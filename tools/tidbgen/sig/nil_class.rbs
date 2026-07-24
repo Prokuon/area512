@@ -4,12 +4,12 @@ class NilClass
   def !: () -> bool
 
   # Always returns false
-  def &: (untyped arg0) -> bool
+  def &: (untyped other) -> bool
 
-  def ===: (untyped arg0) -> bool
+  def ===: (untyped other) -> bool
 
   # Returns logical value of argument
-  def ^: (untyped arg0) -> bool
+  def ^: (untyped other) -> bool
 
   # Returns "nil"
   def inspect: () -> String
@@ -30,6 +30,6 @@ class NilClass
   def to_s: () -> String
 
   # Returns logical value of argument
-  def |: (untyped arg0) -> bool
+  def |: (untyped other) -> bool
 
 end

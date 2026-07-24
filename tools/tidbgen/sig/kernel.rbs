@@ -2,24 +2,24 @@
 
 module Kernel
   # Inspect and output object
-  def p: (*untyped arg0) -> self
+  def p: (*untyped objects) -> self
 
   # Output object
-  def print: (untyped arg0) -> nil
+  def print: (untyped object) -> nil
 
   # Output object with newline
-  def puts: (*untyped arg0) -> nil
+  def puts: (*untyped objects) -> nil
 
-  def system: (String arg0) -> bool
+  def system: (String command) -> bool
 
-  def yield: (*untyped arg0) -> self
+  def yield: (*untyped arguments) -> self
 
   # Create Proc object
-  def proc: () { (untyped block_arg0) -> untyped } -> Proc
+  def proc: () { (untyped argument) -> untyped } -> Proc
 
   # Create lambda expression
-  def lambda: () { (untyped block_arg0) -> untyped } -> Proc
+  def lambda: () { (untyped argument) -> untyped } -> Proc
 
-  def `->`: (untyped arg0) { (untyped block_arg0) -> untyped } -> Proc
+  def `->`: (untyped argument) { (untyped block_argument) -> untyped } -> Proc
 
 end

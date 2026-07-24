@@ -3,15 +3,15 @@
 class Dir
   def close: () -> nil
 
-  def each: () { (String block_arg0) -> untyped } -> self
+  def each: () { (String entry_name) -> untyped } -> self
 
   def read: () -> (String | nil)
 
   def rewind: () -> self
 
-  def seek: (Integer arg0) -> Integer
+  def seek: (Integer position) -> Integer
 
-  def pos=: (Integer arg0) -> Integer
+  def pos=: (Integer position) -> Integer
 
   def tell: () -> Integer
 
@@ -22,38 +22,38 @@ class Dir
   # for VFS
   def findnext: () -> Dir
 
-  def pat=: (String arg0) -> String
+  def pat=: (String pattern) -> String
 
-  def self.chdir: (String arg0) -> Integer
+  def self.chdir: (String path) -> Integer
 
-  def self.chdir: (String arg0) { (String block_arg0) -> untyped } -> untyped
+  def self.chdir: (String path) { (String path) -> untyped } -> untyped
 
-  def self.delete: (String arg0) -> Integer
+  def self.delete: (String path) -> Integer
 
-  def self.rmdir: (String arg0) -> Integer
+  def self.rmdir: (String path) -> Integer
 
-  def self.unlink: (String arg0) -> Integer
+  def self.unlink: (String path) -> Integer
 
-  def self.entries: (String arg0) -> Array[String]
+  def self.entries: (String path) -> Array[String]
 
-  def self.children: (String arg0) -> Array[String]
+  def self.children: (String path) -> Array[String]
 
-  def self.exist?: (String arg0) -> bool
+  def self.exist?: (String path) -> bool
 
-  def self.foreach: (String arg0) { (String block_arg0) -> untyped } -> nil
+  def self.foreach: (String path) { (String entry_name) -> untyped } -> nil
 
   def self.getwd: () -> String
 
   def self.pwd: () -> String
 
-  def self.mkdir: (String arg0, Integer arg1) -> Integer
+  def self.mkdir: (String path, Integer mode) -> Integer
 
-  def self.glob: (String arg0, Integer arg1, ?base: (String | nil)) -> Array[String]
+  def self.glob: (String pattern, Integer flags, ?base: (String | nil)) -> Array[String]
 
-  def self.glob: (String arg0, Integer arg1, ?base: (String | nil)) { (String block_arg0) -> untyped } -> nil
+  def self.glob: (String pattern, Integer flags, ?base: (String | nil)) { (String path) -> untyped } -> nil
 
-  def self.open: (String arg0) -> untyped
+  def self.open: (String path) -> untyped
 
-  def self.open: (String arg0) { (Dir block_arg0) -> untyped } -> Dir
+  def self.open: (String path) { (Dir directory) -> untyped } -> Dir
 
 end

@@ -8,16 +8,16 @@ class File
   def flush: () -> self
 
   # Read one line from file
-  def gets: (String arg0) -> (String | nil)
+  def gets: (String separator) -> (String | nil)
 
   # Write string with newline to file
-  def puts: (*untyped arg0) -> nil
+  def puts: (*untyped objects) -> nil
 
   # Read data from file
-  def read: (Integer arg0) -> (String | nil)
+  def read: (Integer length) -> (String | nil)
 
   # Move file position
-  def seek: (Integer arg0, Integer arg1) -> Integer
+  def seek: (Integer offset, Integer whence) -> Integer
 
   # Return current file position
   def tell: () -> Integer
@@ -26,39 +26,39 @@ class File
   def pos: () -> Integer
 
   # Write string to file, return number of bytes written
-  def write: (String arg0) -> Integer
+  def write: (String string) -> Integer
 
   # Execute block for each line
-  def each_line: () { (String block_arg0) -> untyped } -> self
+  def each_line: () { (String line) -> untyped } -> self
 
   # Open file and return File object
-  def self.open: (String arg0, String arg1) -> File
+  def self.open: (String path, String mode) -> File
 
   # Open file, yield to block, close automatically
-  def self.open: (String arg0, String arg1) { (File block_arg0) -> untyped } -> untyped
+  def self.open: (String path, String mode) { (File file) -> untyped } -> untyped
 
   # Check if file exists
-  def self.exist?: (String arg0) -> bool
+  def self.exist?: (String path) -> bool
 
   # Read entire file and return as string
-  def self.read: (String arg0) -> String
+  def self.read: (String path) -> String
 
   # Write string to file, return number of bytes written
-  def self.write: (String arg0, String arg1) -> Integer
+  def self.write: (String path, String content) -> Integer
 
   # Delete file(s)
-  def self.delete: (*String arg0) -> Integer
+  def self.delete: (*String paths) -> Integer
 
   # Delete file(s) (alias for delete)
-  def self.unlink: (*String arg0) -> Integer
+  def self.unlink: (*String paths) -> Integer
 
   # Return last component of path
-  def self.basename: (String arg0, String arg1) -> String
+  def self.basename: (String path, String suffix) -> String
 
   # Return directory part of path
-  def self.dirname: (String arg0) -> String
+  def self.dirname: (String path) -> String
 
   # Join path components with separator
-  def self.join: (*String arg0) -> String
+  def self.join: (*String parts) -> String
 
 end

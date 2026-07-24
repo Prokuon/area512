@@ -2,29 +2,29 @@
 
 class Range < Enumerable
   # Perform equality comparison
-  def ==: (untyped arg0) -> bool
+  def ==: (untyped other) -> bool
 
   # Check if value is included in range
-  def ===: (untyped arg0) -> bool
+  def ===: (untyped object) -> bool
 
   # Check if end value is excluded
   def exclude_end?: () -> bool
 
   # Return start value of range
-  def first: (Integer arg0) -> (untyped | Array[self])
+  def first: (Integer count) -> (untyped | Array[self])
 
   # Return string representation for debugging
   def inspect: () -> String
 
   # Return end value of range
-  def last: (Integer arg0) -> (untyped | Array[self])
+  def last: (Integer count) -> (untyped | Array[self])
 
   # Return string representation
   def to_s: () -> String
 
   # Execute block for each element in range
-  def each: () { (untyped block_arg0) -> untyped } -> self
+  def each: () { (untyped element) -> untyped } -> self
 
-  def self.new: (untyped arg0, untyped arg1, untyped arg2) -> Range
+  def self.new: (untyped first, untyped last, untyped exclude_end) -> Range
 
 end

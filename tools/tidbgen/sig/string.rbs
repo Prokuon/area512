@@ -5,46 +5,46 @@ class String
   def !: () -> bool
 
   # Repeat string specified number of times
-  def *: (Integer arg0) -> String
+  def *: (Integer count) -> String
 
   # Repeat string specified number of times
-  def **: (Integer arg0) -> String
+  def **: (Integer count) -> String
 
   # Concatenate strings
-  def +: (String arg0) -> String
+  def +: (String other) -> String
 
   # Check if lexicographically smaller
-  def <: (String arg0) -> bool
+  def <: (String other) -> bool
 
   # Append string or character code
-  def <<: ((String | Integer) arg0) -> String
+  def <<: ((String | Integer) string_or_codepoint) -> String
 
   # Check if lexicographically less than or equal
-  def <=: (String arg0) -> bool
+  def <=: (String other) -> bool
 
   # Compare lexicographically. Returns -1 if self < other, 0 if self == other, 1 if self > other
-  def <=>: (String arg0) -> Integer
+  def <=>: (String other) -> Integer
 
   # Perform equality comparison
-  def ==: (untyped arg0) -> bool
+  def ==: (untyped other) -> bool
 
   # Perform equality comparison (for case statements)
-  def ===: (untyped arg0) -> bool
+  def ===: (untyped other) -> bool
 
   # Check if lexicographically greater
-  def >: (String arg0) -> bool
+  def >: (String other) -> bool
 
   # Check if lexicographically greater than or equal
-  def >=: (String arg0) -> bool
+  def >=: (String other) -> bool
 
   # Get character or substring at specified position
-  def []: (untyped arg0) -> (String | nil)
+  def []: (untyped index_or_range) -> (String | nil)
 
   # Replace character or substring at specified position
-  def []=: (untyped arg0, String arg1) -> String
+  def []=: (untyped index_or_range, String replacement) -> String
 
   # Internal method for argument checking of ljust and rjust
-  def __ljust_rjust_argcheck: ((Integer | String) arg0) -> nil
+  def __ljust_rjust_argcheck: ((Integer | String) width_or_padding) -> nil
 
   # Return byte sequence of string as array
   def bytes: () -> Array[Integer]
@@ -53,43 +53,43 @@ class String
   def chars: () -> Array[String]
 
   # Return string with trailing newline removed
-  def chomp: (String arg0) -> String
+  def chomp: (String record_separator) -> String
 
   # Remove trailing newline destructively
-  def chomp!: (String arg0) -> (String | nil)
+  def chomp!: (String record_separator) -> (String | nil)
 
   # Clear string contents
   def clear: () -> String
 
   # Return string converted to lowercase
-  def downcase: (untyped arg0, untyped arg1) -> String
+  def downcase: (untyped options, untyped mapping) -> String
 
   # Convert to lowercase destructively
-  def downcase!: (untyped arg0, untyped arg1) -> (String | nil)
+  def downcase!: (untyped options, untyped mapping) -> (String | nil)
 
   # Execute block for each byte
-  def each_byte: () { (Integer block_arg0) -> untyped } -> self
+  def each_byte: () { (Integer byte) -> untyped } -> self
 
   # Execute block for each character
-  def each_char: () { (String block_arg0) -> untyped } -> self
+  def each_char: () { (String character) -> untyped } -> self
 
   # Execute block for each line
-  def each_line: () { (String block_arg0) -> untyped } -> String
+  def each_line: () { (String line) -> untyped } -> String
 
   # Check if string is empty
   def empty?: () -> bool
 
   # Check if ends with specified string
-  def end_with?: (*String arg0) -> String
+  def end_with?: (*String suffixes) -> String
 
   # Get byte value at specified position
-  def getbyte: (Integer arg0) -> (Integer | nil)
+  def getbyte: (Integer index) -> (Integer | nil)
 
   # Check if contains specified string
-  def include?: (String arg0) -> bool
+  def include?: (String other) -> bool
 
   # Return first position of specified string
-  def index: ((String | Integer) arg0) -> (Integer | nil)
+  def index: ((String | Integer) substring_or_codepoint) -> (Integer | nil)
 
   # Return string representation for debugging
   def inspect: () -> String
@@ -104,7 +104,7 @@ class String
   def size: () -> Integer
 
   # Return string left-justified to specified width
-  def ljust: (Integer arg0, String arg1) -> String
+  def ljust: (Integer width, String padding) -> String
 
   # Return string with leading whitespace removed
   def lstrip: () -> String
@@ -116,7 +116,7 @@ class String
   def ord: () -> Integer
 
   # Return string right-justified to specified width
-  def rjust: (Integer arg0, String arg1) -> String
+  def rjust: (Integer width, String padding) -> String
 
   # Return string with trailing whitespace removed
   def rstrip: () -> String
@@ -125,16 +125,16 @@ class String
   def rstrip!: () -> (String | nil)
 
   # Get character or substring at specified position
-  def slice: (untyped arg0) -> (String | nil)
+  def slice: (untyped index_or_range) -> (String | nil)
 
   # Split by delimiter and return array
-  def split: (String arg0, Integer arg1) -> Array[String]
+  def split: (String separator, Integer limit) -> Array[String]
 
   # Replace the first matching substring
-  def sub: (String arg0, String arg1) -> String
+  def sub: (String pattern, String replacement) -> String
 
   # Check if starts with specified string
-  def start_with?: (*String arg0) -> bool
+  def start_with?: (*String prefixes) -> bool
 
   # Return string with leading and trailing whitespace removed
   def strip: () -> String
@@ -146,7 +146,7 @@ class String
   def to_f: () -> Float
 
   # Convert to integer
-  def to_i: (Integer arg0) -> Integer
+  def to_i: (Integer base) -> Integer
 
   # Return self as string
   def to_s: () -> String
@@ -155,15 +155,15 @@ class String
   def to_sym: () -> Symbol
 
   # Return string with characters replaced
-  def tr: (String arg0, String arg1) -> String
+  def tr: (String source, String replacement) -> String
 
   # Replace characters destructively
-  def tr!: (String arg0, String arg1) -> (String | nil)
+  def tr!: (String source, String replacement) -> (String | nil)
 
   # Return string converted to uppercase
-  def upcase: (untyped arg0, untyped arg1) -> String
+  def upcase: (untyped options, untyped mapping) -> String
 
   # Convert to uppercase destructively
-  def upcase!: (untyped arg0, untyped arg1) -> (String | nil)
+  def upcase!: (untyped options, untyped mapping) -> (String | nil)
 
 end

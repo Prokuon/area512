@@ -2,22 +2,22 @@
 
 class Sandbox
   # Compile a Ruby script string; true on success
-  def compile: (String arg0, ?remove_lv: bool, ?filename: (String | nil)) -> bool
+  def compile: (String script, ?remove_lv: bool, ?filename: (String | nil)) -> bool
 
   # Compile a script from a memory address and size
-  def compile_from_memory: (Integer arg0, Integer arg1, ?remove_lv: bool) -> bool
+  def compile_from_memory: (Integer address, Integer size, ?remove_lv: bool) -> bool
 
   # Start executing the compiled code as a task
   def execute: () -> bool
 
   # Execute precompiled mrb bytecode
-  def exec_mrb: (String arg0) -> bool
+  def exec_mrb: (String mrb) -> bool
 
   # Execute mrb bytecode located at a memory address
-  def exec_mrb_from_memory: (Integer arg0) -> bool
+  def exec_mrb_from_memory: (Integer address) -> bool
 
   # Compile or exec a .rb/.mrb file; join: waits for completion
-  def load_file: (String arg0, ?join: bool) -> untyped
+  def load_file: (String path, ?join: bool) -> untyped
 
   # Wait until the task finishes; timeout in ms, nil waits forever
   def wait: (?timeout: (Integer | nil)) -> bool
@@ -47,18 +47,18 @@ class Sandbox
   def free_parser: () -> nil
 
   # Execute each .mrb listed in a manifest file, keeping loaded code resident
-  def load_manifest: (String arg0, String arg1, ?join: bool) -> (bool | nil)
+  def load_manifest: (String directory, String manifest_path, ?join: bool) -> (bool | nil)
 
   # Terminate the task and release kept code and compiler resources
   def cleanup: () -> nil
 
   # Execute an .mrb file keeping its bytecode resident until release
-  def area512_exec_mrb_file_keep: (String arg0) -> bool
+  def area512_exec_mrb_file_keep: (String path) -> bool
 
   # Release all bytecode kept by area512_exec_mrb_file_keep
   def area512_release_kept_code: () -> nil
 
   # Create a sandbox task; optional name
-  def self.new: (String arg0) -> Sandbox
+  def self.new: (String name) -> Sandbox
 
 end

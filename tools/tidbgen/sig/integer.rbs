@@ -2,61 +2,61 @@
 
 class Integer
   # Calculate modulo
-  def %: ((Integer | Float) arg0) -> (Integer | Float)
+  def %: ((Integer | Float) other) -> (Integer | Float)
 
   # Perform bitwise AND operation
-  def &: (Integer arg0) -> Integer
+  def &: (Integer other) -> Integer
 
   # Perform multiplication
-  def *: ((Integer | Float) arg0) -> (Integer | Float)
+  def *: ((Integer | Float) other) -> (Integer | Float)
 
   # Calculate power
-  def **: ((Integer | Float) arg0) -> Integer
+  def **: ((Integer | Float) other) -> Integer
 
   # Perform addition
-  def +: ((Integer | Float) arg0) -> (Integer | Float)
+  def +: ((Integer | Float) other) -> (Integer | Float)
 
   # Unary plus operator. Returns self
   def +@: () -> Integer
 
   # Perform subtraction
-  def -: ((Integer | Float) arg0) -> (Integer | Float)
+  def -: ((Integer | Float) other) -> (Integer | Float)
 
   # Unary minus operator. Inverts sign
   def -@: () -> Integer
 
   # Perform division
-  def /: ((Integer | Float) arg0) -> (Integer | Float)
+  def /: ((Integer | Float) other) -> (Integer | Float)
 
   # Perform less than comparison
-  def <: ((Integer | Float) arg0) -> bool
+  def <: ((Integer | Float) other) -> bool
 
   # Perform left bit shift
-  def <<: (Integer arg0) -> Integer
+  def <<: (Integer other) -> Integer
 
   # Perform less than or equal comparison
-  def <=: ((Integer | Float) arg0) -> bool
+  def <=: ((Integer | Float) other) -> bool
 
   # Comparison operator. Returns -1 if self < other, 0 if self == other, 1 if self > other
-  def <=>: ((Integer | untyped) arg0) -> Integer
+  def <=>: ((Integer | untyped) other) -> Integer
 
   # Perform equality comparison
-  def ==: (untyped arg0) -> bool
+  def ==: (untyped other) -> bool
 
   # Perform greater than comparison
-  def >: ((Integer | Float) arg0) -> bool
+  def >: ((Integer | Float) other) -> bool
 
   # Perform greater than or equal comparison
-  def >=: ((Integer | Float) arg0) -> bool
+  def >=: ((Integer | Float) other) -> bool
 
   # Perform right bit shift
-  def >>: (Integer arg0) -> Integer
+  def >>: (Integer other) -> Integer
 
   # Perform bitwise XOR operation
-  def ^: (Integer arg0) -> Integer
+  def ^: (Integer other) -> Integer
 
   # Get value at specified bit position
-  def []: (untyped arg0) -> Integer
+  def []: (untyped index) -> Integer
 
   # Get absolute value
   def abs: () -> Integer
@@ -65,10 +65,10 @@ class Integer
   def chr: () -> String
 
   # Execute block while decreasing from self to argument by 1
-  def downto: (Integer arg0) { (Integer block_arg0) -> untyped } -> Integer
+  def downto: (Integer limit) { (Integer block_limit) -> untyped } -> Integer
 
   # Execute block self times
-  def times: () { (Integer block_arg0) -> untyped } -> Integer
+  def times: () { (Integer index) -> untyped } -> Integer
 
   # Convert to floating point number
   def to_f: () -> Float
@@ -77,10 +77,10 @@ class Integer
   def to_i: () -> Integer
 
   # Convert to string. Base can be specified with argument
-  def to_s: (Integer arg0) -> String
+  def to_s: (Integer base) -> String
 
   # Perform bitwise OR operation
-  def |: (Integer arg0) -> Integer
+  def |: (Integer other) -> Integer
 
   # Perform bitwise NOT operation
   def ~: () -> Integer

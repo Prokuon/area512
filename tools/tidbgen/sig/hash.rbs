@@ -1,45 +1,45 @@
 # Area512 built-in type declaration.
 
 class Hash < Enumerable
-  def <: (Hash arg0) -> bool
+  def <: (Hash other) -> bool
 
-  def <=: (Hash arg0) -> bool
+  def <=: (Hash other) -> bool
 
   # Perform equality comparison
-  def ==: (untyped arg0) -> bool
+  def ==: (untyped other) -> bool
 
-  def >: (Hash arg0) -> bool
+  def >: (Hash other) -> bool
 
-  def >=: (Hash arg0) -> bool
+  def >=: (Hash other) -> bool
 
   # Get value for specified key
-  def []: (untyped arg0) -> untyped
+  def []: (untyped key) -> untyped
 
   # Set value for specified key
-  def []=: (untyped arg0) -> self
+  def []=: (untyped value) -> self
 
   # Remove all elements from hash
   def clear: () -> Hash
 
   # Delete specified key
-  def delete: ((String | Symbol) arg0) -> (untyped | nil)
+  def delete: ((String | Symbol) key) -> (untyped | nil)
 
   # Execute block for each key and value
-  def each: () { (untyped block_arg0, untyped block_arg1) -> untyped } -> self
+  def each: () { (untyped key, untyped value) -> untyped } -> self
 
   # Check if hash is empty
   def empty?: () -> bool
 
   # Check if specified key exists
-  def has_key?: ((String | Symbol) arg0) -> bool
+  def has_key?: ((String | Symbol) key) -> bool
 
   # Check if specified value exists
-  def has_value?: (untyped arg0) -> bool
+  def has_value?: (untyped value) -> bool
 
   # Return string representation for debugging
   def inspect: () -> String
 
-  def key: (untyped arg0) -> (String | Symbol | nil)
+  def key: (untyped value) -> (String | Symbol | nil)
 
   # Return all keys as array
   def keys: () -> Array[untyped]
@@ -48,10 +48,10 @@ class Hash < Enumerable
   def length: () -> bool
 
   # Return new hash merged with another hash
-  def merge: (Hash arg0) { (Symbol block_arg0, untyped block_arg1, untyped block_arg2) -> untyped } -> self
+  def merge: (Hash other) { (Symbol key, untyped old_value, untyped new_value) -> untyped } -> self
 
   # Merge hash destructively
-  def merge!: (Hash arg0) { (Symbol block_arg0, untyped block_arg1, untyped block_arg2) -> untyped } -> self
+  def merge!: (Hash other) { (Symbol key, untyped old_value, untyped new_value) -> untyped } -> self
 
   # Remove and return first key-value pair
   def shift: () -> Array
@@ -62,6 +62,6 @@ class Hash < Enumerable
   # Return all values as array
   def values: () -> Array[untyped]
 
-  def self.new: (untyped arg0) -> Hash
+  def self.new: (untyped default_value) -> Hash
 
 end

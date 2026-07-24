@@ -13,7 +13,7 @@ test_string_method_lookup(void) {
   assert(
     strcmp(
       ti_get_builtin_signature(method),
-      "sub: (String arg0, String arg1) -> String"
+      "sub: (String pattern, String replacement) -> String"
     ) == 0
   );
 }
