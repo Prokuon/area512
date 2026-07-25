@@ -1,0 +1,59 @@
+# Area512 built-in type declaration.
+
+class Dir
+  def close: () -> nil
+
+  def each: () { (String entry_name) -> untyped } -> self
+
+  def read: () -> (String | nil)
+
+  def rewind: () -> self
+
+  def seek: (Integer position) -> Integer
+
+  def pos=: (Integer position) -> Integer
+
+  def tell: () -> Integer
+
+  def pos: () -> Integer
+
+  def empty?: () -> bool
+
+  # for VFS
+  def findnext: () -> Dir
+
+  def pat=: (String pattern) -> String
+
+  def self.chdir: (String path) -> Integer
+
+  def self.chdir: (String path) { (String path) -> untyped } -> untyped
+
+  def self.delete: (String path) -> Integer
+
+  def self.rmdir: (String path) -> Integer
+
+  def self.unlink: (String path) -> Integer
+
+  def self.entries: (String path) -> Array[String]
+
+  def self.children: (String path) -> Array[String]
+
+  def self.exist?: (String path) -> bool
+
+  def self.foreach: (String path) { (String entry_name) -> untyped } -> nil
+
+  def self.getwd: () -> String
+
+  def self.pwd: () -> String
+
+  def self.mkdir: (String path, Integer mode) -> Integer
+
+  def self.glob: (String pattern, Integer flags, ?base: (String | nil)) -> Array[String]
+
+  def self.glob: (String pattern, Integer flags, ?base: (String | nil)) { (String path) -> untyped } -> nil
+
+  def self.open: (String path) -> untyped
+
+  def self.open: (String path) { (Dir directory) -> untyped } -> Dir
+
+end

@@ -11,3 +11,4 @@ storage/etc/*
 .cache
 storage/home/**/*.mrb
 managed_components/*
+area512-ti-lsp

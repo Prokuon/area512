@@ -283,12 +283,16 @@ handle_insert(
     start_completion(vim);
     break;
   default:
-    if (key >= 32 && character &&
-        character_byte_length > 0) { // printable ASCII, ' ' (space) and above
+    // printable ASCII, ' ' (space) and above
+    if (key >= 32 && character && character_byte_length > 0) {
       vim_buffer_put_string(BUFFER, character, character_byte_length);
       maybe_outdent_current_line(vim);
 
-      if (character_byte_length == 1 && character[0] == '.') {
+      if (
+        character_byte_length == 1 &&
+        (character[0] == '.' || (character[0] >= 'A' && character[0] <= 'Z'))
+      ) {
+
         if (vim->active_canvas)
           vim_screen_refresh_if_needed(&vim->screen, vim->active_canvas);
 

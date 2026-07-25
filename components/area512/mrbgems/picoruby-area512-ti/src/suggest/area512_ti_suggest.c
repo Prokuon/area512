@@ -128,10 +128,12 @@ append_builtin_suggestions(
   int show_class_name,
   const uint8_t *prefix,
   size_t prefix_length,
+  int max_additions,
   TiSuggestionList *out
 ) {
 
   const TiBuiltinMethod *methods[TI_MAX_SUGGESTIONS];
+  int initial_count = out->count;
   if (out->count >= TI_MAX_SUGGESTIONS)
     return;
 
@@ -153,7 +155,8 @@ append_builtin_suggestions(
     if (has_suggestion(out, name, signature))
       continue;
 
-    if (out->count >= TI_MAX_SUGGESTIONS)
+    if (out->count >= TI_MAX_SUGGESTIONS ||
+        out->count - initial_count >= max_additions)
       return;
 
     TiSuggestion *suggestion = &out->items[out->count++];
@@ -164,9 +167,6 @@ append_builtin_suggestions(
 
     suggestion->class_name =
       show_class_name ? ti_get_builtin_class_name(class_id) : NULL;
-
-    if (out->count >= TI_MAX_SUGGESTIONS)
-      return;
   }
 }
 
@@ -180,6 +180,94 @@ copy_constant_to_arena(const pm_constant_t *constant) {
   copy[constant->length] = '\0';
 
   return copy;
+}
+
+static void
+append_class_suggestion(
+  const char *class_name,
+  size_t class_name_length,
+  TiSuggestionList *out
+) {
+
+  if (has_suggestion(out, class_name, class_name))
+    return;
+
+  TiSuggestion *suggestion = &out->items[out->count++];
+  suggestion->detail = class_name;
+  suggestion->document = "";
+  suggestion->contents = class_name;
+  suggestion->contents_length = (int)class_name_length;
+  suggestion->class_name = NULL;
+}
+
+static void
+append_builtin_class_suggestions(
+  const uint8_t *prefix,
+  size_t prefix_length,
+  TiSuggestionList *out
+) {
+
+  for (
+    uint8_t class_id = 1;
+    class_id < ti_builtin_class_count &&
+    out->count < TI_MAX_SUGGESTIONS;
+    class_id++
+  ) {
+
+    const char *class_name = ti_get_builtin_class_name(class_id);
+    size_t class_name_length = strlen(class_name);
+
+    if (!matches_prefix(
+          (const uint8_t *)class_name,
+          class_name_length,
+          prefix,
+          prefix_length
+        )) {
+
+      continue;
+    }
+
+    append_class_suggestion(class_name, class_name_length, out);
+  }
+}
+
+static void
+append_defined_class_suggestions(
+  TiContext *context,
+  const uint8_t *prefix,
+  size_t prefix_length,
+  TiSuggestionList *out
+) {
+
+  for (
+    int index = 0;
+    index < ti_get_define_info_count() && out->count < TI_MAX_SUGGESTIONS;
+    index++
+  ) {
+
+    TiDefineInfo *define_info = ti_get_define_info(index);
+
+    if (!define_info || !define_info->is_class)
+      continue;
+
+    const pm_constant_t *name = ti_get_constant(context, define_info->name_id);
+
+    if (
+      !name ||
+      !matches_prefix(name->start, name->length, prefix, prefix_length)
+    ) {
+      continue;
+    }
+
+    char *contents = copy_constant_to_arena(name);
+
+    if (!contents) {
+      context->failed = 1;
+      return;
+    }
+
+    append_class_suggestion(contents, name->length, out);
+  }
 }
 
 static char *
@@ -366,6 +454,11 @@ collect_suggestions(
   }
 
   if (!has_receiver) {
+    if (prefix_length > 0 && prefix[0] >= 'A' && prefix[0] <= 'Z') {
+      append_builtin_class_suggestions(prefix, prefix_length, out);
+      append_defined_class_suggestions(context, prefix, prefix_length, out);
+    }
+
     append_define_info_suggestions_for_owner(
       context,
       0,
@@ -407,6 +500,7 @@ collect_suggestions(
       0,
       prefix,
       prefix_length,
+      TI_MAX_SUGGESTIONS,
       out
     );
 
@@ -416,6 +510,7 @@ collect_suggestions(
       0,
       prefix,
       prefix_length,
+      TI_MAX_SUGGESTIONS,
       out
     );
 
@@ -440,6 +535,15 @@ collect_suggestions(
     return 0;
 
   int show_class_name = target_t->union_next != 0;
+  int target_count = 0;
+  const T *counted_target_t = target_t;
+
+  while (counted_target_t) {
+    target_count++;
+    counted_target_t = ti_get_t(counted_target_t->union_next);
+  }
+
+  int max_additions = TI_MAX_SUGGESTIONS / target_count;
 
   while (target_t) {
     if ((target_t->t_flags & TI_T_FLAG_DEFINED_CLASS) != 0) {
@@ -459,6 +563,7 @@ collect_suggestions(
         show_class_name,
         prefix,
         prefix_length,
+        max_additions,
         out
       );
     }

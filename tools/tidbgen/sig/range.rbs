@@ -1,0 +1,30 @@
+# Area512 built-in type declaration.
+
+class Range < Enumerable
+  # Perform equality comparison
+  def ==: (untyped other) -> bool
+
+  # Check if value is included in range
+  def ===: (untyped object) -> bool
+
+  # Check if end value is excluded
+  def exclude_end?: () -> bool
+
+  # Return start value of range
+  def first: (Integer count) -> (untyped | Array[self])
+
+  # Return string representation for debugging
+  def inspect: () -> String
+
+  # Return end value of range
+  def last: (Integer count) -> (untyped | Array[self])
+
+  # Return string representation
+  def to_s: () -> String
+
+  # Execute block for each element in range
+  def each: () { (untyped element) -> untyped } -> self
+
+  def self.new: (untyped first, untyped last, untyped exclude_end) -> Range
+
+end
