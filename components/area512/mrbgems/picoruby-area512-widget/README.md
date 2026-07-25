@@ -181,6 +181,5 @@ view.draw(sp)
 
 `storage/home/tool/gallery` shows every component across six tabs
 (PARTS / TABLE / CHART / LIST / TEXT / MODAL) and doubles as the on-device
-test. Type signatures for the ti checker live in
-`template/app/.ti-config/area512widgets.json` (plus `widget_list.json` and
-`widget_text_view.json`).
+test. Type signatures for the ti checker live in `tools/tidbgen/sig/widget.rbs`,
+`widget_list.rbs`, and `widget_text_view.rbs`.
