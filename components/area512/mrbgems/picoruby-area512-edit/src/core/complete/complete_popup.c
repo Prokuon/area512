@@ -440,6 +440,7 @@ show_complete_popup(
   int selected_index = 0;
   int window_start = 0;
   int document_scroll = 0;
+
   draw_complete_popup(
     vim,
     suggestions,
@@ -456,7 +457,9 @@ show_complete_popup(
 
     if (key == 14) {
       selected_index = (selected_index + 1) % suggestions->count;
+
       document_scroll = 0;
+
       draw_complete_popup(
         vim,
         suggestions,
@@ -464,18 +467,23 @@ show_complete_popup(
         &window_start,
         document_scroll
       );
+
       continue;
     }
 
     if (key == 10 || key == 13) {
       const TiSuggestion *suggestion = &suggestions->items[selected_index];
+
       remove_complete_prefix(vim);
+
       vim_buffer_put_string(
         BUFFER,
         suggestion->contents,
         suggestion->contents_length
       );
+
       REDRAW(VIM_REDRAW_ALL);
+
       return 0;
     }
 
@@ -486,9 +494,12 @@ show_complete_popup(
       if (sequence_length >= 2 && sequence[0] == '[') {
         if (sequence[1] == 'A') {
           selected_index--;
+
           if (selected_index < 0)
             selected_index = suggestions->count - 1;
+
           document_scroll = 0;
+
           draw_complete_popup(
             vim,
             suggestions,
@@ -496,6 +507,7 @@ show_complete_popup(
             &window_start,
             document_scroll
           );
+
           continue;
         }
 
