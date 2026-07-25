@@ -36,7 +36,7 @@ The following keys are available.
 | Key | Action |
 | --- | --- |
 | `;` / `.` (or `k` / `j`) | Move the cursor up / down |
-| `/` or Enter | Open (enter a directory / run an app) |
+| `/` or Enter | Open (enter a directory / run an app / view a Markdown file) |
 | `,` or BS | Go to the parent directory |
 | `1`–`9` | Jump to the n-th entry |
 | `e` | Edit the selected file |
@@ -95,9 +95,15 @@ The world's finest card game. Compete for the high score!
 
 Launch it and you'll get it! That nostalgic game!
 
+### Gallery — `/home/tool/gallery`
+
+A gallery of the built-in Widget components.
+
 ## Editing Code
 
-The editor opened with `e` is a tiny vim running on the device. It has normal, insert, visual, operator, and command modes, plus search — with syntax highlighting. The keys your fingers remember mostly just work!
+The editor opened with `e` is a tiny vim running on the device. It has normal, insert, visual, operator, and command modes, plus search, syntax highlighting, automatic indentation, and Ruby code completion. The keys your fingers remember mostly just work!
+
+In insert mode, press `Ctrl-N` to open completion; it also opens automatically after `.` and uppercase letters in `.rb` files.
 
 ![Editing Ruby code in the on-device vim](image/editor.jpg)
 
@@ -132,6 +138,8 @@ myapp/
 - If `main.manifest` exists, the listed `.mrb` files are loaded into a single sandbox in order. Put dependencies first and `main.mrb` last.
 - Without `main.manifest`, only `main.mrb` is executed.
 - If neither exists, `No main.manifest or main.mrb` is shown.
+
+Applications can use the built-in Widget components with `require 'area512-widget'`. See [the Widget component documentation](components/area512/mrbgems/picoruby-area512-widget/README.md) and the preinstalled `/home/tool/gallery` app.
 
 ## Building
 
