@@ -19,7 +19,7 @@ FMT_FILES := $(shell find $(ROOT)/main $(ROOT)/components \
 	-not -path '*/M5Unified/*' \
 	-not -path '*/managed_components/*')
 
-.PHONY: build flash monitor clean fullclean compile-home-mrb flash-firmware save-firmware gendb gendb-test format format-check help
+.PHONY: build flash monitor clean fullclean compile-home-mrb flash-firmware save-firmware gendb gendb-test format format-check run-emulator help
 
 help:
 	@echo "Targets:"
@@ -37,6 +37,7 @@ help:
 	@echo "                    generated mrb/*.c. Use after editing build_config/*.rb."
 	@echo "  make format     - clang-format -i over our own C/C++ (skips vendored trees)"
 	@echo "  make format-check - check formatting without writing (CI; non-zero on diff)"
+	@echo "  make run-emulator - run firmware/Area512.bin in the Cardputer ADV emulator"
 
 build:
 	idf.py build
@@ -60,6 +61,9 @@ save-firmware:
 
 monitor:
 	idf.py monitor
+
+run-emulator:
+	$(ROOT)/emulator/run.sh
 
 clean:
 	idf.py clean
