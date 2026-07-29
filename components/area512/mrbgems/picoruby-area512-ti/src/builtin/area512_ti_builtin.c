@@ -141,6 +141,37 @@ ti_get_builtin_static_method(
   );
 }
 
+const TiBuiltinArgument *
+ti_get_builtin_argument(
+  const TiBuiltinMethod *builtin_method,
+  int argument_index
+) {
+
+  if (
+    !builtin_method ||
+    argument_index < 0 ||
+    argument_index >= builtin_method->argument_count
+  ) {
+    return NULL;
+  }
+
+  uint16_t builtin_argument_index =
+    builtin_method->argument_start_index + (uint16_t)argument_index;
+
+  if (builtin_argument_index >= ti_builtin_argument_count)
+    return NULL;
+
+  return &ti_builtin_arguments[builtin_argument_index];
+}
+
+const char *
+ti_get_builtin_argument_name(const TiBuiltinArgument *builtin_argument) {
+  if (!builtin_argument || builtin_argument->name_offset == 0)
+    return NULL;
+
+  return &ti_builtin_name_pool[builtin_argument->name_offset];
+}
+
 static int
 matches_partial_method_name(
   const char *builtin_method_name,
@@ -257,6 +288,32 @@ collect_builtin_union_class_ids(
   }
 
   return member_class_count;
+}
+
+int
+ti_get_builtin_argument_classes(
+  const TiBuiltinArgument *builtin_argument,
+  uint8_t output_class_ids[4]
+) {
+
+  if (!builtin_argument || !output_class_ids)
+    return 0;
+
+  int class_count =
+    collect_builtin_union_class_ids(
+      builtin_argument->union_index,
+      output_class_ids
+    );
+
+  if (class_count > 0)
+    return class_count;
+
+  if (builtin_argument->class_identifier == TI_CLASS_NONE)
+    return 0;
+
+  output_class_ids[0] = builtin_argument->class_identifier;
+
+  return 1;
 }
 
 int

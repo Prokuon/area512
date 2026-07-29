@@ -11,13 +11,13 @@ class Range < Enumerable
   def exclude_end?: () -> bool
 
   # Return start value of range
-  def first: (Integer count) -> (untyped | Array[self])
+  def first: () -> untyped
 
   # Return string representation for debugging
   def inspect: () -> String
 
   # Return end value of range
-  def last: (Integer count) -> (untyped | Array[self])
+  def last: () -> untyped
 
   # Return string representation
   def to_s: () -> String
@@ -25,6 +25,6 @@ class Range < Enumerable
   # Execute block for each element in range
   def each: () { (untyped element) -> untyped } -> self
 
-  def self.new: (untyped first, untyped last, untyped exclude_end) -> Range
+  def self.new: (untyped first, untyped last, ?bool exclude_end) -> Range
 
 end

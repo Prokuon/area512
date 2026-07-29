@@ -62,6 +62,6 @@ class Hash < Enumerable
   # Return all values as array
   def values: () -> Array[untyped]
 
-  def self.new: (untyped default_value) -> Hash
+  def self.new: () -> Hash
 
 end

@@ -1,5 +1,7 @@
 #include "core/mode/normal.h"
+#include "area512_ti_diagnostic.h"
 #include "area512_ti_hover.h"
+#include "core/diagnostic/diagnostic_popup.h"
 #include "core/mode/insert.h"
 #include "core/register/paste.h"
 #include "core/register/repeat.h"
@@ -40,9 +42,66 @@ calculate_cursor_offset(Vim *vim) {
 }
 
 static void
-show_type_at_cursor(Vim *vim) {
+fill_diagnostics(Vim *vim) {
   if (!editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length))
     return;
+
+  VimString content;
+  vim_string_init(&content);
+  vim_write_content(vim, &content);
+
+  TiDiagnosticList diagnostics;
+
+  ti_fill_diagnostics(
+    content.bytes,
+    content.byte_length,
+    &diagnostics
+  );
+
+  vim_clear_diagnostics(vim);
+
+  for (int index = 0; index < diagnostics.count; index++) {
+    const TiDiagnostic *source = &diagnostics.items[index];
+    VimDiagnostic *destination = &vim->diagnostics.items[index];
+
+    destination->start_byte_offset = source->start_byte_offset;
+    destination->end_byte_offset = source->end_byte_offset;
+
+    strncpy(
+      destination->message,
+      source->message,
+      VIM_DIAGNOSTIC_MESSAGE_CAPACITY - 1
+    );
+    destination->message[VIM_DIAGNOSTIC_MESSAGE_CAPACITY - 1] = '\0';
+  }
+  vim->diagnostics.count = diagnostics.count;
+
+  if (diagnostics.count)
+    show_message_c_string(vim, "Diagnostics updated");
+  else
+    show_message_c_string(vim, "No diagnostics");
+
+  vim_string_free(&content);
+}
+
+static void
+show_type_or_diagnostic_at_cursor(Vim *vim) {
+  if (!editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length))
+    return;
+
+  int cursor_byte_offset = calculate_cursor_offset(vim);
+
+  for (int index = 0; index < vim->diagnostics.count; index++) {
+    const VimDiagnostic *diagnostic = &vim->diagnostics.items[index];
+
+    if (
+      cursor_byte_offset >= diagnostic->start_byte_offset &&
+      cursor_byte_offset < diagnostic->end_byte_offset
+    ) {
+      show_diagnostic_popup(vim, diagnostic->message);
+      return;
+    }
+  }
 
   VimString content;
   vim_string_init(&content);
@@ -54,7 +113,7 @@ show_type_at_cursor(Vim *vim) {
     ti_find_type_at_cursor(
       content.bytes,
       content.byte_length,
-      calculate_cursor_offset(vim),
+      cursor_byte_offset,
       &type_info
     );
 
@@ -412,7 +471,7 @@ handle_normal(
     break;
 
   case 75: // 'K'
-    show_type_at_cursor(vim);
+    show_type_or_diagnostic_at_cursor(vim);
     REDRAW(VIM_REDRAW_FOOTER);
     break;
 
@@ -430,6 +489,11 @@ handle_normal(
 
     REDRAW(VIM_REDRAW_ALL);
 
+    break;
+
+  case 81: // 'Q'
+    fill_diagnostics(vim);
+    REDRAW(VIM_REDRAW_ALL);
     break;
 
   case 83: // 'S'

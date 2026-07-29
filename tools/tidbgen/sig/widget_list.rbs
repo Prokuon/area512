@@ -8,7 +8,7 @@ class WidgetList
   def clear: () -> nil
 
   # Append a row; optional tag is drawn amber on the left (text, tag = "")
-  def add: (String text, String tag) -> nil
+  def add: (String text, ?String tag) -> nil
 
   # Text shown centered when the list is empty
   def empty_text=: (String text) -> String

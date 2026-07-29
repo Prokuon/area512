@@ -5,7 +5,7 @@ module Kernel
   def p: (*untyped objects) -> self
 
   # Output object
-  def print: (untyped object) -> nil
+  def print: (*untyped objects) -> nil
 
   # Output object with newline
   def puts: (*untyped objects) -> nil

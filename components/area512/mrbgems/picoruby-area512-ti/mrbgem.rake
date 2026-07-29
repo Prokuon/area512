@@ -8,6 +8,7 @@ MRuby::Gem::Specification.new('picoruby-area512-ti') do |spec|
   spec.cc.include_paths << "#{spec.dir}/src/base"
   spec.cc.include_paths << "#{spec.dir}/src/builtin"
   spec.cc.include_paths << "#{spec.dir}/src/context"
+  spec.cc.include_paths << "#{spec.dir}/src/diagnostic"
   spec.cc.include_paths << "#{spec.dir}/src/eval"
   spec.cc.include_paths << "#{spec.dir}/src/eval/method_evaluator"
   spec.cc.include_paths << "#{spec.dir}/src/generated"

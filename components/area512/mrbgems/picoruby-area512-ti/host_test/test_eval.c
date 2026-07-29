@@ -1,3 +1,4 @@
+#include "area512_ti_diagnostic.h"
 #include "area512_ti_hover.h"
 #include "area512_ti_suggest.h"
 #include <assert.h>
@@ -28,6 +29,71 @@ suggest_source(const char *source) {
   );
 
   return suggestions;
+}
+
+static TiDiagnosticList
+diagnose_source(const char *source) {
+  TiDiagnosticList diagnostics;
+
+  ti_fill_diagnostics(
+    source,
+    (int)strlen(source),
+    &diagnostics
+  );
+
+  return diagnostics;
+}
+
+static void
+test_builtin_argument_type_diagnostic(void) {
+  TiDiagnosticList diagnostics =
+    diagnose_source("\"x\".sub(1, \"a\")");
+
+  assert(diagnostics.count == 1);
+  assert(strcmp(
+    diagnostics.items[0].message,
+    "type mismatch: expected String, but got Integer for String.sub"
+  ) == 0);
+  assert(diagnostics.items[0].start_byte_offset == 8);
+  assert(diagnostics.items[0].end_byte_offset == 9);
+}
+
+static void
+test_unknown_argument_has_no_diagnostic(void) {
+  TiDiagnosticList diagnostics =
+    diagnose_source("\"x\".sub(unknown, \"a\")");
+
+  assert(diagnostics.count == 0);
+}
+
+static void
+test_array_and_hash_contents_have_no_diagnostic(void) {
+  TiDiagnosticList array_diagnostics =
+    diagnose_source("[1].concat([\"x\"])");
+  TiDiagnosticList hash_diagnostics =
+    diagnose_source("{a: 1}.merge({a: \"x\"})");
+
+  assert(array_diagnostics.count == 0);
+  assert(hash_diagnostics.count == 0);
+}
+
+static void
+test_builtin_argument_count_diagnostic(void) {
+  TiDiagnosticList diagnostics = diagnose_source("1.to_s()");
+
+  assert(diagnostics.count == 1);
+  assert(strcmp(
+    diagnostics.items[0].message,
+    "too few arguments for Integer.to_s"
+  ) == 0);
+}
+
+static void
+test_user_defined_method_arguments_have_no_diagnostic(void) {
+  TiDiagnosticList diagnostics =
+    diagnose_source("def call(value)\nvalue\nend\ncall()\ncall(1, 2)");
+
+  assert(diagnostics.count == 0);
 }
 
 static void
@@ -196,6 +262,11 @@ test_binding_overflow(void) {
 
 int
 main(void) {
+  test_builtin_argument_type_diagnostic();
+  test_unknown_argument_has_no_diagnostic();
+  test_array_and_hash_contents_have_no_diagnostic();
+  test_builtin_argument_count_diagnostic();
+  test_user_defined_method_arguments_have_no_diagnostic();
   test_literal_bindings();
   test_binding_lookup();
   test_method_chain();

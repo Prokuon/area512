@@ -164,7 +164,7 @@ eval_on_visit(const pm_node_t *node, void *data) {
 
     ti_bind_scalar_assignment(context, write->name, write->value, 0);
 
-    break;
+    return false;
   }
 
   case PM_INSTANCE_VARIABLE_WRITE_NODE: {
@@ -173,7 +173,7 @@ eval_on_visit(const pm_node_t *node, void *data) {
 
     ti_bind_scalar_assignment(context, write->name, write->value, 0);
 
-    break;
+    return false;
   }
 
   case PM_GLOBAL_VARIABLE_WRITE_NODE: {
@@ -181,7 +181,7 @@ eval_on_visit(const pm_node_t *node, void *data) {
       (const pm_global_variable_write_node_t *)node;
 
     ti_bind_scalar_assignment(context, write->name, write->value, 0);
-    break;
+    return false;
   }
 
   case PM_CONSTANT_WRITE_NODE: {
@@ -190,12 +190,16 @@ eval_on_visit(const pm_node_t *node, void *data) {
 
     ti_bind_scalar_assignment(context, write->name, write->value, 0);
 
-    break;
+    return false;
   }
 
   case PM_DEF_NODE:
     ti_eval_def(context, (const pm_def_node_t *)node);
-    break;
+    return false;
+
+  case PM_CALL_NODE:
+    ti_eval_method(context, (const pm_call_node_t *)node, 0);
+    return false;
 
   case PM_CLASS_NODE: {
     const pm_class_node_t *class_node = (const pm_class_node_t *)node;

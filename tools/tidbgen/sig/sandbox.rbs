@@ -59,6 +59,6 @@ class Sandbox
   def area512_release_kept_code: () -> nil
 
   # Create a sandbox task; optional name
-  def self.new: (String name) -> Sandbox
+  def self.new: () -> Sandbox
 
 end

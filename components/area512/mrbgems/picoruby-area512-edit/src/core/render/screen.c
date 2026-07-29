@@ -373,6 +373,7 @@ vim_screen_refresh_full(VimScreen *screen, VimCanvas *canvas) {
   int screen_row = 0;
 
   int line_index = 0;
+  int line_byte_offset = 0;
   while (line_index < screen->buffer.line_count) {
     const char *line = screen->buffer.lines[line_index].bytes;
     int byte_length = screen->buffer.lines[line_index].byte_length;
@@ -395,6 +396,17 @@ vim_screen_refresh_full(VimScreen *screen, VimCanvas *canvas) {
           wrap_index * content_width,
           content_width
         );
+        if (screen->diagnostic)
+          screen->diagnostic(
+            screen->diagnostic_context,
+            canvas,
+            line_byte_offset,
+            VIM_GUTTER_WIDTH,
+            line,
+            byte_length,
+            wrap_index * content_width,
+            content_width
+          );
         canvas->push_row(canvas->context, screen_row);
         screen_row += 1;
         content_height -= 1;
@@ -405,6 +417,7 @@ vim_screen_refresh_full(VimScreen *screen, VimCanvas *canvas) {
     }
     if (content_height == 0)
       break;
+    line_byte_offset += byte_length + 1;
     line_index += 1;
   }
   while (content_height > 0) {

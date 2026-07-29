@@ -134,6 +134,7 @@ c_vim_start(mrbc_vm *virtual_machine, mrbc_value *values, int argument_count) {
     .draw_row_text = draw_editor_canvas_row_text,
     .push_row = push_editor_canvas_row,
     .fill_row_span = fill_editor_canvas_row_span,
+    .draw_row_underline = draw_editor_canvas_row_underline,
     .set_font_size = set_editor_canvas_font_size,
     .draw_cursor = draw_editor_canvas_cursor,
   };
@@ -181,6 +182,9 @@ c_vim_start(mrbc_vm *virtual_machine, mrbc_value *values, int argument_count) {
       status =
         vim_handle_key(core, first_byte, character, character_byte_length);
     }
+
+    if (core->screen.buffer.dirty >= VIM_DIRTY_CONTENT)
+      vim_clear_diagnostics(core);
 
     vim_screen_refresh_if_needed(&core->screen, &canvas);
 

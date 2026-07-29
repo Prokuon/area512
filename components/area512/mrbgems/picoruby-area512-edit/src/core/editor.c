@@ -6,7 +6,10 @@
 #include "core/mode/visual.h"
 #include "core/render/footer.h"
 #include "core/syntax/picoruby/highlight.h"
+#include "core/text/utf8.h"
 #include <string.h>
+
+#define VIM_DIAGNOSTIC_FOREGROUND 0xD16969
 
 static void
 handle_escape_arrow(Vim *vim, int letter) {
@@ -37,6 +40,8 @@ vim_init(Vim *vim, int width, int height) {
   vim->screen.footer_context = vim;
   vim->screen.draw_cursor = draw_vim_cursor;
   vim->screen.draw_cursor_context = vim;
+  vim->screen.diagnostic = vim_draw_diagnostics;
+  vim->screen.diagnostic_context = vim;
   vim->input.mode = VIM_MODE_NORMAL;
   vim->input.current_operator = VIM_OPERATOR_NONE;
   vim->input.pending = VIM_PENDING_NONE;
@@ -61,6 +66,75 @@ vim_free(Vim *vim) {
 }
 
 void
+vim_clear_diagnostics(Vim *vim) {
+  vim->diagnostics.count = 0;
+}
+
+void
+vim_draw_diagnostics(
+  void *vim_context,
+  VimCanvas *canvas,
+  int line_byte_offset,
+  int draw_column,
+  const char *line,
+  int line_byte_length,
+  int start_column,
+  int max_width
+) {
+  Vim *vim = (Vim *)vim_context;
+  int segment_byte_begin =
+    vim_column_to_byte(line, line_byte_length, start_column);
+  int segment_byte_end =
+    vim_column_to_byte(line, line_byte_length, start_column + max_width);
+  int segment_start_byte_offset = line_byte_offset + segment_byte_begin;
+  int segment_end_byte_offset = line_byte_offset + segment_byte_end;
+
+  for (int index = 0; index < vim->diagnostics.count; index++) {
+    VimDiagnostic *diagnostic = &vim->diagnostics.items[index];
+    int start_byte_offset = diagnostic->start_byte_offset;
+    int end_byte_offset = diagnostic->end_byte_offset;
+
+    if (start_byte_offset < segment_start_byte_offset)
+      start_byte_offset = segment_start_byte_offset;
+    if (end_byte_offset > segment_end_byte_offset)
+      end_byte_offset = segment_end_byte_offset;
+    if (start_byte_offset >= end_byte_offset)
+      continue;
+
+    int line_start_byte_offset = start_byte_offset - line_byte_offset;
+    int line_end_byte_offset = end_byte_offset - line_byte_offset;
+    int column =
+      draw_column +
+      vim_display_width(
+        line + segment_byte_begin,
+        line_start_byte_offset - segment_byte_begin
+      );
+    int column_count =
+      vim_display_width(
+        line + line_start_byte_offset,
+        line_end_byte_offset - line_start_byte_offset
+      );
+
+    canvas->draw_row_text(
+      canvas->context,
+      column,
+      line + line_start_byte_offset,
+      line_end_byte_offset - line_start_byte_offset,
+      VIM_DIAGNOSTIC_FOREGROUND,
+      0,
+      0
+    );
+    if (canvas->draw_row_underline)
+      canvas->draw_row_underline(
+        canvas->context,
+        column,
+        column_count,
+        VIM_DIAGNOSTIC_FOREGROUND
+      );
+  }
+}
+
+void
 vim_set_filepath(Vim *vim, const char *text, int byte_length) {
   vim_string_set(&vim->filepath, text, byte_length);
   vim->screen.syntax_highlight = editor_is_ruby_filename(text, byte_length);
@@ -68,6 +142,7 @@ vim_set_filepath(Vim *vim, const char *text, int byte_length) {
 
 void
 vim_load_text(Vim *vim, const char *text, int byte_length) {
+  vim_clear_diagnostics(vim);
   vim_buffer_load_text(BUFFER, text, byte_length);
 
   vim_buffer_move_home(BUFFER);

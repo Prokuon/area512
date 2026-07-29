@@ -16,6 +16,14 @@ const TiBuiltinMethod *ti_get_builtin_static_method(
   const uint8_t *name,
   size_t length
 );
+const TiBuiltinArgument *
+ti_get_builtin_argument(const TiBuiltinMethod *method, int argument_index);
+const char *
+ti_get_builtin_argument_name(const TiBuiltinArgument *argument);
+int ti_get_builtin_argument_classes(
+  const TiBuiltinArgument *argument,
+  uint8_t out_class_ids[4]
+);
 int ti_collect_builtin_methods_matching_partial_method_name(
   uint8_t class_id,
   int use_static_methods,

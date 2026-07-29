@@ -77,7 +77,7 @@ class Integer
   def to_i: () -> Integer
 
   # Convert to string. Base can be specified with argument
-  def to_s: (Integer base) -> String
+  def to_s: (?Integer base) -> String
 
   # Perform bitwise OR operation
   def |: (Integer other) -> Integer

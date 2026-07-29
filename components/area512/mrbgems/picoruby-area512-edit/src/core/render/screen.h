@@ -26,6 +26,12 @@ typedef struct {
     int column_count,
     uint32_t color
   );
+  void (*draw_row_underline)(
+    void *context,
+    int column,
+    int column_count,
+    uint32_t color
+  );
   void (*set_font_size)(void *context, int font_size);
   void (*draw_cursor)(void *context, int column, int row_index, int visible);
 } VimCanvas;
@@ -38,6 +44,16 @@ typedef void (*vim_highlight_function)(
 );
 typedef void (*vim_footer_function)(void *vim_context, VimCanvas *canvas);
 typedef void (*vim_draw_cursor_function)(void *vim_context, VimCanvas *canvas);
+typedef void (*vim_diagnostic_function)(
+  void *vim_context,
+  VimCanvas *canvas,
+  int line_byte_offset,
+  int draw_column,
+  const char *line,
+  int line_byte_length,
+  int start_column,
+  int max_width
+);
 
 typedef enum {
   VIM_REDRAW_NONE = 0,
@@ -63,6 +79,8 @@ typedef struct {
   void *footer_context;
   vim_draw_cursor_function draw_cursor;
   void *draw_cursor_context;
+  vim_diagnostic_function diagnostic;
+  void *diagnostic_context;
 } VimScreen;
 
 void vim_screen_init(VimScreen *screen, int width, int height);

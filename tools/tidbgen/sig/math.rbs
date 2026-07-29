@@ -47,7 +47,7 @@ class Math
   def self.ldexp: (Float fraction, Integer exponent) -> Float
 
   # Calculate natural logarithm
-  def self.log: (Float x, Float base) -> Float
+  def self.log: (Float x) -> Float
 
   # Calculate common logarithm
   def self.log10: (Float x) -> Float

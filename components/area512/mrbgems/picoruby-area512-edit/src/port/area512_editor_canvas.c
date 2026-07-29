@@ -117,6 +117,32 @@ fill_editor_canvas_row_span(
   );
 }
 
+void
+draw_editor_canvas_row_underline(
+  void *context,
+  int column,
+  int column_count,
+  uint32_t color
+) {
+  Area512EditorCanvas *canvas = (Area512EditorCanvas *)context;
+
+  if (column_count <= 0)
+    return;
+
+  int pixel_left = column * canvas->char_width;
+  int pixel_right = (column + column_count) * canvas->char_width - 1;
+  int pixel_top = canvas->row_height - 1;
+
+  area512_sprite_line(
+    canvas->row_sprite,
+    pixel_left,
+    pixel_top,
+    pixel_right,
+    pixel_top,
+    color
+  );
+}
+
 int
 editor_canvas_font_width(int font_size) {
   int width = (font_size + 1) / 2;

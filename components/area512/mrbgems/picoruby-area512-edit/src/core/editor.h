@@ -5,6 +5,8 @@
 
 #define INDENT_UNIT "  "
 #define INDENT_UNIT_BYTE_LENGTH 2
+#define VIM_MAX_DIAGNOSTICS 64
+#define VIM_DIAGNOSTIC_MESSAGE_CAPACITY 256
 #define BUFFER (&vim->screen.buffer)
 #define REDRAW(mode) (vim->screen.redraw_mode = (mode))
 
@@ -97,6 +99,17 @@ typedef struct {
 } VimRepeat;
 
 typedef struct {
+  int start_byte_offset;
+  int end_byte_offset;
+  char message[VIM_DIAGNOSTIC_MESSAGE_CAPACITY];
+} VimDiagnostic;
+
+typedef struct {
+  VimDiagnostic items[VIM_MAX_DIAGNOSTICS];
+  int count;
+} VimDiagnosticList;
+
+typedef struct {
   VimScreen screen;
   VimCanvas *active_canvas;
   VimInput input;
@@ -104,6 +117,7 @@ typedef struct {
   VimSearch search;
   VimPaste paste;
   VimRepeat repeat;
+  VimDiagnosticList diagnostics;
   VimString filepath;
 } Vim;
 
@@ -121,6 +135,17 @@ VimStatus vim_handle_key(
 VimStatus vim_handle_esc(Vim *vim, const char *sequence, int byte_length);
 
 void vim_write_content(Vim *vim, VimString *content);
+void vim_clear_diagnostics(Vim *vim);
+void vim_draw_diagnostics(
+  void *vim_context,
+  VimCanvas *canvas,
+  int line_byte_offset,
+  int draw_column,
+  const char *line,
+  int line_byte_length,
+  int start_column,
+  int max_width
+);
 void vim_handle_after_save(Vim *vim, int saved);
 
 #endif
