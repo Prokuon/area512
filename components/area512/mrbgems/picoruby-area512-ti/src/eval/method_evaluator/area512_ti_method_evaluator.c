@@ -247,17 +247,17 @@ argument_type_matches(
        actual_t = ti_get_t(actual_t->union_next)) {
 
     if (
-      !contains_class_id(
+      contains_class_id(
         expected_class_ids,
         expected_class_count,
         actual_t->object_class_id
       )
     ) {
-      return 0;
+      return 1;
     }
   }
 
-  return 1;
+  return 0;
 }
 
 static uint16_t

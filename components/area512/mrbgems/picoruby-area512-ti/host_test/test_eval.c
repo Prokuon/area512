@@ -56,6 +56,14 @@ test_builtin_argument_type_diagnostic(void) {
   ) == 0);
   assert(diagnostics.items[0].start_byte_offset == 8);
   assert(diagnostics.items[0].end_byte_offset == 9);
+
+  diagnostics =
+    diagnose_source("v = 1\nv = \"x\"\n\"x\".sub(v, \"a\")");
+  assert(diagnostics.count == 0);
+
+  diagnostics =
+    diagnose_source("v = 1\nv = []\n\"x\".sub(v, \"a\")");
+  assert(diagnostics.count == 1);
 }
 
 static void
