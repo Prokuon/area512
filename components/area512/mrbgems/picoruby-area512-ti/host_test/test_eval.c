@@ -105,6 +105,35 @@ test_user_defined_method_arguments_have_no_diagnostic(void) {
 }
 
 static void
+test_user_defined_method_return_type_is_scoped_by_class(void) {
+  TiDiagnosticList diagnostics =
+    diagnose_source("class Hoge\n"
+                    "  def test\n"
+                    "    '1'\n"
+                    "  end\n"
+                    "end\n"
+                    "h = Hoge.new\n"
+                    "1 + h.test\n"
+                    "def test\n"
+                    "  1\n"
+                    "end");
+
+  assert(diagnostics.count == 1);
+}
+
+static void
+test_user_defined_method_does_not_share_type_with_local_variable(void) {
+  TiDiagnosticList diagnostics =
+    diagnose_source("def test\n"
+                    "  '1'\n"
+                    "end\n"
+                    "test = 1\n"
+                    "1 + test()");
+
+  assert(diagnostics.count == 1);
+}
+
+static void
 test_literal_bindings(void) {
   TiSuggestionList integer_suggestions = suggest_source("a = 1\na.");
   assert(has_suggestion(&integer_suggestions, "abs"));
@@ -275,6 +304,8 @@ main(void) {
   test_array_and_hash_contents_have_no_diagnostic();
   test_builtin_argument_count_diagnostic();
   test_user_defined_method_arguments_have_no_diagnostic();
+  test_user_defined_method_return_type_is_scoped_by_class();
+  test_user_defined_method_does_not_share_type_with_local_variable();
   test_literal_bindings();
   test_binding_lookup();
   test_method_chain();

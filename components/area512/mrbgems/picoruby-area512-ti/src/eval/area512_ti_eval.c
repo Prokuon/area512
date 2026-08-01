@@ -213,12 +213,16 @@ eval_on_visit(const pm_node_t *node, void *data) {
     ti_eval_class(context, class_node);
 
     uint16_t outer_class_name_id = context->current_class_name_id;
+    uint8_t outer_class_id = context->current_class_id;
     context->current_class_name_id = class_name_id;
+    context->current_class_id = ti_get_defined_class_id(class_name_id);
 
     if (!context->failed && class_node->body)
       pm_visit_node(class_node->body, eval_on_visit, context);
 
     context->current_class_name_id = outer_class_name_id;
+    context->current_class_id = outer_class_id;
+
     return false;
   }
 

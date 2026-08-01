@@ -83,6 +83,14 @@ ti_eval_def(TiContext *context, const pm_def_node_t *def_node) {
 
   define_info->return_t_node_index = return_t_node_index;
 
-  if (!ti_set_value_t(name_id, return_t_node_index))
+  if (
+    !ti_set_method_t(
+      context->current_class_id,
+      name_id,
+      return_t_node_index
+    )
+  ) {
+
     context->failed = 1;
+  }
 }

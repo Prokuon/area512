@@ -809,7 +809,7 @@ ti_eval_method(
 
   if (!call_node->receiver) {
     uint16_t defined_return_t_node_index =
-      ti_get_value_t(method_name_identifier);
+      ti_get_method_t(context->current_class_id, method_name_identifier);
 
     if (defined_return_t_node_index != 0)
       return defined_return_t_node_index;
@@ -856,7 +856,10 @@ ti_eval_method(
       );
     }
 
-    return ti_get_value_t(method_name_identifier);
+    return ti_get_method_t(
+      receiver_t_node->object_class_id,
+      method_name_identifier
+    );
   }
 
   const TiBuiltinMethod *builtin_method;
