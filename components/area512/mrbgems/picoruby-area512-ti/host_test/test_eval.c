@@ -97,6 +97,21 @@ test_builtin_argument_count_diagnostic(void) {
 }
 
 static void
+test_splat_arguments_have_no_argument_count_diagnostic(void) {
+  TiDiagnosticList diagnostics =
+    diagnose_source("a = [\"a\", \"b\"]\n\"x\".sub(*a)");
+  assert(diagnostics.count == 0);
+
+  diagnostics =
+    diagnose_source("a = []\n\"x\".sub(\"a\", \"b\", *a)");
+  assert(diagnostics.count == 0);
+
+  diagnostics =
+    diagnose_source("a = {}\n\"x\".sub(\"a\", \"b\", **a)");
+  assert(diagnostics.count == 0);
+}
+
+static void
 test_user_defined_method_arguments_have_no_diagnostic(void) {
   TiDiagnosticList diagnostics =
     diagnose_source("def call(value)\nvalue\nend\ncall()\ncall(1, 2)");
@@ -303,6 +318,7 @@ main(void) {
   test_unknown_argument_has_no_diagnostic();
   test_array_and_hash_contents_have_no_diagnostic();
   test_builtin_argument_count_diagnostic();
+  test_splat_arguments_have_no_argument_count_diagnostic();
   test_user_defined_method_arguments_have_no_diagnostic();
   test_user_defined_method_return_type_is_scoped_by_class();
   test_user_defined_method_does_not_share_type_with_local_variable();
