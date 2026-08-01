@@ -11,39 +11,46 @@
 #define TI_CALL_ARGUMENT_CAPACITY 64
 
 typedef struct {
-  const pm_node_t *node;
+  const pm_node_t *diagnostic_node;
   uint16_t t_node_index;
   const uint8_t *keyword_name;
   size_t keyword_name_length;
 } TiCallArgument;
 
 typedef struct {
-  TiCallArgument positionals[TI_CALL_ARGUMENT_CAPACITY];
-  TiCallArgument keywords[TI_CALL_ARGUMENT_CAPACITY];
-  int positional_count;
-  int keyword_count;
+  TiCallArgument positional_arguments[TI_CALL_ARGUMENT_CAPACITY];
+  TiCallArgument keyword_arguments[TI_CALL_ARGUMENT_CAPACITY];
+  int positional_argument_count;
+  int keyword_argument_count;
 } TiCallArguments;
 
 typedef struct {
-  pm_location_t location;
-  char message[TI_DIAGNOSTIC_MESSAGE_CAPACITY];
-} TiMethodMismatch;
+  pm_location_t diagnostic_location;
+  char diagnostic_message[TI_DIAGNOSTIC_MESSAGE_CAPACITY];
+} TiBuiltinMethodMismatch;
 
 static int
-make_array_variants(const TiBuiltinMethod *method, uint16_t *variants) {
-  uint8_t class_ids[4];
+set_array_variant_t_node_index(
+  const TiBuiltinMethod *builtin_method,
+  uint16_t *array_variant_t_node_index
+) {
+  uint8_t class_identifiers[4];
 
-  int class_count =
-    ti_get_builtin_return_array_variant_classes(method, class_ids);
+  int class_identifier_count =
+    ti_get_builtin_return_array_variant_classes(
+      builtin_method,
+      class_identifiers
+    );
 
-  *variants = 0;
+  *array_variant_t_node_index = 0;
 
-  for (int index = 0; index < class_count; index++) {
-    uint16_t t_node_index = ti_new_t(class_ids[index], 0, 0);
+  for (int index = 0; index < class_identifier_count; index++) {
+    uint16_t t_node_index = ti_new_t(class_identifiers[index], 0, 0);
 
-    *variants = ti_make_union(*variants, t_node_index);
+    *array_variant_t_node_index =
+      ti_make_union(*array_variant_t_node_index, t_node_index);
 
-    if (*variants == 0)
+    if (*array_variant_t_node_index == 0)
       return 0;
   }
 
@@ -51,92 +58,125 @@ make_array_variants(const TiBuiltinMethod *method, uint16_t *variants) {
 }
 
 static uint16_t
-make_method_return(const TiBuiltinMethod *method) {
+make_method_return_t_node_index(const TiBuiltinMethod *builtin_method) {
   uint8_t return_class_identifiers[4];
 
-  int return_class_count =
-    ti_get_builtin_return_classes(method, return_class_identifiers);
+  int return_class_identifier_count =
+    ti_get_builtin_return_classes(
+      builtin_method,
+      return_class_identifiers
+    );
 
-  uint16_t result = 0;
+  uint16_t method_return_t_node_index = 0;
 
-  for (int index = 0; index < return_class_count; index++) {
-    uint16_t variants = 0;
+  for (int index = 0; index < return_class_identifier_count; index++) {
+    uint16_t array_variant_t_node_index = 0;
 
     if (
         return_class_identifiers[index] == TI_CLASS_ARRAY &&
-        !make_array_variants(method, &variants)
+        !set_array_variant_t_node_index(
+          builtin_method,
+          &array_variant_t_node_index
+        )
       ) {
 
       return 0;
     }
 
-    uint16_t union_next_t_node_index =
-      ti_new_t(return_class_identifiers[index], 0, variants);
+    uint16_t union_member_t_node_index =
+      ti_new_t(
+        return_class_identifiers[index],
+        0,
+        array_variant_t_node_index
+      );
 
-    result = ti_make_union(result, union_next_t_node_index);
+    method_return_t_node_index =
+      ti_make_union(
+        method_return_t_node_index,
+        union_member_t_node_index
+      );
 
-    if (result == 0)
+    if (method_return_t_node_index == 0)
       return 0;
   }
 
-  return result;
+  return method_return_t_node_index;
 }
 
 static void
 append_call_argument(
-  TiCallArgument arguments[TI_CALL_ARGUMENT_CAPACITY],
-  int *argument_count,
-  const pm_node_t *node,
+  TiCallArgument destination_arguments[TI_CALL_ARGUMENT_CAPACITY],
+  int *destination_argument_count,
+  const pm_node_t *diagnostic_node,
   uint16_t t_node_index,
   const uint8_t *keyword_name,
   size_t keyword_name_length
 ) {
 
-  if (*argument_count >= TI_CALL_ARGUMENT_CAPACITY)
+  if (*destination_argument_count >= TI_CALL_ARGUMENT_CAPACITY)
     return;
 
-  TiCallArgument *argument = &arguments[(*argument_count)++];
+  TiCallArgument *call_argument =
+    &destination_arguments[(*destination_argument_count)++];
 
-  argument->node = node;
-  argument->t_node_index = t_node_index;
-  argument->keyword_name = keyword_name;
-  argument->keyword_name_length = keyword_name_length;
+  call_argument->diagnostic_node = diagnostic_node;
+  call_argument->t_node_index = t_node_index;
+  call_argument->keyword_name = keyword_name;
+  call_argument->keyword_name_length = keyword_name_length;
 }
 
 static void
 collect_keyword_arguments(
   TiContext *context,
-  const pm_keyword_hash_node_t *keyword_hash,
-  int depth,
-  TiCallArguments *arguments
+  const pm_keyword_hash_node_t *keyword_hash_node,
+  int evaluation_depth,
+  TiCallArguments *call_arguments
 ) {
 
-  for (size_t index = 0; index < keyword_hash->elements.size; index++) {
-    const pm_node_t *element = keyword_hash->elements.nodes[index];
+  for (size_t keyword_argument_index = 0;
+       keyword_argument_index < keyword_hash_node->elements.size;
+       keyword_argument_index++) {
 
-    if (PM_NODE_TYPE(element) == PM_ASSOC_NODE) {
-      const pm_assoc_node_t *association = (const pm_assoc_node_t *)element;
+    const pm_node_t *keyword_argument_node =
+      keyword_hash_node->elements.nodes[keyword_argument_index];
+
+    if (PM_NODE_TYPE(keyword_argument_node) == PM_ASSOC_NODE) {
+      const pm_node_t *keyword_name_node =
+        ((const pm_assoc_node_t *)keyword_argument_node)->key;
+
+      const pm_node_t *keyword_value_node =
+        ((const pm_assoc_node_t *)keyword_argument_node)->value;
+
       const uint8_t *keyword_name = NULL;
       size_t keyword_name_length = 0;
 
       if (
-        association->key &&
-        PM_NODE_TYPE(association->key) == PM_SYMBOL_NODE
+        keyword_name_node &&
+        PM_NODE_TYPE(keyword_name_node) == PM_SYMBOL_NODE
       ) {
-        const pm_symbol_node_t *symbol =
-          (const pm_symbol_node_t *)association->key;
 
-        keyword_name = pm_string_source(&symbol->unescaped);
-        keyword_name_length = pm_string_length(&symbol->unescaped);
+        keyword_name =
+          pm_string_source(
+            &((const pm_symbol_node_t *)keyword_name_node)->unescaped
+          );
+        keyword_name_length =
+          pm_string_length(
+            &((const pm_symbol_node_t *)keyword_name_node)->unescaped
+          );
       }
 
       uint16_t t_node_index =
-        ti_eval_expression(context, association->value, depth + 1);
+        ti_eval_expression(context, keyword_value_node, evaluation_depth + 1);
+
+      const pm_node_t *diagnostic_node = keyword_argument_node;
+
+      if (keyword_value_node)
+        diagnostic_node = keyword_value_node;
 
       append_call_argument(
-        arguments->keywords,
-        &arguments->keyword_count,
-        association->value ? association->value : element,
+        call_arguments->keyword_arguments,
+        &call_arguments->keyword_argument_count,
+        diagnostic_node,
         t_node_index,
         keyword_name,
         keyword_name_length
@@ -146,9 +186,9 @@ collect_keyword_arguments(
     }
 
     append_call_argument(
-      arguments->keywords,
-      &arguments->keyword_count,
-      element,
+      call_arguments->keyword_arguments,
+      &call_arguments->keyword_argument_count,
+      keyword_argument_node,
       0,
       NULL,
       0
@@ -159,35 +199,42 @@ collect_keyword_arguments(
 static void
 collect_call_arguments(
   TiContext *context,
-  const pm_call_node_t *call,
-  int depth,
-  TiCallArguments *arguments
+  const pm_call_node_t *call_node,
+  int evaluation_depth,
+  TiCallArguments *call_arguments
 ) {
 
-  memset(arguments, 0, sizeof(*arguments));
+  memset(call_arguments, 0, sizeof(*call_arguments));
 
-  if (!call->arguments)
+  if (!call_node->arguments)
     return;
 
-  for (size_t index = 0; index < call->arguments->arguments.size; index++) {
-    const pm_node_t *argument = call->arguments->arguments.nodes[index];
+  for (size_t call_argument_index = 0;
+       call_argument_index < call_node->arguments->arguments.size;
+       call_argument_index++) {
 
-    if (PM_NODE_TYPE(argument) == PM_KEYWORD_HASH_NODE) {
+    const pm_node_t *call_argument_node =
+      call_node->arguments->arguments.nodes[call_argument_index];
+
+    if (PM_NODE_TYPE(call_argument_node) == PM_KEYWORD_HASH_NODE) {
       collect_keyword_arguments(
         context,
-        (const pm_keyword_hash_node_t *)argument,
-        depth,
-        arguments
+        (const pm_keyword_hash_node_t *)call_argument_node,
+        evaluation_depth,
+        call_arguments
       );
 
       continue;
     }
 
+    uint16_t t_node_index =
+      ti_eval_expression(context, call_argument_node, evaluation_depth + 1);
+
     append_call_argument(
-      arguments->positionals,
-      &arguments->positional_count,
-      argument,
-      ti_eval_expression(context, argument, depth + 1),
+      call_arguments->positional_arguments,
+      &call_arguments->positional_argument_count,
+      call_argument_node,
+      t_node_index,
       NULL,
       0
     );
@@ -195,14 +242,14 @@ collect_call_arguments(
 }
 
 static int
-contains_class_id(
-  const uint8_t class_ids[4],
-  int class_count,
-  uint8_t class_id
+contains_class_identifier(
+  const uint8_t class_identifiers[4],
+  int class_identifier_count,
+  uint8_t class_identifier
 ) {
 
-  for (int index = 0; index < class_count; index++) {
-    if (class_ids[index] == class_id)
+  for (int index = 0; index < class_identifier_count; index++) {
+    if (class_identifiers[index] == class_identifier)
       return 1;
   }
 
@@ -218,41 +265,44 @@ argument_type_matches(
   if (actual_t_node_index == 0)
     return 1;
 
-  uint8_t expected_class_ids[4];
-  int expected_class_count =
+  uint8_t expected_class_identifiers[4];
+
+  int expected_class_identifier_count =
     ti_get_builtin_argument_classes(
       builtin_argument,
-      expected_class_ids
+      expected_class_identifiers
     );
 
   if (
-    expected_class_count == 0 ||
-    contains_class_id(
-      expected_class_ids,
-      expected_class_count,
+    expected_class_identifier_count == 0 ||
+    contains_class_identifier(
+      expected_class_identifiers,
+      expected_class_identifier_count,
       TI_CLASS_UNTYPED
     )
   ) {
+
     return 1;
   }
 
-  for (const T *actual_t = ti_get_t(actual_t_node_index); actual_t;
-       actual_t = ti_get_t(actual_t->union_next)) {
 
-    if (actual_t->object_class_id == TI_CLASS_UNTYPED)
+  for (
+    const T *actual_t_node = ti_get_t(actual_t_node_index);
+    actual_t_node;
+    actual_t_node = ti_get_t(actual_t_node->union_next)
+  ) {
+
+    if (actual_t_node->object_class_id == TI_CLASS_UNTYPED)
       return 1;
-  }
-
-  for (const T *actual_t = ti_get_t(actual_t_node_index); actual_t;
-       actual_t = ti_get_t(actual_t->union_next)) {
 
     if (
-      contains_class_id(
-        expected_class_ids,
-        expected_class_count,
-        actual_t->object_class_id
+      contains_class_identifier(
+        expected_class_identifiers,
+        expected_class_identifier_count,
+        actual_t_node->object_class_id
       )
     ) {
+
       return 1;
     }
   }
@@ -261,19 +311,23 @@ argument_type_matches(
 }
 
 static uint16_t
-make_argument_t(const TiBuiltinArgument *builtin_argument) {
-  uint8_t class_ids[4];
-  int class_count =
-    ti_get_builtin_argument_classes(builtin_argument, class_ids);
+make_argument_t_node_index(const TiBuiltinArgument *builtin_argument) {
+  uint8_t class_identifiers[4];
 
-  uint16_t result = 0;
+  int class_identifier_count =
+    ti_get_builtin_argument_classes(builtin_argument, class_identifiers);
 
-  for (int index = 0; index < class_count; index++) {
-    uint16_t t_node_index = ti_new_t(class_ids[index], 0, 0);
-    result = ti_make_union(result, t_node_index);
+  uint16_t argument_t_node_index = 0;
+
+  for (int index = 0; index < class_identifier_count; index++) {
+    uint16_t union_member_t_node_index =
+      ti_new_t(class_identifiers[index], 0, 0);
+
+    argument_t_node_index =
+      ti_make_union(argument_t_node_index, union_member_t_node_index);
   }
 
-  return result;
+  return argument_t_node_index;
 }
 
 static void
@@ -283,34 +337,35 @@ set_type_mismatch(
   const char *method_name,
   const TiBuiltinArgument *builtin_argument,
   const TiCallArgument *call_argument,
-  TiMethodMismatch *mismatch
+  TiBuiltinMethodMismatch *builtin_method_mismatch
 ) {
 
-  char expected_type[TI_TYPE_STRING_CAPACITY];
-  char actual_type[TI_TYPE_STRING_CAPACITY];
+  char expected_type_string[TI_TYPE_STRING_CAPACITY];
+  char actual_type_string[TI_TYPE_STRING_CAPACITY];
 
   ti_type_to_string(
     context,
-    make_argument_t(builtin_argument),
-    expected_type,
-    sizeof(expected_type)
+    make_argument_t_node_index(builtin_argument),
+    expected_type_string,
+    sizeof(expected_type_string)
   );
 
   ti_type_to_string(
     context,
     call_argument->t_node_index,
-    actual_type,
-    sizeof(actual_type)
+    actual_type_string,
+    sizeof(actual_type_string)
   );
 
-  mismatch->location = call_argument->node->location;
+  builtin_method_mismatch->diagnostic_location =
+    call_argument->diagnostic_node->location;
 
   snprintf(
-    mismatch->message,
-    sizeof(mismatch->message),
+    builtin_method_mismatch->diagnostic_message,
+    sizeof(builtin_method_mismatch->diagnostic_message),
     "type mismatch: expected %s, but got %s for %s.%s",
-    expected_type,
-    actual_type,
+    expected_type_string,
+    actual_type_string,
     class_name,
     method_name
   );
@@ -318,42 +373,51 @@ set_type_mismatch(
 
 static void
 set_argument_count_mismatch(
-  const pm_call_node_t *call,
+  const pm_call_node_t *call_node,
   const char *class_name,
   const char *method_name,
-  const char *count_description,
-  TiMethodMismatch *mismatch
+  const char *argument_count_description,
+  TiBuiltinMethodMismatch *builtin_method_mismatch
 ) {
 
-  mismatch->location = call->base.location;
+  builtin_method_mismatch->diagnostic_location = call_node->base.location;
 
   snprintf(
-    mismatch->message,
-    sizeof(mismatch->message),
+    builtin_method_mismatch->diagnostic_message,
+    sizeof(builtin_method_mismatch->diagnostic_message),
     "%s arguments for %s.%s",
-    count_description,
+    argument_count_description,
     class_name,
     method_name
   );
 }
 
 static int
-remaining_required_positionals(
-  const TiBuiltinMethod *method,
-  int argument_index
+count_remaining_required_positional_arguments(
+  const TiBuiltinMethod *builtin_method,
+  int builtin_argument_index
 ) {
 
-  int required_count = 0;
+  int required_positional_argument_count = 0;
 
-  for (int index = argument_index; index < method->argument_count; index++) {
-    const TiBuiltinArgument *argument =
-      ti_get_builtin_argument(method, index);
+  for (
+    int remaining_argument_index = builtin_argument_index;
+     remaining_argument_index < builtin_method->argument_count;
+     remaining_argument_index++
+   ) {
 
-    if (argument && argument->kind == TI_BUILTIN_ARGUMENT_REQUIRED)
-      required_count++;
+    const TiBuiltinArgument *builtin_argument =
+      ti_get_builtin_argument(builtin_method, remaining_argument_index);
+
+    if (
+      builtin_argument &&
+      builtin_argument->kind == TI_BUILTIN_ARGUMENT_REQUIRED
+    ) {
+      required_positional_argument_count++;
+    }
   }
 
-  return required_count;
+  return required_positional_argument_count;
 }
 
 static int
@@ -362,123 +426,175 @@ keyword_name_matches(
   const TiCallArgument *call_argument
 ) {
 
-  const char *expected_name =
+  const char *expected_keyword_name =
     ti_get_builtin_argument_name(builtin_argument);
 
-  return expected_name &&
-         strlen(expected_name) == call_argument->keyword_name_length &&
+  return expected_keyword_name &&
+         strlen(expected_keyword_name) == call_argument->keyword_name_length &&
          call_argument->keyword_name &&
          memcmp(
-           expected_name,
+           expected_keyword_name,
            call_argument->keyword_name,
            call_argument->keyword_name_length
          ) == 0;
 }
 
 static int
-match_builtin_method(
+match_argument_type_or_set_mismatch(
   TiContext *context,
-  const pm_call_node_t *call,
   const char *class_name,
   const char *method_name,
-  const TiBuiltinMethod *method,
-  const TiCallArguments *call_arguments,
-  TiMethodMismatch *mismatch
+  const TiBuiltinArgument *builtin_argument,
+  const TiCallArgument *call_argument,
+  TiBuiltinMethodMismatch *builtin_method_mismatch
 ) {
 
-  int positional_index = 0;
-  uint8_t matched_keywords[TI_CALL_ARGUMENT_CAPACITY] = {0};
-  int has_rest_keywords = 0;
+  if (
+    argument_type_matches(
+      builtin_argument,
+      call_argument->t_node_index
+    )
+  ) {
 
-  for (int argument_index = 0;
-       argument_index < method->argument_count;
-       argument_index++) {
+    return 1;
+  }
+
+  set_type_mismatch(
+    context,
+    class_name,
+    method_name,
+    builtin_argument,
+    call_argument,
+    builtin_method_mismatch
+  );
+
+  return 0;
+}
+
+static int
+match_builtin_method(
+  TiContext *context,
+  const pm_call_node_t *call_node,
+  const char *class_name,
+  const char *method_name,
+  const TiBuiltinMethod *builtin_method,
+  const TiCallArguments *call_arguments,
+  TiBuiltinMethodMismatch *builtin_method_mismatch
+) {
+
+  int positional_argument_index = 0;
+  uint8_t keyword_argument_matched_flags[TI_CALL_ARGUMENT_CAPACITY] = {0};
+  int has_rest_keyword_argument = 0;
+
+  for (
+    int builtin_argument_index = 0;
+    builtin_argument_index < builtin_method->argument_count;
+    builtin_argument_index++
+  ) {
 
     const TiBuiltinArgument *builtin_argument =
-      ti_get_builtin_argument(method, argument_index);
+      ti_get_builtin_argument(builtin_method, builtin_argument_index);
 
     if (!builtin_argument)
       continue;
 
     switch (builtin_argument->kind) {
     case TI_BUILTIN_ARGUMENT_REQUIRED:
-      if (positional_index >= call_arguments->positional_count) {
+      if (
+        positional_argument_index >=
+        call_arguments->positional_argument_count
+      ) {
+
         set_argument_count_mismatch(
-          call,
+          call_node,
           class_name,
           method_name,
           "too few",
-          mismatch
+          builtin_method_mismatch
         );
+
         return 0;
       }
 
-      if (!argument_type_matches(
-            builtin_argument,
-            call_arguments->positionals[positional_index].t_node_index
-          )) {
-        set_type_mismatch(
+      if (
+        !match_argument_type_or_set_mismatch(
           context,
           class_name,
           method_name,
           builtin_argument,
-          &call_arguments->positionals[positional_index],
-          mismatch
-        );
+          &call_arguments->positional_arguments[positional_argument_index],
+          builtin_method_mismatch
+        )
+      ) {
+
         return 0;
       }
 
-      positional_index++;
+      positional_argument_index++;
+
       break;
 
-    case TI_BUILTIN_ARGUMENT_OPTIONAL:
+    case TI_BUILTIN_ARGUMENT_OPTIONAL: {
+      int remaining_call_positional_argument_count =
+        call_arguments->positional_argument_count - positional_argument_index;
+
+      int remaining_required_positional_argument_count =
+        count_remaining_required_positional_arguments(
+          builtin_method,
+          builtin_argument_index + 1
+        );
+
       if (
-        call_arguments->positional_count - positional_index <=
-        remaining_required_positionals(method, argument_index + 1)
+        remaining_call_positional_argument_count <=
+        remaining_required_positional_argument_count
       ) {
+
         break;
       }
 
-      if (!argument_type_matches(
-            builtin_argument,
-            call_arguments->positionals[positional_index].t_node_index
-          )) {
-        set_type_mismatch(
+      if (
+        !match_argument_type_or_set_mismatch(
           context,
           class_name,
           method_name,
           builtin_argument,
-          &call_arguments->positionals[positional_index],
-          mismatch
-        );
+          &call_arguments->positional_arguments[positional_argument_index],
+          builtin_method_mismatch
+        )
+      ) {
+
         return 0;
       }
 
-      positional_index++;
+      positional_argument_index++;
+
       break;
+    }
 
     case TI_BUILTIN_ARGUMENT_REST: {
-      int rest_end =
-        call_arguments->positional_count -
-        remaining_required_positionals(method, argument_index + 1);
+      int rest_positional_end_index =
+        call_arguments->positional_argument_count -
+        count_remaining_required_positional_arguments(
+          builtin_method,
+          builtin_argument_index + 1
+        );
 
-      while (positional_index < rest_end) {
-        if (!argument_type_matches(
-              builtin_argument,
-              call_arguments->positionals[positional_index].t_node_index
-            )) {
-          set_type_mismatch(
+      while (positional_argument_index < rest_positional_end_index) {
+        if (
+          !match_argument_type_or_set_mismatch(
             context,
             class_name,
             method_name,
             builtin_argument,
-            &call_arguments->positionals[positional_index],
-            mismatch
-          );
+            &call_arguments->positional_arguments[positional_argument_index],
+            builtin_method_mismatch
+          )
+        ) {
+
           return 0;
         }
 
-        positional_index++;
+        positional_argument_index++;
       }
 
       break;
@@ -486,36 +602,40 @@ match_builtin_method(
 
     case TI_BUILTIN_ARGUMENT_REQUIRED_KEYWORD:
     case TI_BUILTIN_ARGUMENT_OPTIONAL_KEYWORD: {
-      int matching_keyword_index = -1;
+      int matching_keyword_argument_index = -1;
 
-      for (int keyword_index = 0;
-           keyword_index < call_arguments->keyword_count;
-           keyword_index++) {
+      for (
+        int keyword_argument_index = 0;
+        keyword_argument_index < call_arguments->keyword_argument_count;
+        keyword_argument_index++
+      ) {
 
         if (
-          !matched_keywords[keyword_index] &&
+          !keyword_argument_matched_flags[keyword_argument_index] &&
           keyword_name_matches(
             builtin_argument,
-            &call_arguments->keywords[keyword_index]
+            &call_arguments->keyword_arguments[keyword_argument_index]
           )
         ) {
-          matching_keyword_index = keyword_index;
+
+          matching_keyword_argument_index = keyword_argument_index;
           break;
         }
       }
 
-      if (matching_keyword_index < 0) {
+      if (matching_keyword_argument_index < 0) {
         if (
-          builtin_argument->kind ==
-          TI_BUILTIN_ARGUMENT_REQUIRED_KEYWORD
+          builtin_argument->kind == TI_BUILTIN_ARGUMENT_REQUIRED_KEYWORD
         ) {
+
           set_argument_count_mismatch(
-            call,
+            call_node,
             class_name,
             method_name,
             "too few",
-            mismatch
+            builtin_method_mismatch
           );
+
           return 0;
         }
 
@@ -523,83 +643,94 @@ match_builtin_method(
       }
 
       const TiCallArgument *call_argument =
-        &call_arguments->keywords[matching_keyword_index];
+        &call_arguments->keyword_arguments[matching_keyword_argument_index];
 
-      if (!argument_type_matches(
-            builtin_argument,
-            call_argument->t_node_index
-          )) {
-        set_type_mismatch(
+      if (
+        !match_argument_type_or_set_mismatch(
           context,
           class_name,
           method_name,
           builtin_argument,
           call_argument,
-          mismatch
-        );
+          builtin_method_mismatch
+        )
+      ) {
+
         return 0;
       }
 
-      matched_keywords[matching_keyword_index] = 1;
+      keyword_argument_matched_flags[matching_keyword_argument_index] = 1;
+
       break;
     }
 
     case TI_BUILTIN_ARGUMENT_REST_KEYWORD:
-      has_rest_keywords = 1;
+      has_rest_keyword_argument = 1;
 
-      for (int keyword_index = 0;
-           keyword_index < call_arguments->keyword_count;
-           keyword_index++) {
+      for (
+        int keyword_argument_index = 0;
+        keyword_argument_index < call_arguments->keyword_argument_count;
+        keyword_argument_index++
+      ) {
 
-        if (matched_keywords[keyword_index])
+        if (keyword_argument_matched_flags[keyword_argument_index])
           continue;
 
         const TiCallArgument *call_argument =
-          &call_arguments->keywords[keyword_index];
+          &call_arguments->keyword_arguments[keyword_argument_index];
 
-        if (!argument_type_matches(
-              builtin_argument,
-              call_argument->t_node_index
-            )) {
-          set_type_mismatch(
+        if (
+          !match_argument_type_or_set_mismatch(
             context,
             class_name,
             method_name,
             builtin_argument,
             call_argument,
-            mismatch
-          );
+            builtin_method_mismatch
+          )
+        ) {
+
           return 0;
         }
 
-        matched_keywords[keyword_index] = 1;
+        keyword_argument_matched_flags[keyword_argument_index] = 1;
       }
 
       break;
     }
   }
 
-  if (positional_index < call_arguments->positional_count) {
+  if (
+    positional_argument_index < call_arguments->positional_argument_count
+  ) {
+
     set_argument_count_mismatch(
-      call,
+      call_node,
       class_name,
       method_name,
       "too many",
-      mismatch
+      builtin_method_mismatch
     );
+
     return 0;
   }
 
-  if (!has_rest_keywords) {
-    for (int index = 0; index < call_arguments->keyword_count; index++) {
-      if (!matched_keywords[index]) {
+  if (!has_rest_keyword_argument) {
+    for (
+      int keyword_argument_index = 0;
+      keyword_argument_index < call_arguments->keyword_argument_count;
+      keyword_argument_index++
+    ) {
+
+      if (!keyword_argument_matched_flags[keyword_argument_index]) {
         set_argument_count_mismatch(
-          call,
+          call_node,
           class_name,
           method_name,
           "too many",
-          mismatch
+          builtin_method_mismatch
         );
+
         return 0;
       }
     }
@@ -611,69 +742,92 @@ match_builtin_method(
 static uint16_t
 evaluate_builtin_method(
   TiContext *context,
-  const pm_call_node_t *call,
-  int depth,
-  uint8_t class_id,
-  const TiBuiltinMethod *method
+  const pm_call_node_t *call_node,
+  int evaluation_depth,
+  uint8_t class_identifier,
+  const TiBuiltinMethod *builtin_method
 ) {
 
   TiCallArguments call_arguments;
-  collect_call_arguments(context, call, depth, &call_arguments);
 
-  const char *class_name = ti_get_builtin_class_name(class_id);
-  TiMethodMismatch mismatch = {0};
+  collect_call_arguments(
+    context,
+    call_node,
+    evaluation_depth,
+    &call_arguments
+  );
 
-  if (!match_builtin_method(
-        context,
-        call,
-        class_name,
-        ti_get_builtin_method_name(method),
-        method,
-        &call_arguments,
-        &mismatch
-      )) {
+  const char *class_name = ti_get_builtin_class_name(class_identifier);
+  TiBuiltinMethodMismatch builtin_method_mismatch = {0};
+
+  if (
+    !match_builtin_method(
+      context,
+      call_node,
+      class_name,
+      ti_get_builtin_method_name(builtin_method),
+      builtin_method,
+      &call_arguments,
+      &builtin_method_mismatch
+    )
+  ) {
+
     ti_add_diagnostic(
       context,
-      mismatch.location,
-      mismatch.message
+      builtin_method_mismatch.diagnostic_location,
+      builtin_method_mismatch.diagnostic_message
     );
   }
 
-  return make_method_return(method);
+  return make_method_return_t_node_index(builtin_method);
 }
 
 uint16_t
-ti_eval_method(TiContext *context, const pm_call_node_t *call, int depth) {
-  uint16_t name_id;
+ti_eval_method(
+  TiContext *context,
+  const pm_call_node_t *call_node,
+  int evaluation_depth
+) {
 
-  if (!ti_convert_constant_id(call->name, &name_id))
+  uint16_t method_name_identifier;
+
+  if (
+    !ti_convert_constant_id(
+      call_node->name,
+      &method_name_identifier
+    )
+  ) {
+
+    return 0;
+  }
+
+  const pm_constant_t *method_name_constant =
+    ti_get_constant(context, call_node->name);
+
+  if (!method_name_constant)
     return 0;
 
-  const pm_constant_t *method_name = ti_get_constant(context, call->name);
-
-  if (!method_name)
-    return 0;
-
-  if (!call->receiver) {
-    uint16_t defined_return_t_node_index = ti_get_value_t(name_id);
+  if (!call_node->receiver) {
+    uint16_t defined_return_t_node_index =
+      ti_get_value_t(method_name_identifier);
 
     if (defined_return_t_node_index != 0)
       return defined_return_t_node_index;
 
-    const TiBuiltinMethod *kernel_method =
+    const TiBuiltinMethod *kernel_builtin_method =
       ti_get_builtin_instance_method(
         TI_CLASS_KERNEL,
-        method_name->start,
-        method_name->length
+        method_name_constant->start,
+        method_name_constant->length
       );
 
-    if (kernel_method) {
+    if (kernel_builtin_method) {
       return evaluate_builtin_method(
         context,
-        call,
-        depth,
+        call_node,
+        evaluation_depth,
         TI_CLASS_KERNEL,
-        kernel_method
+        kernel_builtin_method
       );
     }
 
@@ -681,57 +835,58 @@ ti_eval_method(TiContext *context, const pm_call_node_t *call, int depth) {
   }
 
   uint16_t receiver_t_node_index =
-    ti_eval_expression(context, call->receiver, depth + 1);
+    ti_eval_expression(context, call_node->receiver, evaluation_depth + 1);
 
-  const T *receiver_t = ti_get_t(receiver_t_node_index);
+  const T *receiver_t_node = ti_get_t(receiver_t_node_index);
 
-  if (!receiver_t || receiver_t->union_next != 0)
+  if (!receiver_t_node || receiver_t_node->union_next != 0)
     return 0;
 
-  if ((receiver_t->t_flags & TI_T_FLAG_DEFINED_CLASS) != 0) {
+  if ((receiver_t_node->t_flags & TI_T_FLAG_DEFINED_CLASS) != 0) {
     if (
-      method_name->length == 3 &&
-      memcmp(method_name->start, "new", 3) == 0 &&
-      (receiver_t->t_flags & TI_T_FLAG_STATIC) != 0
+      method_name_constant->length == 3 &&
+      memcmp(method_name_constant->start, "new", 3) == 0 &&
+      (receiver_t_node->t_flags & TI_T_FLAG_STATIC) != 0
     ) {
+
       return ti_new_t(
-        receiver_t->object_class_id,
-        receiver_t->t_flags & TI_T_FLAG_DEFINED_CLASS,
-        receiver_t->variants
+        receiver_t_node->object_class_id,
+        receiver_t_node->t_flags & TI_T_FLAG_DEFINED_CLASS,
+        receiver_t_node->variants
       );
     }
 
-    return ti_get_value_t(name_id);
+    return ti_get_value_t(method_name_identifier);
   }
 
-  const TiBuiltinMethod *method;
-  int use_static_methods =
-    (receiver_t->t_flags & TI_T_FLAG_STATIC) != 0;
+  const TiBuiltinMethod *builtin_method;
+  int is_static_method =
+    (receiver_t_node->t_flags & TI_T_FLAG_STATIC) != 0;
 
-  if (use_static_methods) {
-    method =
+  if (is_static_method) {
+    builtin_method =
       ti_get_builtin_static_method(
-        receiver_t->object_class_id,
-        method_name->start,
-        method_name->length
+        receiver_t_node->object_class_id,
+        method_name_constant->start,
+        method_name_constant->length
       );
   } else {
-    method =
+    builtin_method =
       ti_get_builtin_instance_method(
-        receiver_t->object_class_id,
-        method_name->start,
-        method_name->length
+        receiver_t_node->object_class_id,
+        method_name_constant->start,
+        method_name_constant->length
       );
   }
 
-  if (!method)
+  if (!builtin_method)
     return 0;
 
   return evaluate_builtin_method(
     context,
-    call,
-    depth,
-    receiver_t->object_class_id,
-    method
+    call_node,
+    evaluation_depth,
+    receiver_t_node->object_class_id,
+    builtin_method
   );
 }

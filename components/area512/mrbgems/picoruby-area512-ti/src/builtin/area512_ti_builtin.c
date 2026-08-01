@@ -152,6 +152,7 @@ ti_get_builtin_argument(
     argument_index < 0 ||
     argument_index >= builtin_method->argument_count
   ) {
+
     return NULL;
   }
 

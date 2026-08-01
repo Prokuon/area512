@@ -74,61 +74,115 @@ void
 vim_draw_diagnostics(
   void *vim_context,
   VimCanvas *canvas,
-  int line_byte_offset,
-  int draw_column,
+  int line_start_buffer_byte_offset,
+  int segment_draw_column,
   const char *line,
   int line_byte_length,
-  int start_column,
-  int max_width
+  int segment_start_line_column,
+  int segment_column_capacity
 ) {
+
   Vim *vim = (Vim *)vim_context;
-  int segment_byte_begin =
-    vim_column_to_byte(line, line_byte_length, start_column);
-  int segment_byte_end =
-    vim_column_to_byte(line, line_byte_length, start_column + max_width);
-  int segment_start_byte_offset = line_byte_offset + segment_byte_begin;
-  int segment_end_byte_offset = line_byte_offset + segment_byte_end;
+
+  int segment_start_line_byte_offset =
+    vim_column_to_byte(
+      line,
+      line_byte_length,
+      segment_start_line_column
+    );
+
+  int segment_end_line_byte_offset =
+    vim_column_to_byte(
+      line,
+      line_byte_length,
+      segment_start_line_column + segment_column_capacity
+    );
+
+  int segment_start_buffer_byte_offset =
+    line_start_buffer_byte_offset + segment_start_line_byte_offset;
+
+  int segment_end_buffer_byte_offset =
+    line_start_buffer_byte_offset + segment_end_line_byte_offset;
+
+  const char *segment = line + segment_start_line_byte_offset;
 
   for (int index = 0; index < vim->diagnostics.count; index++) {
-    VimDiagnostic *diagnostic = &vim->diagnostics.items[index];
-    int start_byte_offset = diagnostic->start_byte_offset;
-    int end_byte_offset = diagnostic->end_byte_offset;
+    const VimDiagnostic *diagnostic = &vim->diagnostics.items[index];
 
-    if (start_byte_offset < segment_start_byte_offset)
-      start_byte_offset = segment_start_byte_offset;
-    if (end_byte_offset > segment_end_byte_offset)
-      end_byte_offset = segment_end_byte_offset;
-    if (start_byte_offset >= end_byte_offset)
+    int diagnostic_start_buffer_byte_offset = diagnostic->start_byte_offset;
+    int diagnostic_end_buffer_byte_offset = diagnostic->end_byte_offset;
+
+    if (
+      diagnostic_start_buffer_byte_offset <
+      segment_start_buffer_byte_offset
+    ) {
+
+      diagnostic_start_buffer_byte_offset =
+        segment_start_buffer_byte_offset;
+    }
+
+    if (
+      diagnostic_end_buffer_byte_offset >
+      segment_end_buffer_byte_offset
+    ) {
+
+      diagnostic_end_buffer_byte_offset =
+        segment_end_buffer_byte_offset;
+    }
+
+    if (
+      diagnostic_start_buffer_byte_offset >=
+      diagnostic_end_buffer_byte_offset
+    ) {
+
       continue;
+    }
 
-    int line_start_byte_offset = start_byte_offset - line_byte_offset;
-    int line_end_byte_offset = end_byte_offset - line_byte_offset;
-    int column =
-      draw_column +
+    int diagnostic_start_line_byte_offset =
+      diagnostic_start_buffer_byte_offset - line_start_buffer_byte_offset;
+
+    int diagnostic_end_line_byte_offset =
+      diagnostic_end_buffer_byte_offset - line_start_buffer_byte_offset;
+
+    int diagnostic_start_segment_byte_offset =
+      diagnostic_start_line_byte_offset - segment_start_line_byte_offset;
+
+    int diagnostic_start_segment_column =
       vim_display_width(
-        line + segment_byte_begin,
-        line_start_byte_offset - segment_byte_begin
+        segment,
+        diagnostic_start_segment_byte_offset
       );
-    int column_count =
+
+    int diagnostic_draw_column =
+      segment_draw_column + diagnostic_start_segment_column;
+
+    const char *diagnostic_text =
+      line + diagnostic_start_line_byte_offset;
+
+    int diagnostic_byte_length =
+      diagnostic_end_line_byte_offset - diagnostic_start_line_byte_offset;
+
+    int diagnostic_column_count =
       vim_display_width(
-        line + line_start_byte_offset,
-        line_end_byte_offset - line_start_byte_offset
+        diagnostic_text,
+        diagnostic_byte_length
       );
 
     canvas->draw_row_text(
       canvas->context,
-      column,
-      line + line_start_byte_offset,
-      line_end_byte_offset - line_start_byte_offset,
+      diagnostic_draw_column,
+      diagnostic_text,
+      diagnostic_byte_length,
       VIM_DIAGNOSTIC_FOREGROUND,
       0,
       0
     );
+
     if (canvas->draw_row_underline)
       canvas->draw_row_underline(
         canvas->context,
-        column,
-        column_count,
+        diagnostic_draw_column,
+        diagnostic_column_count,
         VIM_DIAGNOSTIC_FOREGROUND
       );
   }

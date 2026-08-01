@@ -21,14 +21,17 @@ diagnostic_popup_row_count(
   const char *message,
   int message_byte_length
 ) {
+
   int text_width = diagnostic_popup_text_width(vim);
   int message_width = vim_display_width(message, message_byte_length);
   int row_count = (message_width + text_width - 1) / text_width;
+
   int maximum_row_count =
     vim->screen.height - vim->screen.footer_height;
 
   if (row_count < 1)
     row_count = 1;
+
   if (row_count > maximum_row_count)
     row_count = maximum_row_count;
 
@@ -38,17 +41,16 @@ diagnostic_popup_row_count(
 static void
 draw_diagnostic_popup(Vim *vim, const char *message) {
   VimCanvas *canvas = vim->active_canvas;
+
   int message_byte_length = (int)strlen(message);
   int text_width = diagnostic_popup_text_width(vim);
-  int row_count =
-    diagnostic_popup_row_count(vim, message, message_byte_length);
-  int screen_row =
-    vim->screen.height - vim->screen.footer_height - row_count;
+  int row_count = diagnostic_popup_row_count(vim, message, message_byte_length);
+  int screen_row = vim->screen.height - vim->screen.footer_height - row_count;
   int message_byte_offset = 0;
 
   for (int row_index = 0; row_index < row_count; row_index++) {
-    int remaining_byte_length =
-      message_byte_length - message_byte_offset;
+    int remaining_byte_length = message_byte_length - message_byte_offset;
+
     int row_byte_length =
       vim_column_to_byte(
         message + message_byte_offset,
@@ -62,13 +64,12 @@ draw_diagnostic_popup(Vim *vim, const char *message) {
 
     canvas->clear_row(canvas->context);
 
-    if (canvas->fill_row_span)
-      canvas->fill_row_span(
-        canvas->context,
-        0,
-        vim->screen.width,
-        DIAGNOSTIC_POPUP_BACKGROUND
-      );
+    canvas->fill_row_span(
+      canvas->context,
+      0,
+      vim->screen.width,
+      DIAGNOSTIC_POPUP_BACKGROUND
+    );
 
     canvas->draw_row_text(
       canvas->context,

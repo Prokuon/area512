@@ -334,6 +334,69 @@ class TiDatabaseGeneratorTest < Minitest::Test
     )
   end
 
+  def test_builtin_arguments_preserve_rbs_argument_order_names_and_kinds
+    collected_declarations =
+      build_collected_declarations_for(
+        signature_file_names: ["arguments.rbs", "basic.rbs"]
+      )
+
+    builtin_database =
+      TiDatabaseGenerator::DatabaseBuilder.new.build(
+        collected_declarations:
+      )
+
+    arguments_class_identifier =
+      builtin_database.class_identifiers_by_full_name.fetch("::Arguments")
+
+    arguments_builtin_class =
+      builtin_database.builtin_classes.fetch(arguments_class_identifier)
+
+    call_builtin_method =
+      builtin_database.builtin_methods[
+        arguments_builtin_class.instance_method_start_index,
+        arguments_builtin_class.instance_method_count
+      ].find do |builtin_method_candidate|
+        builtin_database.name_pool.binary_string
+          .byteslice(builtin_method_candidate.name_offset..)
+          .split("\0", 2)
+          .first == "call"
+      end
+
+    call_builtin_arguments =
+      builtin_database.builtin_arguments[
+        call_builtin_method.argument_start_index,
+        call_builtin_method.argument_count
+      ]
+
+    assert_equal(
+      TiDatabaseGenerator::BUILTIN_ARGUMENT_KINDS.values_at(
+        :required,
+        :optional,
+        :rest,
+        :required,
+        :required_keyword,
+        :optional_keyword,
+        :rest_keyword
+      ),
+      call_builtin_arguments.map(&:kind)
+    )
+
+    builtin_argument_names =
+      call_builtin_arguments.map do |builtin_argument|
+        next if builtin_argument.name_offset.zero?
+
+        builtin_database.name_pool.binary_string
+          .byteslice(builtin_argument.name_offset..)
+          .split("\0", 2)
+          .first
+      end
+
+    assert_equal(
+      [nil, nil, nil, nil, "key", "timeout", nil],
+      builtin_argument_names
+    )
+  end
+
   def test_string_pool_limits
     string_pool = TiDatabaseGenerator::StringPool.new(pool_name: "test")
 

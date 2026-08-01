@@ -72,8 +72,10 @@ fill_diagnostics(Vim *vim) {
       source->message,
       VIM_DIAGNOSTIC_MESSAGE_CAPACITY - 1
     );
+
     destination->message[VIM_DIAGNOSTIC_MESSAGE_CAPACITY - 1] = '\0';
   }
+
   vim->diagnostics.count = diagnostics.count;
 
   if (diagnostics.count)
@@ -98,6 +100,7 @@ show_type_or_diagnostic_at_cursor(Vim *vim) {
       cursor_byte_offset >= diagnostic->start_byte_offset &&
       cursor_byte_offset < diagnostic->end_byte_offset
     ) {
+
       show_diagnostic_popup(vim, diagnostic->message);
       return;
     }

@@ -337,7 +337,11 @@ module TiDatabaseGenerator
       )
     end
 
-    def build_builtin_method_record(collected_class:, resolved_collected_method:)
+    def build_builtin_method_record(
+      collected_class:,
+      resolved_collected_method:
+    )
+
       collected_method = resolved_collected_method.collected_method
       resolved_return_type = resolved_collected_method.resolved_return_type
 
@@ -415,19 +419,25 @@ module TiDatabaseGenerator
           error_context: "#{error_context} argument"
         )
 
+      argument_name_offset = 0
+
+      if resolved_argument.name
+        argument_name_offset =
+          @name_pool.add_string_and_return_offset(
+            string: resolved_argument.name
+          )
+      end
+
+      argument_union_index =
+        @union_pool.resolve_union_index(
+          class_identifiers:,
+          error_context: "#{error_context} argument"
+        )
+
       @builtin_arguments << BuiltinArgumentRecord.new(
-        name_offset:
-          resolved_argument.name ?
-            @name_pool.add_string_and_return_offset(
-              string: resolved_argument.name
-            ) :
-            0,
+        name_offset: argument_name_offset,
         class_identifier: class_identifiers.first || 0,
-        union_index:
-          @union_pool.resolve_union_index(
-            class_identifiers:,
-            error_context: "#{error_context} argument"
-          ),
+        union_index: argument_union_index,
         kind: BUILTIN_ARGUMENT_KINDS.fetch(resolved_argument.kind)
       )
     end
@@ -470,159 +480,262 @@ module TiDatabaseGenerator
     )
 
       method_types = collected_method.method_types
-      leading_parameters_by_method_type =
-        method_types.map do |method_type|
-          function = method_type.type
-          function.required_positionals +
-            function.optional_positionals
-        end
-
-      maximum_leading_count =
-        leading_parameters_by_method_type.map(&:length).max || 0
 
       resolved_arguments =
-        (0...maximum_leading_count).map do |position_index|
-          parameters =
-            method_types.filter_map.with_index do |method_type, method_type_index|
-              leading_parameters =
-                leading_parameters_by_method_type[method_type_index]
+        resolve_required_and_optional_positional_arguments(
+          method_types:,
+          owner_full_name:,
+          substitution:
+        )
 
-              leading_parameters[position_index] ||
-                method_type.type.rest_positionals
-            end
+      rest_positional_argument =
+        resolve_rest_positional_argument(
+          method_types:,
+          owner_full_name:,
+          substitution:
+        )
+      resolved_arguments << rest_positional_argument if rest_positional_argument
 
-          required =
-            method_types.all? do |method_type|
-              position_index <
-                method_type.type.required_positionals.length
-            end
+      resolved_arguments.concat(
+        resolve_trailing_positional_arguments(
+          method_types:,
+          owner_full_name:,
+          substitution:
+        )
+      )
 
-          ResolvedArgument.new(
-            name: nil,
-            kind: required ? :required : :optional,
-            resolved_type:
-              resolve_parameter_types(
-                parameters:,
-                owner_full_name:,
-                substitution:
-              )
-          )
+      resolved_arguments.concat(
+        resolve_required_and_optional_keyword_arguments(
+          method_types:,
+          owner_full_name:,
+          substitution:
+        )
+      )
+
+      rest_keyword_argument =
+        resolve_rest_keyword_argument(
+          method_types:,
+          owner_full_name:,
+          substitution:
+        )
+      resolved_arguments << rest_keyword_argument if rest_keyword_argument
+
+      resolved_arguments
+    end
+
+    def resolve_required_and_optional_positional_arguments(
+      method_types:,
+      owner_full_name:,
+      substitution:
+    )
+
+      maximum_required_and_optional_positional_parameter_count =
+        method_types.map do |method_type|
+          method_type.type.required_positionals.length +
+            method_type.type.optional_positionals.length
+        end.max || 0
+
+      (
+        0...maximum_required_and_optional_positional_parameter_count
+      ).map do |position_index|
+
+        positional_argument_type_parameters_at_index =
+          method_types.filter_map do |method_type|
+            method_type_required_and_optional_positional_parameters =
+              method_type.type.required_positionals +
+              method_type.type.optional_positionals
+
+            method_type_required_and_optional_positional_parameters[position_index] ||
+              method_type.type.rest_positionals
+          end
+
+        is_positional_argument_required_in_all_method_types =
+          method_types.all? do |method_type|
+            position_index < method_type.type.required_positionals.length
+          end
+
+        argument_kind = :optional
+        if is_positional_argument_required_in_all_method_types
+          argument_kind = :required
         end
 
-      rest_parameters =
+        build_resolved_argument(
+          argument_name: nil,
+          argument_kind:,
+          argument_type_parameters: positional_argument_type_parameters_at_index,
+          owner_full_name:,
+          substitution:
+        )
+      end
+    end
+
+    def resolve_rest_positional_argument(
+      method_types:,
+      owner_full_name:,
+      substitution:
+    )
+
+      rest_positional_parameters =
         method_types.filter_map do |method_type|
           method_type.type.rest_positionals
         end
 
-      unless rest_parameters.empty?
-        resolved_arguments << ResolvedArgument.new(
-          name: nil,
-          kind: :rest,
-          resolved_type:
-            resolve_parameter_types(
-              parameters: rest_parameters,
-              owner_full_name:,
-              substitution:
-            )
-        )
-      end
+      return if rest_positional_parameters.empty?
 
-      trailing_parameters_by_method_type =
+      build_resolved_argument(
+        argument_name: nil,
+        argument_kind: :rest,
+        argument_type_parameters: rest_positional_parameters,
+        owner_full_name:,
+        substitution:
+      )
+    end
+
+    def resolve_trailing_positional_arguments(
+      method_types:,
+      owner_full_name:,
+      substitution:
+    )
+
+      maximum_trailing_positional_parameter_count =
         method_types.map do |method_type|
-          method_type.type.trailing_positionals
+          method_type.type.trailing_positionals.length
+        end.max || 0
+
+      (
+        0...maximum_trailing_positional_parameter_count
+      ).map do |position_index|
+
+        trailing_positional_argument_type_parameters_at_index =
+          method_types.filter_map do |method_type|
+            method_type_trailing_positional_parameters =
+              method_type.type.trailing_positionals
+
+            method_type_trailing_positional_parameters[position_index]
+          end
+
+        is_trailing_positional_argument_present_in_all_method_types =
+          method_types.all? do |method_type|
+            method_type_trailing_positional_parameters =
+              method_type.type.trailing_positionals
+
+            position_index < method_type_trailing_positional_parameters.length
+          end
+
+        argument_kind = :optional
+        if is_trailing_positional_argument_present_in_all_method_types
+          argument_kind = :required
         end
 
-      maximum_trailing_count =
-        trailing_parameters_by_method_type.map(&:length).max || 0
-
-      (0...maximum_trailing_count).each do |position_index|
-        parameters =
-          trailing_parameters_by_method_type.filter_map do |trailing_parameters|
-            trailing_parameters[position_index]
-          end
-
-        required =
-          trailing_parameters_by_method_type.all? do |trailing_parameters|
-            position_index < trailing_parameters.length
-          end
-
-        resolved_arguments << ResolvedArgument.new(
-          name: nil,
-          kind: required ? :required : :optional,
-          resolved_type:
-            resolve_parameter_types(
-              parameters:,
-              owner_full_name:,
-              substitution:
-            )
+        build_resolved_argument(
+          argument_name: nil,
+          argument_kind:,
+          argument_type_parameters:
+            trailing_positional_argument_type_parameters_at_index,
+          owner_full_name:,
+          substitution:
         )
       end
+    end
 
+    def resolve_required_and_optional_keyword_arguments(
+      method_types:,
+      owner_full_name:,
+      substitution:
+    )
       keyword_names =
         method_types.flat_map do |method_type|
-          function = method_type.type
-          function.required_keywords.keys + function.optional_keywords.keys
+          method_type.type.required_keywords.keys +
+            method_type.type.optional_keywords.keys
         end.uniq.sort
 
-      keyword_names.each do |keyword_name|
-        parameters =
+      keyword_names.map do |keyword_name|
+        keyword_argument_type_parameters =
           method_types.filter_map do |method_type|
-            function = method_type.type
-            function.required_keywords[keyword_name] ||
-              function.optional_keywords[keyword_name] ||
-              function.rest_keywords
+            method_type.type.required_keywords[keyword_name] ||
+              method_type.type.optional_keywords[keyword_name] ||
+              method_type.type.rest_keywords
           end
 
-        required =
+        is_keyword_argument_required_in_all_method_types =
           method_types.all? do |method_type|
             method_type.type.required_keywords.key?(keyword_name)
           end
 
-        resolved_arguments << ResolvedArgument.new(
-          name: keyword_name,
-          kind: required ? :required_keyword : :optional_keyword,
-          resolved_type:
-            resolve_parameter_types(
-              parameters:,
-              owner_full_name:,
-              substitution:
-            )
+        argument_kind = :optional_keyword
+        if is_keyword_argument_required_in_all_method_types
+          argument_kind = :required_keyword
+        end
+
+        build_resolved_argument(
+          argument_name: keyword_name,
+          argument_kind:,
+          argument_type_parameters: keyword_argument_type_parameters,
+          owner_full_name:,
+          substitution:
         )
       end
+    end
 
+    def resolve_rest_keyword_argument(
+      method_types:,
+      owner_full_name:,
+      substitution:
+    )
       rest_keyword_parameters =
         method_types.filter_map do |method_type|
           method_type.type.rest_keywords
         end
 
-      unless rest_keyword_parameters.empty?
-        resolved_arguments << ResolvedArgument.new(
-          name: nil,
-          kind: :rest_keyword,
-          resolved_type:
-            resolve_parameter_types(
-              parameters: rest_keyword_parameters,
-              owner_full_name:,
-              substitution:
-            )
-        )
-      end
+      return if rest_keyword_parameters.empty?
 
-      resolved_arguments
+      build_resolved_argument(
+        argument_name: nil,
+        argument_kind: :rest_keyword,
+        argument_type_parameters: rest_keyword_parameters,
+        owner_full_name:,
+        substitution:
+      )
     end
 
-    def resolve_parameter_types(parameters:, owner_full_name:, substitution:)
-      resolved_types =
-        parameters.map do |parameter|
+    def build_resolved_argument(
+      argument_name:,
+      argument_kind:,
+      argument_type_parameters:,
+      owner_full_name:,
+      substitution:
+    )
+      ResolvedArgument.new(
+        name: argument_name,
+        kind: argument_kind,
+        resolved_type:
+          resolve_argument_type(
+            argument_type_parameters:,
+            owner_full_name:,
+            substitution:
+          )
+      )
+    end
+
+    def resolve_argument_type(
+      argument_type_parameters:,
+      owner_full_name:,
+      substitution:
+    )
+      resolved_argument_parameter_types =
+        argument_type_parameters.map do |argument_type_parameter|
           @type_resolver.resolve(
-            signature_type: parameter.type.sub(substitution),
+            signature_type: argument_type_parameter.type.sub(substitution),
             owner_full_name:
           )
         end
 
       ResolvedType.new(
         class_identifiers:
-          resolved_types.flat_map(&:class_identifiers).uniq.sort,
+          resolved_argument_parameter_types
+            .flat_map(&:class_identifiers)
+            .uniq
+            .sort,
         array_variant_class_identifiers: []
       )
     end
@@ -632,18 +745,24 @@ module TiDatabaseGenerator
       owner_full_name:,
       substitution:
     )
+
       collected_method.method_types.each do |method_type|
         method_block = method_type.block
+
         if method_block
           block_parameter = method_block.type.required_positionals.first
+
           unless block_parameter
             block_parameter = method_block.type.optional_positionals.first
           end
+
           if block_parameter
-            resolved_block_parameter_type = @type_resolver.resolve(
-              signature_type: block_parameter.type.sub(substitution),
-              owner_full_name:
-            )
+            resolved_block_parameter_type =
+              @type_resolver.resolve(
+                signature_type: block_parameter.type.sub(substitution),
+                owner_full_name:
+              )
+
             return resolved_block_parameter_type.class_identifiers.first || 0
           end
         end
