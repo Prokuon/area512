@@ -33,6 +33,11 @@ module TiDatabaseGenerator
           structure_field_definitions: BUILTIN_CLASS_FIELD_DEFINITIONS
         )
 
+      builtin_argument_field_declarations =
+        generate_structure_field_declarations(
+          structure_field_definitions: BUILTIN_ARGUMENT_FIELD_DEFINITIONS
+        )
+
       <<~HEADER
         #ifndef AREA512_TI_BUILTIN_DATABASE_H
         #define AREA512_TI_BUILTIN_DATABASE_H
@@ -49,6 +54,19 @@ module TiDatabaseGenerator
         #{builtin_method_field_declarations}
         } TiBuiltinMethod;
 
+        typedef enum {
+          TI_BUILTIN_ARGUMENT_REQUIRED = 0,
+          TI_BUILTIN_ARGUMENT_OPTIONAL,
+          TI_BUILTIN_ARGUMENT_REST,
+          TI_BUILTIN_ARGUMENT_REQUIRED_KEYWORD,
+          TI_BUILTIN_ARGUMENT_OPTIONAL_KEYWORD,
+          TI_BUILTIN_ARGUMENT_REST_KEYWORD
+        } TiBuiltinArgumentKind;
+
+        typedef struct {
+        #{builtin_argument_field_declarations}
+        } TiBuiltinArgument;
+
         typedef struct {
         #{builtin_class_field_declarations}
         } TiBuiltinClass;
@@ -59,12 +77,14 @@ module TiDatabaseGenerator
 
         extern const TiBuiltinClass ti_builtin_classes[];
         extern const TiBuiltinMethod ti_builtin_methods[];
+        extern const TiBuiltinArgument ti_builtin_arguments[];
         extern const TiBuiltinUnion ti_builtin_unions[];
         extern const char ti_builtin_name_pool[];
         extern const char ti_builtin_signature_pool[];
         extern const char ti_builtin_document_pool[];
         extern const uint16_t ti_builtin_class_count;
         extern const uint16_t ti_builtin_method_count;
+        extern const uint16_t ti_builtin_argument_count;
         extern const uint16_t ti_builtin_union_count;
         extern const uint16_t ti_builtin_name_pool_size;
         extern const uint16_t ti_builtin_signature_pool_size;
@@ -96,6 +116,12 @@ module TiDatabaseGenerator
         c_type_name: "TiBuiltinClass",
         c_variable_name: "ti_builtin_classes",
         records: @builtin_database.builtin_classes
+      )
+
+      source_code << generate_record_table_source(
+        c_type_name: "TiBuiltinArgument",
+        c_variable_name: "ti_builtin_arguments",
+        records: @builtin_database.builtin_arguments
       )
 
       source_code << generate_record_table_source(
@@ -155,6 +181,7 @@ module TiDatabaseGenerator
       <<~CONSTANTS
         const uint16_t ti_builtin_class_count = #{@builtin_database.builtin_classes.length};
         const uint16_t ti_builtin_method_count = #{@builtin_database.builtin_methods.length};
+        const uint16_t ti_builtin_argument_count = #{@builtin_database.builtin_arguments.length};
         const uint16_t ti_builtin_union_count = #{@builtin_database.union_pool.union_entries.length};
         const uint16_t ti_builtin_name_pool_size = #{@builtin_database.name_pool.binary_string.bytesize};
         const uint16_t ti_builtin_signature_pool_size = #{@builtin_database.signature_pool.binary_string.bytesize};

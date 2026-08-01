@@ -3,7 +3,9 @@
 
 #include <prism.h>
 
-typedef struct {
+#include "area512_ti_diagnostic.h"
+
+typedef struct TiContext {
   pm_parser_t *parser;
   const uint8_t *source;
   size_t source_length;
@@ -11,6 +13,7 @@ typedef struct {
   uint16_t return_t_node_index;
   int round;
   int failed;
+  TiDiagnosticList *diagnostics;
 } TiContext;
 
 int ti_convert_constant_id(pm_constant_id_t constant_id, uint16_t *name_id);

@@ -132,7 +132,13 @@ module TiDatabaseGenerator
         )
       end
 
-      # Hash[T] -> Hash[Untyped]
+      if full_type_name == "::Hash"
+        return build_type_components(
+          class_identifiers:
+            [fetch_class_identifier(full_class_name: "::Hash")]
+        )
+      end
+
       if !class_instance_type.args.empty? && full_type_name != "::Array"
         return build_type_components(
           class_identifiers:

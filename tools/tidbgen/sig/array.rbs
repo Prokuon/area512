@@ -24,7 +24,7 @@ class Array < Enumerable
   # Compare arrays. Returns -1 if self < other, 0 if self == other, 1 if self > other
   def <=>: (untyped other) -> Integer
 
-  def all?: () { (untyped element) -> untyped } -> bool
+  def all?: (*untyped patterns) { (untyped element) -> untyped } -> bool
 
   # Get element at specified position
   def at: (Integer index) -> untyped
@@ -35,7 +35,7 @@ class Array < Enumerable
   # Execute block for each element and destructively replace
   def collect!: () { (untyped element) -> untyped } -> Array[untyped]
 
-  def count: (untyped object) { (untyped element) -> untyped } -> Integer
+  def count: () -> Integer
 
   # Concatenate arrays
   def concat: (Array other) -> Array
@@ -56,7 +56,7 @@ class Array < Enumerable
   def empty?: () -> bool
 
   # Get first element
-  def first: (Integer count) -> untyped
+  def first: () -> untyped
 
   # Flatten nested array
   def flatten: () -> self
@@ -68,20 +68,20 @@ class Array < Enumerable
   def inspect: () -> String
 
   # Join elements and return string
-  def join: (String separator) -> String
+  def join: (?String separator) -> String
 
   # Get last element
-  def last: (Integer count) -> (untyped | self)
+  def last: () -> untyped
 
   # Return number of elements in array
   def length: () -> Integer
 
-  def max: (Integer count) { (untyped left, untyped right) -> untyped } -> (untyped | self)
+  def max: () { (untyped left, untyped right) -> untyped } -> untyped
 
-  def min: (Integer count) { (untyped left, untyped right) -> untyped } -> (untyped | self)
+  def min: () { (untyped left, untyped right) -> untyped } -> untyped
 
   # Remove and return last element
-  def pop: (Integer count) -> (untyped | self)
+  def pop: (?Integer count) -> (untyped | self)
 
   # Return array excluding elements for which block returns true
   def reject: () { (untyped element) -> untyped } -> self
@@ -92,7 +92,7 @@ class Array < Enumerable
   def replace: (Array other) -> Array
 
   # Remove and return first element
-  def shift: (Integer count) -> (untyped | self)
+  def shift: (?Integer count) -> (untyped | self)
 
   # Return sorted array
   def sort: () { (untyped left, untyped right) -> untyped } -> self
@@ -114,6 +114,6 @@ class Array < Enumerable
 
   def |: (Array other) -> Array
 
-  def self.new: (untyped size, untyped object) -> Array
+  def self.new: (?Integer size, ?untyped object) -> Array
 
 end

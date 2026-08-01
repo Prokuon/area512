@@ -23,7 +23,7 @@ class GPIO
   def self.low_at?: (Integer pin) -> bool
 
   # Create GPIO object
-  def self.new: ((Integer | String | Symbol) pin, Integer flags, Integer alt_function) -> GPIO
+  def self.new: ((Integer | String | Symbol) pin, Integer flags, ?Integer alt_function) -> GPIO
 
   # Set specified pin to open drain output mode
   def self.open_drain_at: ((Integer | String | Symbol) pin) -> Integer

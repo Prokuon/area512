@@ -46,7 +46,7 @@ class Dir
 
   def self.pwd: () -> String
 
-  def self.mkdir: (String path, Integer mode) -> Integer
+  def self.mkdir: (String path, ?Integer mode) -> Integer
 
   def self.glob: (String pattern, Integer flags, ?base: (String | nil)) -> Array[String]
 

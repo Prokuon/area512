@@ -46,6 +46,8 @@ typedef struct {
   uint16_t name_offset;
   uint16_t signature_offset;
   uint16_t document_offset;
+  uint16_t argument_start_index;
+  uint8_t argument_count;
   uint8_t return_class_identifier;
   uint8_t return_array_variant_class_identifier;
   uint16_t return_union_index;
@@ -53,6 +55,22 @@ typedef struct {
   uint8_t block_parameter_class_identifier;
   uint8_t origin_class_identifier;
 } TiBuiltinMethod;
+
+typedef enum {
+  TI_BUILTIN_ARGUMENT_REQUIRED = 0,
+  TI_BUILTIN_ARGUMENT_OPTIONAL,
+  TI_BUILTIN_ARGUMENT_REST,
+  TI_BUILTIN_ARGUMENT_REQUIRED_KEYWORD,
+  TI_BUILTIN_ARGUMENT_OPTIONAL_KEYWORD,
+  TI_BUILTIN_ARGUMENT_REST_KEYWORD
+} TiBuiltinArgumentKind;
+
+typedef struct {
+  uint16_t name_offset;
+  uint8_t class_identifier;
+  uint16_t union_index;
+  uint8_t kind;
+} TiBuiltinArgument;
 
 typedef struct {
   uint16_t name_offset;
@@ -68,12 +86,14 @@ typedef struct {
 
 extern const TiBuiltinClass ti_builtin_classes[];
 extern const TiBuiltinMethod ti_builtin_methods[];
+extern const TiBuiltinArgument ti_builtin_arguments[];
 extern const TiBuiltinUnion ti_builtin_unions[];
 extern const char ti_builtin_name_pool[];
 extern const char ti_builtin_signature_pool[];
 extern const char ti_builtin_document_pool[];
 extern const uint16_t ti_builtin_class_count;
 extern const uint16_t ti_builtin_method_count;
+extern const uint16_t ti_builtin_argument_count;
 extern const uint16_t ti_builtin_union_count;
 extern const uint16_t ti_builtin_name_pool_size;
 extern const uint16_t ti_builtin_signature_pool_size;

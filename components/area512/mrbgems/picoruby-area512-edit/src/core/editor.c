@@ -6,7 +6,10 @@
 #include "core/mode/visual.h"
 #include "core/render/footer.h"
 #include "core/syntax/picoruby/highlight.h"
+#include "core/text/utf8.h"
 #include <string.h>
+
+#define VIM_DIAGNOSTIC_FOREGROUND 0xD16969
 
 static void
 handle_escape_arrow(Vim *vim, int letter) {
@@ -37,6 +40,8 @@ vim_init(Vim *vim, int width, int height) {
   vim->screen.footer_context = vim;
   vim->screen.draw_cursor = draw_vim_cursor;
   vim->screen.draw_cursor_context = vim;
+  vim->screen.diagnostic = vim_draw_diagnostics;
+  vim->screen.diagnostic_context = vim;
   vim->input.mode = VIM_MODE_NORMAL;
   vim->input.current_operator = VIM_OPERATOR_NONE;
   vim->input.pending = VIM_PENDING_NONE;
@@ -61,6 +66,129 @@ vim_free(Vim *vim) {
 }
 
 void
+vim_clear_diagnostics(Vim *vim) {
+  vim->diagnostics.count = 0;
+}
+
+void
+vim_draw_diagnostics(
+  void *vim_context,
+  VimCanvas *canvas,
+  int line_start_buffer_byte_offset,
+  int segment_draw_column,
+  const char *line,
+  int line_byte_length,
+  int segment_start_line_column,
+  int segment_column_capacity
+) {
+
+  Vim *vim = (Vim *)vim_context;
+
+  int segment_start_line_byte_offset =
+    vim_column_to_byte(
+      line,
+      line_byte_length,
+      segment_start_line_column
+    );
+
+  int segment_end_line_byte_offset =
+    vim_column_to_byte(
+      line,
+      line_byte_length,
+      segment_start_line_column + segment_column_capacity
+    );
+
+  int segment_start_buffer_byte_offset =
+    line_start_buffer_byte_offset + segment_start_line_byte_offset;
+
+  int segment_end_buffer_byte_offset =
+    line_start_buffer_byte_offset + segment_end_line_byte_offset;
+
+  const char *segment = line + segment_start_line_byte_offset;
+
+  for (int index = 0; index < vim->diagnostics.count; index++) {
+    const VimDiagnostic *diagnostic = &vim->diagnostics.items[index];
+
+    int diagnostic_start_buffer_byte_offset = diagnostic->start_byte_offset;
+    int diagnostic_end_buffer_byte_offset = diagnostic->end_byte_offset;
+
+    if (
+      diagnostic_start_buffer_byte_offset <
+      segment_start_buffer_byte_offset
+    ) {
+
+      diagnostic_start_buffer_byte_offset =
+        segment_start_buffer_byte_offset;
+    }
+
+    if (
+      diagnostic_end_buffer_byte_offset >
+      segment_end_buffer_byte_offset
+    ) {
+
+      diagnostic_end_buffer_byte_offset =
+        segment_end_buffer_byte_offset;
+    }
+
+    if (
+      diagnostic_start_buffer_byte_offset >=
+      diagnostic_end_buffer_byte_offset
+    ) {
+
+      continue;
+    }
+
+    int diagnostic_start_line_byte_offset =
+      diagnostic_start_buffer_byte_offset - line_start_buffer_byte_offset;
+
+    int diagnostic_end_line_byte_offset =
+      diagnostic_end_buffer_byte_offset - line_start_buffer_byte_offset;
+
+    int diagnostic_start_segment_byte_offset =
+      diagnostic_start_line_byte_offset - segment_start_line_byte_offset;
+
+    int diagnostic_start_segment_column =
+      vim_display_width(
+        segment,
+        diagnostic_start_segment_byte_offset
+      );
+
+    int diagnostic_draw_column =
+      segment_draw_column + diagnostic_start_segment_column;
+
+    const char *diagnostic_text =
+      line + diagnostic_start_line_byte_offset;
+
+    int diagnostic_byte_length =
+      diagnostic_end_line_byte_offset - diagnostic_start_line_byte_offset;
+
+    int diagnostic_column_count =
+      vim_display_width(
+        diagnostic_text,
+        diagnostic_byte_length
+      );
+
+    canvas->draw_row_text(
+      canvas->context,
+      diagnostic_draw_column,
+      diagnostic_text,
+      diagnostic_byte_length,
+      VIM_DIAGNOSTIC_FOREGROUND,
+      0,
+      0
+    );
+
+    if (canvas->draw_row_underline)
+      canvas->draw_row_underline(
+        canvas->context,
+        diagnostic_draw_column,
+        diagnostic_column_count,
+        VIM_DIAGNOSTIC_FOREGROUND
+      );
+  }
+}
+
+void
 vim_set_filepath(Vim *vim, const char *text, int byte_length) {
   vim_string_set(&vim->filepath, text, byte_length);
   vim->screen.syntax_highlight = editor_is_ruby_filename(text, byte_length);
@@ -68,6 +196,7 @@ vim_set_filepath(Vim *vim, const char *text, int byte_length) {
 
 void
 vim_load_text(Vim *vim, const char *text, int byte_length) {
+  vim_clear_diagnostics(vim);
   vim_buffer_load_text(BUFFER, text, byte_length);
 
   vim_buffer_move_home(BUFFER);

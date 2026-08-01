@@ -130,6 +130,19 @@ class TiDatabaseGeneratorTest < Minitest::Test
       resolved_array_type.array_variant_class_identifiers
     )
 
+    resolved_hash_type =
+      type_resolver.resolve(
+        signature_type: RBS::Parser.parse_type("Hash[String, Integer]"),
+        owner_full_name: "::Basic"
+      )
+
+    assert_equal(
+      [class_identifiers_by_full_name["::Hash"]],
+      resolved_hash_type.class_identifiers
+    )
+
+    assert_empty resolved_hash_type.array_variant_class_identifiers
+
     resolved_generic_alias_type =
       type_resolver.resolve(
         signature_type: RBS::Parser.parse_type("maybe[String]"),
@@ -257,6 +270,130 @@ class TiDatabaseGeneratorTest < Minitest::Test
     assert_equal(
       builtin_database.class_identifiers_by_full_name.fetch("::String"),
       builtin_method.return_class_identifier
+    )
+  end
+
+  def test_builtin_arguments_merge_overload_types_by_position
+    collected_declarations =
+      build_collected_declarations_for(
+        signature_file_names: ["basic.rbs", "overloads.rbs"]
+      )
+
+    builtin_database =
+      TiDatabaseGenerator::DatabaseBuilder.new.build(
+        collected_declarations:
+      )
+
+    class_identifier =
+      builtin_database.class_identifiers_by_full_name.fetch("::Overloads")
+
+    builtin_class = builtin_database.builtin_classes.fetch(class_identifier)
+
+    builtin_method =
+      builtin_database.builtin_methods[
+        builtin_class.instance_method_start_index,
+        builtin_class.instance_method_count
+      ].find do |builtin_method_entry|
+        builtin_database.name_pool.binary_string
+          .byteslice(builtin_method_entry.name_offset..)
+          .split("\0", 2)
+          .first == "convert"
+      end
+
+    assert_equal 1, builtin_method.argument_count
+
+    builtin_argument =
+      builtin_database.builtin_arguments.fetch(
+        builtin_method.argument_start_index
+      )
+
+    union_entry =
+      builtin_database.union_pool.union_entries.fetch(
+        builtin_argument.union_index
+      )
+
+    assert_equal(
+      [
+        builtin_database.class_identifiers_by_full_name.fetch("::Integer"),
+        builtin_database.class_identifiers_by_full_name.fetch("::String")
+      ].sort,
+      union_entry.reject(&:zero?).sort
+    )
+
+    assert_equal(
+      [
+        builtin_database.class_identifiers_by_full_name.fetch("::Integer"),
+        builtin_database.class_identifiers_by_full_name.fetch("::String")
+      ].sort,
+      [
+        builtin_method.return_class_identifier,
+        *builtin_database.union_pool.union_entries
+          .fetch(builtin_method.return_union_index)
+          .reject(&:zero?)
+      ].uniq.sort
+    )
+  end
+
+  def test_builtin_arguments_preserve_rbs_argument_order_names_and_kinds
+    collected_declarations =
+      build_collected_declarations_for(
+        signature_file_names: ["arguments.rbs", "basic.rbs"]
+      )
+
+    builtin_database =
+      TiDatabaseGenerator::DatabaseBuilder.new.build(
+        collected_declarations:
+      )
+
+    arguments_class_identifier =
+      builtin_database.class_identifiers_by_full_name.fetch("::Arguments")
+
+    arguments_builtin_class =
+      builtin_database.builtin_classes.fetch(arguments_class_identifier)
+
+    call_builtin_method =
+      builtin_database.builtin_methods[
+        arguments_builtin_class.instance_method_start_index,
+        arguments_builtin_class.instance_method_count
+      ].find do |builtin_method_candidate|
+        builtin_database.name_pool.binary_string
+          .byteslice(builtin_method_candidate.name_offset..)
+          .split("\0", 2)
+          .first == "call"
+      end
+
+    call_builtin_arguments =
+      builtin_database.builtin_arguments[
+        call_builtin_method.argument_start_index,
+        call_builtin_method.argument_count
+      ]
+
+    assert_equal(
+      TiDatabaseGenerator::BUILTIN_ARGUMENT_KINDS.values_at(
+        :required,
+        :optional,
+        :rest,
+        :required,
+        :required_keyword,
+        :optional_keyword,
+        :rest_keyword
+      ),
+      call_builtin_arguments.map(&:kind)
+    )
+
+    builtin_argument_names =
+      call_builtin_arguments.map do |builtin_argument|
+        next if builtin_argument.name_offset.zero?
+
+        builtin_database.name_pool.binary_string
+          .byteslice(builtin_argument.name_offset..)
+          .split("\0", 2)
+          .first
+      end
+
+    assert_equal(
+      [nil, nil, nil, nil, "key", "timeout", nil],
+      builtin_argument_names
     )
   end
 

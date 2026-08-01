@@ -12,6 +12,7 @@ MRuby::Gem::Specification.new('picoruby-area512-edit') do |spec|
   spec.add_dependency 'picoruby-io-console'
   spec.cc.include_paths << "#{spec.dir}/../../../area512_hal/include"
   spec.cc.include_paths << "#{MRUBY_ROOT}/mrbgems/mruby-compiler2/lib/prism/include"
+  spec.cc.include_paths << "#{spec.dir}/../picoruby-area512-ti/src/diagnostic"
   spec.cc.include_paths << "#{spec.dir}/../picoruby-area512-ti/src/hover"
   spec.cc.include_paths << "#{spec.dir}/../picoruby-area512-ti/src/suggest"
 

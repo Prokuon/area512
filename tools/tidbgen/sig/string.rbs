@@ -53,19 +53,19 @@ class String
   def chars: () -> Array[String]
 
   # Return string with trailing newline removed
-  def chomp: (String record_separator) -> String
+  def chomp: () -> String
 
   # Remove trailing newline destructively
-  def chomp!: (String record_separator) -> (String | nil)
+  def chomp!: () -> (String | nil)
 
   # Clear string contents
   def clear: () -> String
 
   # Return string converted to lowercase
-  def downcase: (untyped options, untyped mapping) -> String
+  def downcase: () -> String
 
   # Convert to lowercase destructively
-  def downcase!: (untyped options, untyped mapping) -> (String | nil)
+  def downcase!: () -> (String | nil)
 
   # Execute block for each byte
   def each_byte: () { (Integer byte) -> untyped } -> self
@@ -74,7 +74,7 @@ class String
   def each_char: () { (String character) -> untyped } -> self
 
   # Execute block for each line
-  def each_line: () { (String line) -> untyped } -> String
+  def each_line: (?String separator, ?chomp: bool) { (String line) -> untyped } -> String
 
   # Check if string is empty
   def empty?: () -> bool
@@ -89,7 +89,7 @@ class String
   def include?: (String other) -> bool
 
   # Return first position of specified string
-  def index: ((String | Integer) substring_or_codepoint) -> (Integer | nil)
+  def index: ((String | Integer) substring_or_codepoint, ?Integer offset) -> (Integer | nil)
 
   # Return string representation for debugging
   def inspect: () -> String
@@ -104,7 +104,7 @@ class String
   def size: () -> Integer
 
   # Return string left-justified to specified width
-  def ljust: (Integer width, String padding) -> String
+  def ljust: (Integer width, ?String padding) -> String
 
   # Return string with leading whitespace removed
   def lstrip: () -> String
@@ -116,7 +116,7 @@ class String
   def ord: () -> Integer
 
   # Return string right-justified to specified width
-  def rjust: (Integer width, String padding) -> String
+  def rjust: (Integer width, ?String padding) -> String
 
   # Return string with trailing whitespace removed
   def rstrip: () -> String
@@ -128,7 +128,7 @@ class String
   def slice: (untyped index_or_range) -> (String | nil)
 
   # Split by delimiter and return array
-  def split: (String separator, Integer limit) -> Array[String]
+  def split: (?String separator, ?Integer limit) -> Array[String]
 
   # Replace the first matching substring
   def sub: (String pattern, String replacement) -> String
@@ -146,7 +146,7 @@ class String
   def to_f: () -> Float
 
   # Convert to integer
-  def to_i: (Integer base) -> Integer
+  def to_i: (?Integer base) -> Integer
 
   # Return self as string
   def to_s: () -> String
@@ -161,9 +161,9 @@ class String
   def tr!: (String source, String replacement) -> (String | nil)
 
   # Return string converted to uppercase
-  def upcase: (untyped options, untyped mapping) -> String
+  def upcase: () -> String
 
   # Convert to uppercase destructively
-  def upcase!: (untyped options, untyped mapping) -> (String | nil)
+  def upcase!: () -> (String | nil)
 
 end

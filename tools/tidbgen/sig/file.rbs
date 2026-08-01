@@ -8,16 +8,16 @@ class File
   def flush: () -> self
 
   # Read one line from file
-  def gets: (String separator) -> (String | nil)
+  def gets: (?String separator) -> (String | nil)
 
   # Write string with newline to file
   def puts: (*untyped objects) -> nil
 
   # Read data from file
-  def read: (Integer length) -> (String | nil)
+  def read: (?Integer length) -> (String | nil)
 
   # Move file position
-  def seek: (Integer offset, Integer whence) -> Integer
+  def seek: (Integer offset, ?Integer whence) -> Integer
 
   # Return current file position
   def tell: () -> Integer
@@ -32,10 +32,10 @@ class File
   def each_line: () { (String line) -> untyped } -> self
 
   # Open file and return File object
-  def self.open: (String path, String mode) -> File
+  def self.open: (String path, ?String mode) -> File
 
   # Open file, yield to block, close automatically
-  def self.open: (String path, String mode) { (File file) -> untyped } -> untyped
+  def self.open: (String path, ?String mode) { (File file) -> untyped } -> untyped
 
   # Check if file exists
   def self.exist?: (String path) -> bool
@@ -53,7 +53,7 @@ class File
   def self.unlink: (*String paths) -> Integer
 
   # Return last component of path
-  def self.basename: (String path, String suffix) -> String
+  def self.basename: (String path, ?String suffix) -> String
 
   # Return directory part of path
   def self.dirname: (String path) -> String
