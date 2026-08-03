@@ -227,17 +227,18 @@ test_type_at_cursor(void) {
   const char *target = strrchr(source, 'v');
   assert(target);
 
-  TiTypeInfo type_info;
-  int found = ti_find_type_at_cursor(
+  TiHoverInfo hover_info;
+  int found = ti_find_hover_at_cursor(
     source,
     (int)strlen(source),
     (int)(target - source),
-    &type_info
+    &hover_info
   );
 
   assert(found);
-  assert(strcmp(type_info.variable_name, "value") == 0);
-  assert(strcmp(type_info.type_name, "Integer") == 0);
+  assert(!hover_info.is_method);
+  assert(strcmp(hover_info.variable_name, "value") == 0);
+  assert(strcmp(hover_info.type_name, "Integer") == 0);
 }
 
 static void
@@ -246,14 +247,52 @@ test_union_type_at_cursor(void) {
   const char *target = strrchr(source, 'v');
   assert(target);
 
-  TiTypeInfo type_info;
-  assert(ti_find_type_at_cursor(
+  TiHoverInfo hover_info;
+  assert(ti_find_hover_at_cursor(
     source,
     (int)strlen(source),
     (int)(target - source),
-    &type_info
+    &hover_info
   ));
-  assert(strcmp(type_info.type_name, "Union<Integer String>") == 0);
+  assert(strcmp(hover_info.type_name, "Union<Integer String>") == 0);
+}
+
+static void
+test_builtin_method_at_cursor(void) {
+  const char *source = "\"x\".bytes";
+  const char *target = strstr(source, "bytes");
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(ti_find_hover_at_cursor(
+    source,
+    (int)strlen(source),
+    (int)(target - source),
+    &hover_info
+  ));
+  assert(hover_info.is_method);
+  assert(hover_info.method_name_length == 5);
+  assert(hover_info.method_document);
+  assert(strncmp(hover_info.method_signature, "bytes:", 6) == 0);
+}
+
+static void
+test_defined_method_at_cursor(void) {
+  const char *source = "def answer(value) = 1\nanswer(1)";
+  const char *target = strrchr(source, 'a');
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(ti_find_hover_at_cursor(
+    source,
+    (int)strlen(source),
+    (int)(target - source),
+    &hover_info
+  ));
+  assert(hover_info.is_method);
+  assert(hover_info.method_name_length == 6);
+  assert(strcmp(hover_info.method_document, "") == 0);
+  assert(strcmp(hover_info.method_signature, "answer(value) -> Integer") == 0);
 }
 
 static void
@@ -332,6 +371,8 @@ main(void) {
   test_explicit_return();
   test_type_at_cursor();
   test_union_type_at_cursor();
+  test_builtin_method_at_cursor();
+  test_defined_method_at_cursor();
   test_forward_definition();
   test_union_binding();
   test_unknown_return();

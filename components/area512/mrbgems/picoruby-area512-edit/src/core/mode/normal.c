@@ -2,6 +2,7 @@
 #include "area512_ti_diagnostic.h"
 #include "area512_ti_hover.h"
 #include "core/diagnostic/diagnostic_popup.h"
+#include "core/hover/hover_popup.h"
 #include "core/mode/insert.h"
 #include "core/register/paste.h"
 #include "core/register/repeat.h"
@@ -87,7 +88,7 @@ fill_diagnostics(Vim *vim) {
 }
 
 static void
-show_type_or_diagnostic_at_cursor(Vim *vim) {
+show_hover_or_diagnostic_at_cursor(Vim *vim) {
   if (!editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length))
     return;
 
@@ -110,25 +111,44 @@ show_type_or_diagnostic_at_cursor(Vim *vim) {
   vim_string_init(&content);
   vim_write_content(vim, &content);
 
-  TiTypeInfo type_info;
+  TiHoverInfo hover_info;
 
   int found =
-    ti_find_type_at_cursor(
+    ti_find_hover_at_cursor(
       content.bytes,
       content.byte_length,
       cursor_byte_offset,
-      &type_info
+      &hover_info
     );
 
   if (found) {
-    VimString message;
+    if (hover_info.is_method) {
+      show_hover_popup(
+        vim,
+        hover_info.method_signature,
+        (int)strlen(hover_info.method_signature),
+        hover_info.method_name_length,
+        hover_info.method_document
+      );
 
-    vim_string_init(&message);
-    vim_string_append_c_string(&message, type_info.variable_name);
-    vim_string_append_c_string(&message, ": ");
-    vim_string_append_c_string(&message, type_info.type_name);
-    show_message(vim, message.bytes, message.byte_length);
-    vim_string_free(&message);
+    } else {
+      VimString message;
+
+      vim_string_init(&message);
+      vim_string_append_c_string(&message, hover_info.variable_name);
+      vim_string_append_c_string(&message, ": ");
+      vim_string_append_c_string(&message, hover_info.type_name);
+
+      show_hover_popup(
+        vim,
+        message.bytes,
+        message.byte_length,
+        (int)strlen(hover_info.variable_name),
+        NULL
+      );
+
+      vim_string_free(&message);
+    }
   } else {
     show_message_c_string(vim, "Type information is unavailable");
   }
@@ -474,7 +494,7 @@ handle_normal(
     break;
 
   case 75: // 'K'
-    show_type_or_diagnostic_at_cursor(vim);
+    show_hover_or_diagnostic_at_cursor(vim);
     REDRAW(VIM_REDRAW_FOOTER);
     break;
 

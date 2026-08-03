@@ -2,6 +2,7 @@
 #include "area512_ti_arena.h"
 #include "area512_ti_context.h"
 #include "area512_ti_eval.h"
+#include "area512_ti_suggest.h"
 #include "area512_ti_t_frame.h"
 #include "area512_ti_type.h"
 #include <prism.h>
@@ -12,15 +13,23 @@ typedef struct {
   int cursor_byte_offset;
   pm_constant_id_t name;
   pm_location_t location;
-} TiTypeSearch;
+  const pm_call_node_t *call;
+} TiHoverSearch;
 
 static bool
-find_type_target_on_visit(const pm_node_t *node, void *data) {
-  TiTypeSearch *search = data;
+find_hover_target_on_visit(const pm_node_t *node, void *data) {
+  TiHoverSearch *search = data;
   pm_constant_id_t name = 0;
   pm_location_t location = node->location;
 
   switch (PM_NODE_TYPE(node)) {
+  case PM_CALL_NODE: {
+    const pm_call_node_t *call = (const pm_call_node_t *)node;
+    name = call->name;
+    location = call->message_loc;
+    break;
+  }
+
   case PM_LOCAL_VARIABLE_READ_NODE:
     name = ((const pm_local_variable_read_node_t *)node)->name;
     break;
@@ -83,16 +92,19 @@ find_type_target_on_visit(const pm_node_t *node, void *data) {
 
   search->name = name;
   search->location = location;
+  search->call = PM_NODE_TYPE(node) == PM_CALL_NODE
+                   ? (const pm_call_node_t *)node
+                   : NULL;
 
   return false;
 }
 
 int
-ti_find_type_at_cursor(
+ti_find_hover_at_cursor(
   const char *source,
   int source_byte_length,
   int cursor_byte_offset,
-  TiTypeInfo *out
+  TiHoverInfo *out
 ) {
 
   if (out)
@@ -125,16 +137,58 @@ ti_find_type_at_cursor(
     .source_length = (size_t)source_byte_length,
   };
 
-  TiTypeSearch search = {
+  TiHoverSearch search = {
     .source = (const uint8_t *)source,
     .cursor_byte_offset = cursor_byte_offset,
   };
 
   if (ti_evaluation_loop(&context, root) && !ti_did_arena_overflow())
-    pm_visit_node(root, find_type_target_on_visit, &search);
+    pm_visit_node(root, find_hover_target_on_visit, &search);
+
+  if (search.call) {
+    TiSuggestionList suggestions;
+
+    int method_name_end_byte_offset =
+      (int)(search.call->message_loc.end - context.source);
+
+    ti_fill_suggestions_at_cursor(
+      source,
+      source_byte_length,
+      method_name_end_byte_offset,
+      &suggestions
+    );
+
+    const pm_constant_t *method_name =
+      ti_get_constant(&context, search.call->name);
+
+    if (method_name) {
+      for (int index = 0; index < suggestions.count; index++) {
+        const TiSuggestion *suggestion = &suggestions.items[index];
+
+        if (
+          suggestion->contents_length == (int)method_name->length &&
+          memcmp(
+            suggestion->contents,
+            method_name->start,
+            method_name->length
+          ) == 0
+        ) {
+
+          out->method_signature = suggestion->detail;
+          out->method_document = suggestion->document;
+          out->method_name_length = suggestion->contents_length;
+          out->is_method = 1;
+          out->found = 1;
+
+          break;
+        }
+      }
+    }
+  }
 
   uint16_t name_id;
-  if (search.name != 0 && ti_convert_constant_id(search.name, &name_id)) {
+  if (!search.call && search.name != 0 &&
+      ti_convert_constant_id(search.name, &name_id)) {
     const pm_constant_t *constant = ti_get_constant(&context, search.name);
     uint16_t t_node_index = ti_get_value_t(name_id);
 
