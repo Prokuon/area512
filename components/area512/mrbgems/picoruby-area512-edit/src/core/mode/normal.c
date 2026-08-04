@@ -9,6 +9,7 @@
 #include "core/register/search.h"
 #include "core/render/footer.h"
 #include "core/syntax/picoruby/highlight.h"
+#include "core/ti/loader.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -51,6 +52,11 @@ fill_diagnostics(Vim *vim) {
   vim_string_init(&content);
   vim_write_content(vim, &content);
 
+  int source_start_byte_offset;
+  prepend_ti_preload_sources(vim, &content, &source_start_byte_offset);
+
+  int source_end_byte_offset = content.byte_length;
+
   TiDiagnosticList diagnostics;
 
   ti_fill_diagnostics(
@@ -62,24 +68,37 @@ fill_diagnostics(Vim *vim) {
   vim_clear_diagnostics(vim);
 
   for (int index = 0; index < diagnostics.count; index++) {
-    const TiDiagnostic *source = &diagnostics.items[index];
-    VimDiagnostic *destination = &vim->diagnostics.items[index];
+    const TiDiagnostic *source_diagnostic = &diagnostics.items[index];
 
-    destination->start_byte_offset = source->start_byte_offset;
-    destination->end_byte_offset = source->end_byte_offset;
+    if (
+      source_diagnostic->start_byte_offset < source_start_byte_offset ||
+      source_diagnostic->end_byte_offset > source_end_byte_offset
+    ) {
+
+      continue;
+    }
+
+    VimDiagnostic *destination_diagnostic =
+      &vim->diagnostics.items[vim->diagnostics.count];
+
+    destination_diagnostic->start_byte_offset =
+      source_diagnostic->start_byte_offset - source_start_byte_offset;
+
+    destination_diagnostic->end_byte_offset =
+      source_diagnostic->end_byte_offset - source_start_byte_offset;
 
     strncpy(
-      destination->message,
-      source->message,
+      destination_diagnostic->message,
+      source_diagnostic->message,
       VIM_DIAGNOSTIC_MESSAGE_CAPACITY - 1
     );
 
-    destination->message[VIM_DIAGNOSTIC_MESSAGE_CAPACITY - 1] = '\0';
+    destination_diagnostic->message[VIM_DIAGNOSTIC_MESSAGE_CAPACITY - 1] = '\0';
+
+    vim->diagnostics.count++;
   }
 
-  vim->diagnostics.count = diagnostics.count;
-
-  if (diagnostics.count)
+  if (vim->diagnostics.count)
     show_message_c_string(vim, "Diagnostics updated");
   else
     show_message_c_string(vim, "No diagnostics");
@@ -111,13 +130,16 @@ show_hover_or_diagnostic_at_cursor(Vim *vim) {
   vim_string_init(&content);
   vim_write_content(vim, &content);
 
+  int source_byte_offset;
+  prepend_ti_preload_sources(vim, &content, &source_byte_offset);
+
   TiHoverInfo hover_info;
 
   int found =
     ti_find_hover_at_cursor(
       content.bytes,
       content.byte_length,
-      cursor_byte_offset,
+      source_byte_offset + cursor_byte_offset,
       &hover_info
     );
 

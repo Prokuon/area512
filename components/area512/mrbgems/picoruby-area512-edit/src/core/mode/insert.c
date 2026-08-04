@@ -3,6 +3,7 @@
 #include "core/complete/complete_popup.h"
 #include "core/syntax/picoruby/highlight.h"
 #include "core/syntax/picoruby/indent.h"
+#include "core/ti/loader.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -156,9 +157,13 @@ start_completion(Vim *vim) {
     vim_string_init(&content);
     vim_write_content(vim, &content);
 
+    int source_byte_offset;
+    prepend_ti_preload_sources(vim, &content, &source_byte_offset);
+
     TiSuggestionList suggestions;
 
-    int cursor_offset = calculate_completion_cursor_offset(vim);
+    int cursor_offset =
+      source_byte_offset + calculate_completion_cursor_offset(vim);
 
     int suggestion_count =
       ti_fill_suggestions_at_cursor(
