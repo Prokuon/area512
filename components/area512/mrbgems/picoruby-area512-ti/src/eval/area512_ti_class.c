@@ -9,7 +9,7 @@ void
 ti_eval_class(TiContext *context, const pm_class_node_t *class_node) {
   uint16_t name_id;
 
-  if (!ti_convert_constant_id(class_node->name, &name_id)) {
+  if (!ti_convert_constant_id(context, class_node->name, &name_id)) {
     context->failed = 1;
     return;
   }

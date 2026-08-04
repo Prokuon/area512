@@ -33,7 +33,7 @@ set_define_args(
 
     uint16_t name_id;
 
-    if (!ti_convert_constant_id(constant_id, &name_id)) {
+    if (!ti_convert_constant_id(context, constant_id, &name_id)) {
       context->failed = 1;
 
       return;
@@ -47,7 +47,7 @@ void
 ti_eval_def(TiContext *context, const pm_def_node_t *def_node) {
   uint16_t name_id;
 
-  if (!ti_convert_constant_id(def_node->name, &name_id)) {
+  if (!ti_convert_constant_id(context, def_node->name, &name_id)) {
     context->failed = 1;
     return;
   }

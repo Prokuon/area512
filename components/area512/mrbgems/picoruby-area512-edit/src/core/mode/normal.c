@@ -52,16 +52,17 @@ fill_diagnostics(Vim *vim) {
   vim_string_init(&content);
   vim_write_content(vim, &content);
 
-  int source_start_byte_offset;
-  prepend_ti_preload_sources(vim, &content, &source_start_byte_offset);
+  TiLoadedSources loaded_sources;
 
-  int source_end_byte_offset = content.byte_length;
+  if (!load_ti_sources(vim, &content, &loaded_sources)) {
+    vim_string_free(&content);
+    return;
+  }
 
   TiDiagnosticList diagnostics;
 
   ti_fill_diagnostics(
-    content.bytes,
-    content.byte_length,
+    &loaded_sources.list,
     &diagnostics
   );
 
@@ -70,22 +71,14 @@ fill_diagnostics(Vim *vim) {
   for (int index = 0; index < diagnostics.count; index++) {
     const TiDiagnostic *source_diagnostic = &diagnostics.items[index];
 
-    if (
-      source_diagnostic->start_byte_offset < source_start_byte_offset ||
-      source_diagnostic->end_byte_offset > source_end_byte_offset
-    ) {
-
-      continue;
-    }
-
     VimDiagnostic *destination_diagnostic =
       &vim->diagnostics.items[vim->diagnostics.count];
 
     destination_diagnostic->start_byte_offset =
-      source_diagnostic->start_byte_offset - source_start_byte_offset;
+      source_diagnostic->start_byte_offset;
 
     destination_diagnostic->end_byte_offset =
-      source_diagnostic->end_byte_offset - source_start_byte_offset;
+      source_diagnostic->end_byte_offset;
 
     strncpy(
       destination_diagnostic->message,
@@ -103,7 +96,7 @@ fill_diagnostics(Vim *vim) {
   else
     show_message_c_string(vim, "No diagnostics");
 
-  vim_string_free(&content);
+  free_ti_sources(&loaded_sources);
 }
 
 static void
@@ -130,16 +123,19 @@ show_hover_or_diagnostic_at_cursor(Vim *vim) {
   vim_string_init(&content);
   vim_write_content(vim, &content);
 
-  int source_byte_offset;
-  prepend_ti_preload_sources(vim, &content, &source_byte_offset);
+  TiLoadedSources loaded_sources;
+
+  if (!load_ti_sources(vim, &content, &loaded_sources)) {
+    vim_string_free(&content);
+    return;
+  }
 
   TiHoverInfo hover_info;
 
   int found =
     ti_find_hover_at_cursor(
-      content.bytes,
-      content.byte_length,
-      source_byte_offset + cursor_byte_offset,
+      &loaded_sources.list,
+      cursor_byte_offset,
       &hover_info
     );
 
@@ -175,7 +171,7 @@ show_hover_or_diagnostic_at_cursor(Vim *vim) {
     show_message_c_string(vim, "Type information is unavailable");
   }
 
-  vim_string_free(&content);
+  free_ti_sources(&loaded_sources);
 }
 
 static VimStatus

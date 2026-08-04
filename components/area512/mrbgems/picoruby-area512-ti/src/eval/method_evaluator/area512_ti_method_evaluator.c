@@ -344,7 +344,6 @@ make_argument_t_node_index(const TiBuiltinArgument *builtin_argument) {
 
 static void
 set_type_mismatch(
-  TiContext *context,
   const char *class_name,
   const char *method_name,
   const TiBuiltinArgument *builtin_argument,
@@ -356,14 +355,12 @@ set_type_mismatch(
   char actual_type_string[TI_TYPE_STRING_CAPACITY];
 
   ti_type_to_string(
-    context,
     make_argument_t_node_index(builtin_argument),
     expected_type_string,
     sizeof(expected_type_string)
   );
 
   ti_type_to_string(
-    context,
     call_argument->t_node_index,
     actual_type_string,
     sizeof(actual_type_string)
@@ -453,7 +450,6 @@ keyword_name_matches(
 
 static int
 match_argument_type_or_set_mismatch(
-  TiContext *context,
   const char *class_name,
   const char *method_name,
   const TiBuiltinArgument *builtin_argument,
@@ -472,7 +468,6 @@ match_argument_type_or_set_mismatch(
   }
 
   set_type_mismatch(
-    context,
     class_name,
     method_name,
     builtin_argument,
@@ -485,7 +480,6 @@ match_argument_type_or_set_mismatch(
 
 static int
 match_builtin_method(
-  TiContext *context,
   const pm_call_node_t *call_node,
   const char *class_name,
   const char *method_name,
@@ -533,7 +527,6 @@ match_builtin_method(
 
       if (
         !match_argument_type_or_set_mismatch(
-          context,
           class_name,
           method_name,
           builtin_argument,
@@ -569,7 +562,6 @@ match_builtin_method(
 
       if (
         !match_argument_type_or_set_mismatch(
-          context,
           class_name,
           method_name,
           builtin_argument,
@@ -597,7 +589,6 @@ match_builtin_method(
       while (positional_argument_index < rest_positional_end_index) {
         if (
           !match_argument_type_or_set_mismatch(
-            context,
             class_name,
             method_name,
             builtin_argument,
@@ -663,7 +654,6 @@ match_builtin_method(
 
       if (
         !match_argument_type_or_set_mismatch(
-          context,
           class_name,
           method_name,
           builtin_argument,
@@ -697,7 +687,6 @@ match_builtin_method(
 
         if (
           !match_argument_type_or_set_mismatch(
-            context,
             class_name,
             method_name,
             builtin_argument,
@@ -782,7 +771,6 @@ evaluate_builtin_method(
 
   if (
     !match_builtin_method(
-      context,
       call_node,
       class_name,
       ti_get_builtin_method_name(builtin_method),
@@ -813,6 +801,7 @@ ti_eval_method(
 
   if (
     !ti_convert_constant_id(
+      context,
       call_node->name,
       &method_name_identifier
     )

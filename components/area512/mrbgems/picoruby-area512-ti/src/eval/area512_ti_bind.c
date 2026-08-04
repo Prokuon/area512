@@ -13,7 +13,7 @@ ti_bind_scalar_assignment(
 
   uint16_t name_id;
 
-  if (!ti_convert_constant_id(constant_id, &name_id)) {
+  if (!ti_convert_constant_id(context, constant_id, &name_id)) {
     context->failed = 1;
     return 0;
   }

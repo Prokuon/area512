@@ -1,12 +1,20 @@
 #include "area512_ti_context.h"
-#include <stdint.h>
+#include "area512_ti_name.h"
 
 int
-ti_convert_constant_id(pm_constant_id_t constant_id, uint16_t *name_id) {
-  if (!name_id || constant_id == 0 || constant_id > UINT16_MAX)
+ti_convert_constant_id(
+  TiContext *context,
+  pm_constant_id_t constant_id,
+  uint16_t *name_id
+) {
+
+  if (!context)
     return 0;
 
-  *name_id = (uint16_t)constant_id;
+  if (!ti_intern_constant(context->parser, constant_id, name_id)) {
+    context->failed = 1;
+    return 0;
+  }
 
   return 1;
 }

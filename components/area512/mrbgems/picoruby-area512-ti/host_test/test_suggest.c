@@ -6,10 +6,17 @@ static TiSuggestionList
 suggest_source(const char *source) {
   TiSuggestionList suggestions;
   int source_length = (int)strlen(source);
+  TiSource source_item = {
+    .source = source,
+    .source_byte_length = source_length,
+  };
+  TiSourceList sources = {
+    .items = &source_item,
+    .count = 1,
+  };
 
   ti_fill_suggestions_at_cursor(
-    source,
-    source_length,
+    &sources,
     source_length,
     &suggestions
   );

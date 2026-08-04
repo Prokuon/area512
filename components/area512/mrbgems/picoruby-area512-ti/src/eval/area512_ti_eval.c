@@ -8,6 +8,7 @@
 #include "area512_ti_eval_handlers.h"
 #include "area512_ti_ifunless.h"
 #include "area512_ti_method_evaluator.h"
+#include "area512_ti_name.h"
 #include "area512_ti_return.h"
 #include "area512_ti_square_bracket.h"
 #include "area512_ti_t.h"
@@ -109,16 +110,19 @@ ti_eval_expression(TiContext *context, const pm_node_t *node, int depth) {
 
   case PM_LOCAL_VARIABLE_READ_NODE:
     return ti_handle_identifier(
+      context,
       ((const pm_local_variable_read_node_t *)node)->name
     );
 
   case PM_INSTANCE_VARIABLE_READ_NODE:
     return ti_handle_identifier(
+      context,
       ((const pm_instance_variable_read_node_t *)node)->name
     );
 
   case PM_GLOBAL_VARIABLE_READ_NODE:
     return ti_handle_identifier(
+      context,
       ((const pm_global_variable_read_node_t *)node)->name
     );
 
@@ -205,7 +209,7 @@ eval_on_visit(const pm_node_t *node, void *data) {
     const pm_class_node_t *class_node = (const pm_class_node_t *)node;
     uint16_t class_name_id;
 
-    if (!ti_convert_constant_id(class_node->name, &class_name_id)) {
+    if (!ti_convert_constant_id(context, class_node->name, &class_name_id)) {
       context->failed = 1;
       return false;
     }
@@ -233,22 +237,104 @@ eval_on_visit(const pm_node_t *node, void *data) {
   return !context->failed;
 }
 
-int
-ti_evaluation_loop(TiContext *context, const pm_node_t *root) {
+static int
+ti_initialize_evaluation(void) {
   ti_reset_arena();
 
-  if (!ti_initialize_t() || !ti_initialize_t_frame() ||
-      !ti_initialize_define_infos()) {
+  if (
+    !ti_initialize_names() ||
+    !ti_initialize_t() ||
+    !ti_initialize_t_frame() ||
+    !ti_initialize_define_infos()
+  ) {
     return 0;
   }
 
-  context->round = 1;
-  pm_visit_node(root, eval_on_visit, context);
+  return 1;
+}
 
-  if (!context->failed) {
-    context->round = 2;
-    pm_visit_node(root, eval_on_visit, context);
+static int
+ti_evaluate_source(
+  const TiSource *source,
+  int round,
+  TiDiagnosticList *diagnostics
+) {
+
+  if (
+    !source || source->source_byte_length < 0 ||
+    (!source->source && source->source_byte_length > 0)
+  ) {
+    return 0;
   }
 
-  return !context->failed;
+  const char *source_bytes = "";
+
+  if (source->source)
+    source_bytes = source->source;
+
+  pm_parser_t parser;
+
+  pm_parser_init(
+    &parser,
+    (const uint8_t *)source_bytes,
+    (size_t)source->source_byte_length,
+    NULL
+  );
+
+  pm_node_t *root = pm_parse(&parser);
+
+  if (!root) {
+    pm_parser_free(&parser);
+    return 0;
+  }
+
+  TiContext context = {
+    .parser = &parser,
+    .source = (const uint8_t *)source_bytes,
+    .source_length = (size_t)source->source_byte_length,
+    .round = round,
+    .diagnostics = diagnostics,
+  };
+
+  pm_visit_node(root, eval_on_visit, &context);
+
+  pm_node_destroy(&parser, root);
+  pm_parser_free(&parser);
+
+  return !context.failed;
+}
+
+int
+ti_evaluate_sources(
+  const TiSourceList *sources,
+  TiDiagnosticList *diagnostics
+) {
+
+  if (
+    !sources || !sources->items || sources->count <= 0 ||
+    !ti_initialize_evaluation()
+  ) {
+    return 0;
+  }
+
+  for (int round = 1; round <= 2; round++) {
+    for (int source_index = 0; source_index < sources->count; source_index++) {
+      TiDiagnosticList *source_diagnostics = NULL;
+
+      if (round == 2 && source_index == sources->count - 1)
+        source_diagnostics = diagnostics;
+
+      if (
+        !ti_evaluate_source(
+          &sources->items[source_index],
+          round,
+          source_diagnostics
+        )
+      ) {
+        return 0;
+      }
+    }
+  }
+
+  return !ti_did_arena_overflow();
 }

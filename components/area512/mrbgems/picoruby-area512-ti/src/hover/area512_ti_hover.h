@@ -1,6 +1,8 @@
 #ifndef AREA512_TI_HOVER_H
 #define AREA512_TI_HOVER_H
 
+#include "area512_ti_source.h"
+
 #define TI_TYPE_NAME_CAPACITY 96
 #define TI_VARIABLE_NAME_CAPACITY 64
 
@@ -15,8 +17,7 @@ typedef struct {
 } TiHoverInfo;
 
 int ti_find_hover_at_cursor(
-  const char *source,
-  int source_byte_length,
+  const TiSourceList *sources,
   int cursor_byte_offset,
   TiHoverInfo *out
 );

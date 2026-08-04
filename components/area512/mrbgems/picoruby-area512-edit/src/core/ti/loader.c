@@ -1,5 +1,6 @@
 #include "core/ti/loader.h"
 #include "port/area512_editor_file.h"
+#include <stdlib.h>
 #include <string.h>
 
 #define TI_LOADER_FILENAME ".ti-loader.manifest"
@@ -52,13 +53,13 @@ append_ti_preload_source(
   int loader_directory_byte_length,
   const char *preload_path,
   int preload_path_byte_length,
-  VimString *combined_source
+  TiLoadedSources *loaded_sources
 ) {
 
   VimString resolved_preload_path;
   vim_string_init(&resolved_preload_path);
 
-  int appended =
+  int loaded =
     build_ti_preload_path(
       &vim->filepath,
       loader_directory_byte_length,
@@ -68,7 +69,7 @@ append_ti_preload_source(
     );
 
   if (
-    appended &&
+    loaded &&
     resolved_preload_path.byte_length == vim->filepath.byte_length &&
     memcmp(
       resolved_preload_path.bytes,
@@ -76,45 +77,59 @@ append_ti_preload_source(
       (size_t)vim->filepath.byte_length
     ) == 0
   ) {
-
     vim_string_free(&resolved_preload_path);
     return 1;
   }
 
-  VimString preload_source;
-  vim_string_init(&preload_source);
+  VimString *source_content =
+    &loaded_sources->contents[loaded_sources->list.count];
+
+  vim_string_init(source_content);
 
   if (
-    appended &&
+    loaded &&
     load_edit_file(
       resolved_preload_path.bytes,
       resolved_preload_path.byte_length,
-      &preload_source
+      source_content
     )
   ) {
-    appended =
-      vim_string_append(
-        combined_source,
-        preload_source.bytes,
-        preload_source.byte_length
-      ) &&
-      vim_string_append_byte(combined_source, '\n');
+    loaded_sources->list.count++;
   }
 
-  vim_string_free(&preload_source);
   vim_string_free(&resolved_preload_path);
 
-  return appended;
+  return loaded;
+}
+
+void
+free_ti_sources(TiLoadedSources *loaded_sources) {
+  if (!loaded_sources)
+    return;
+
+  for (
+    int source_index = 0;
+    source_index < loaded_sources->list.count;
+    source_index++
+  ) {
+
+    vim_string_free(&loaded_sources->contents[source_index]);
+  }
+
+  free(loaded_sources->contents);
+  free(loaded_sources->sources);
+
+  memset(loaded_sources, 0, sizeof(*loaded_sources));
 }
 
 int
-prepend_ti_preload_sources(
+load_ti_sources(
   const Vim *vim,
   VimString *content,
-  int *source_byte_offset
+  TiLoadedSources *loaded_sources
 ) {
 
-  *source_byte_offset = 0;
+  memset(loaded_sources, 0, sizeof(*loaded_sources));
 
   VimString loader_path;
   vim_string_init(&loader_path);
@@ -130,31 +145,46 @@ prepend_ti_preload_sources(
   ) {
 
     vim_string_free(&loader_path);
-
     return 0;
   }
 
   VimString loader_manifest;
   vim_string_init(&loader_manifest);
 
-  if (
-    !load_edit_file(
-      loader_path.bytes,
-      loader_path.byte_length,
-      &loader_manifest
-    )
-  ) {
+  load_edit_file(
+    loader_path.bytes,
+    loader_path.byte_length,
+    &loader_manifest
+  );
 
+  int source_capacity = 1;
+
+  for (int index = 0; index < loader_manifest.byte_length; index++)
+    if (loader_manifest.bytes[index] == '\n')
+      source_capacity++;
+
+  if (
+    loader_manifest.byte_length > 0 &&
+    loader_manifest.bytes[loader_manifest.byte_length - 1] != '\n'
+  ) {
+    source_capacity++;
+  }
+
+  loaded_sources->contents =
+    calloc((size_t)source_capacity, sizeof(VimString));
+
+  loaded_sources->sources =
+    calloc((size_t)source_capacity, sizeof(TiSource));
+
+  if (!loaded_sources->contents || !loaded_sources->sources) {
+    free_ti_sources(loaded_sources);
     vim_string_free(&loader_manifest);
     vim_string_free(&loader_path);
 
-    return 1;
+    return 0;
   }
 
-  VimString combined_source;
-  vim_string_init(&combined_source);
-
-  int appended = 1;
+  int loaded = 1;
   int line_start_byte_offset = 0;
 
   while (line_start_byte_offset < loader_manifest.byte_length) {
@@ -164,7 +194,6 @@ prepend_ti_preload_sources(
       line_end_byte_offset < loader_manifest.byte_length &&
       loader_manifest.bytes[line_end_byte_offset] != '\n'
     ) {
-
       line_end_byte_offset++;
     }
 
@@ -179,16 +208,16 @@ prepend_ti_preload_sources(
       line_end_byte_offset - line_start_byte_offset;
 
     if (preload_path_byte_length > 0) {
-      appended =
+      loaded =
         append_ti_preload_source(
           vim,
           loader_directory_byte_length,
           loader_manifest.bytes + line_start_byte_offset,
           preload_path_byte_length,
-          &combined_source
+          loaded_sources
         );
 
-      if (!appended)
+      if (!loaded)
         break;
     }
 
@@ -196,34 +225,37 @@ prepend_ti_preload_sources(
       line_end_byte_offset < loader_manifest.byte_length &&
       loader_manifest.bytes[line_end_byte_offset] != '\n'
     ) {
-
       line_end_byte_offset++;
     }
 
     line_start_byte_offset = line_end_byte_offset + 1;
   }
 
-  if (appended) {
-    *source_byte_offset = combined_source.byte_length;
+  if (loaded) {
+    loaded_sources->contents[loaded_sources->list.count++] = *content;
+    vim_string_init(content);
 
-    appended =
-      vim_string_append(
-        &combined_source,
-        content->bytes,
-        content->byte_length
-      );
-  }
+    for (
+      int source_index = 0;
+      source_index < loaded_sources->list.count;
+      source_index++
+    ) {
 
-  if (appended) {
-    vim_string_free(content);
-    *content = combined_source;
+      loaded_sources->sources[source_index].source =
+        loaded_sources->contents[source_index].bytes;
+
+      loaded_sources->sources[source_index].source_byte_length =
+        loaded_sources->contents[source_index].byte_length;
+    }
+
+    loaded_sources->list.items = loaded_sources->sources;
+
   } else {
-    vim_string_free(&combined_source);
-    *source_byte_offset = 0;
+    free_ti_sources(loaded_sources);
   }
 
   vim_string_free(&loader_manifest);
   vim_string_free(&loader_path);
 
-  return appended;
+  return loaded;
 }

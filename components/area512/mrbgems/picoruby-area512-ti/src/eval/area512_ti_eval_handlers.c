@@ -5,10 +5,10 @@
 #include "area512_ti_t_frame.h"
 
 uint16_t
-ti_handle_identifier(pm_constant_id_t constant_id) {
+ti_handle_identifier(TiContext *context, pm_constant_id_t constant_id) {
   uint16_t name_id;
 
-  if (!ti_convert_constant_id(constant_id, &name_id))
+  if (!ti_convert_constant_id(context, constant_id, &name_id))
     return 0;
 
   return ti_get_value_t(name_id);
@@ -32,7 +32,7 @@ ti_handle_const_evaluation(
   }
 
   uint16_t name_id;
-  if (!ti_convert_constant_id(constant_read->name, &name_id))
+  if (!ti_convert_constant_id(context, constant_read->name, &name_id))
     return 0;
 
   uint8_t user_class_id = ti_get_defined_class_id(name_id);

@@ -16,14 +16,36 @@ has_suggestion(const TiSuggestionList *suggestions, const char *contents) {
   return 0;
 }
 
+static TiSourceList
+source_list_for(const char *source, TiSource *source_item) {
+  source_item->source = source;
+  source_item->source_byte_length = (int)strlen(source);
+
+  TiSourceList sources = {
+    .items = source_item,
+    .count = 1,
+  };
+
+  return sources;
+}
+
+static int
+find_hover(const char *source, int cursor_byte_offset, TiHoverInfo *hover_info) {
+  TiSource source_item;
+  TiSourceList sources = source_list_for(source, &source_item);
+
+  return ti_find_hover_at_cursor(&sources, cursor_byte_offset, hover_info);
+}
+
 static TiSuggestionList
 suggest_source(const char *source) {
   TiSuggestionList suggestions;
   int source_length = (int)strlen(source);
+  TiSource source_item;
+  TiSourceList sources = source_list_for(source, &source_item);
 
   ti_fill_suggestions_at_cursor(
-    source,
-    source_length,
+    &sources,
     source_length,
     &suggestions
   );
@@ -34,10 +56,11 @@ suggest_source(const char *source) {
 static TiDiagnosticList
 diagnose_source(const char *source) {
   TiDiagnosticList diagnostics;
+  TiSource source_item;
+  TiSourceList sources = source_list_for(source, &source_item);
 
   ti_fill_diagnostics(
-    source,
-    (int)strlen(source),
+    &sources,
     &diagnostics
   );
 
@@ -228,9 +251,8 @@ test_type_at_cursor(void) {
   assert(target);
 
   TiHoverInfo hover_info;
-  int found = ti_find_hover_at_cursor(
+  int found = find_hover(
     source,
-    (int)strlen(source),
     (int)(target - source),
     &hover_info
   );
@@ -248,9 +270,8 @@ test_union_type_at_cursor(void) {
   assert(target);
 
   TiHoverInfo hover_info;
-  assert(ti_find_hover_at_cursor(
+  assert(find_hover(
     source,
-    (int)strlen(source),
     (int)(target - source),
     &hover_info
   ));
@@ -264,9 +285,8 @@ test_builtin_method_at_cursor(void) {
   TiHoverInfo hover_info;
 
   assert(target);
-  assert(ti_find_hover_at_cursor(
+  assert(find_hover(
     source,
-    (int)strlen(source),
     (int)(target - source),
     &hover_info
   ));
@@ -283,9 +303,8 @@ test_defined_method_at_cursor(void) {
   TiHoverInfo hover_info;
 
   assert(target);
-  assert(ti_find_hover_at_cursor(
+  assert(find_hover(
     source,
-    (int)strlen(source),
     (int)(target - source),
     &hover_info
   ));
@@ -300,6 +319,35 @@ test_forward_definition(void) {
   TiSuggestionList suggestions =
     suggest_source("x = my_method()\ndef my_method() = \"x\"\nx.sp");
   assert(has_suggestion(&suggestions, "split"));
+}
+
+static void
+test_preload_source_definition(void) {
+  const char *preload_source = "def answer() = 1";
+  const char *source = "answer().";
+  TiSource source_items[] = {
+    {
+      .source = preload_source,
+      .source_byte_length = (int)strlen(preload_source),
+    },
+    {
+      .source = source,
+      .source_byte_length = (int)strlen(source),
+    },
+  };
+  TiSourceList sources = {
+    .items = source_items,
+    .count = 2,
+  };
+  TiSuggestionList suggestions;
+
+  ti_fill_suggestions_at_cursor(
+    &sources,
+    source_items[1].source_byte_length,
+    &suggestions
+  );
+
+  assert(has_suggestion(&suggestions, "abs"));
 }
 
 static void
@@ -340,9 +388,10 @@ test_binding_overflow(void) {
   offset += 8;
 
   TiSuggestionList suggestions;
+  TiSource source_item;
+  TiSourceList sources = source_list_for(source, &source_item);
   int count = ti_fill_suggestions_at_cursor(
-    source,
-    (int)offset,
+    &sources,
     (int)offset,
     &suggestions
   );
@@ -374,6 +423,7 @@ main(void) {
   test_builtin_method_at_cursor();
   test_defined_method_at_cursor();
   test_forward_definition();
+  test_preload_source_definition();
   test_union_binding();
   test_unknown_return();
   test_binding_overflow();

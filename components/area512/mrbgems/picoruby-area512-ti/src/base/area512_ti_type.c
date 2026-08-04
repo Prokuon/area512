@@ -1,6 +1,7 @@
 #include "area512_ti_type.h"
 #include "area512_ti_builtin.h"
 #include "area512_ti_define_info.h"
+#include "area512_ti_name.h"
 #include "area512_ti_t.h"
 #include <string.h>
 
@@ -26,7 +27,6 @@ write_text(
 
 static void
 object_class_to_string(
-  const TiContext *context,
   uint8_t class_id,
   char *buffer,
   size_t capacity,
@@ -34,6 +34,7 @@ object_class_to_string(
 ) {
 
   const char *builtin_name = ti_get_builtin_class_name(class_id);
+
   if (builtin_name) {
     write_text(
       buffer,
@@ -58,18 +59,18 @@ object_class_to_string(
     if (current_user_class_index++ != user_class_index)
       continue;
 
-    const pm_constant_t *constant =
-      ti_get_constant(context, define_info->name_id);
+    const TiName *name = ti_get_name(define_info->name_id);
+    const uint8_t *name_bytes = ti_get_name_bytes(name);
 
-    if (!constant)
+    if (!name_bytes)
       break;
 
     write_text(
       buffer,
       capacity,
       length,
-      (const char *)constant->start,
-      constant->length
+      (const char *)name_bytes,
+      name->byte_length
     );
 
     return;
@@ -85,7 +86,6 @@ object_class_to_string(
 }
 
 static void type_to_string(
-  const TiContext *context,
   const T *t,
   char *buffer,
   size_t capacity,
@@ -94,27 +94,25 @@ static void type_to_string(
 
 static void
 array_type_to_string(
-  const TiContext *context,
   const T *t,
   char *buffer,
   size_t capacity,
   size_t *length
 ) {
 
-  object_class_to_string(context, t->object_class_id, buffer, capacity, length);
+  object_class_to_string(t->object_class_id, buffer, capacity, length);
   write_text(buffer, capacity, length, "<", sizeof("<") - 1);
 
   const T *variant = ti_get_t(t->variants);
 
   if (variant)
-    type_to_string(context, variant, buffer, capacity, length);
+    type_to_string(variant, buffer, capacity, length);
 
   write_text(buffer, capacity, length, ">", sizeof(">") - 1);
 }
 
 static void
 type_to_string(
-  const TiContext *context,
   const T *t,
   char *buffer,
   size_t capacity,
@@ -122,16 +120,15 @@ type_to_string(
 ) {
 
   if (t->object_class_id == TI_CLASS_ARRAY && t->variants != 0) {
-    array_type_to_string(context, t, buffer, capacity, length);
+    array_type_to_string(t, buffer, capacity, length);
     return;
   }
 
-  object_class_to_string(context, t->object_class_id, buffer, capacity, length);
+  object_class_to_string(t->object_class_id, buffer, capacity, length);
 }
 
 static void
 union_type_to_string(
-  const TiContext *context,
   const T *first_t_node,
   char *buffer,
   size_t capacity,
@@ -158,7 +155,7 @@ union_type_to_string(
         sizeof(" ") - 1
       );
 
-    type_to_string(context, current, buffer, capacity, length);
+    type_to_string(current, buffer, capacity, length);
   }
 
   write_text(buffer, capacity, length, ">", sizeof(">") - 1);
@@ -166,7 +163,6 @@ union_type_to_string(
 
 int
 ti_type_to_string(
-  const TiContext *context,
   uint16_t t_node_index,
   char *buffer,
   size_t capacity
@@ -184,9 +180,9 @@ ti_type_to_string(
   size_t length = 0;
 
   if (first_t_node->union_next != 0)
-    union_type_to_string(context, first_t_node, buffer, capacity, &length);
+    union_type_to_string(first_t_node, buffer, capacity, &length);
   else
-    type_to_string(context, first_t_node, buffer, capacity, &length);
+    type_to_string(first_t_node, buffer, capacity, &length);
 
   return (int)length;
 }

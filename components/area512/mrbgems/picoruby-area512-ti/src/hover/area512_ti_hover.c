@@ -92,17 +92,17 @@ find_hover_target_on_visit(const pm_node_t *node, void *data) {
 
   search->name = name;
   search->location = location;
-  search->call = PM_NODE_TYPE(node) == PM_CALL_NODE
-                   ? (const pm_call_node_t *)node
-                   : NULL;
+  search->call = NULL;
+
+  if (PM_NODE_TYPE(node) == PM_CALL_NODE)
+    search->call = (const pm_call_node_t *)node;
 
   return false;
 }
 
 int
 ti_find_hover_at_cursor(
-  const char *source,
-  int source_byte_length,
+  const TiSourceList *sources,
   int cursor_byte_offset,
   TiHoverInfo *out
 ) {
@@ -110,8 +110,24 @@ ti_find_hover_at_cursor(
   if (out)
     memset(out, 0, sizeof(*out));
 
-  if (!source || source_byte_length < 0 || !out || cursor_byte_offset < 0 ||
-      cursor_byte_offset > source_byte_length) {
+  if (
+    !sources || !sources->items || sources->count <= 0 || !out
+  ) {
+    return 0;
+  }
+
+  const TiSource *source = &sources->items[sources->count - 1];
+  const char *source_bytes = "";
+
+  if (source->source)
+    source_bytes = source->source;
+
+  if (
+    (!source->source && source->source_byte_length > 0) ||
+    cursor_byte_offset < 0 ||
+    cursor_byte_offset > source->source_byte_length ||
+    !ti_evaluate_sources(sources, NULL)
+  ) {
 
     return 0;
   }
@@ -120,8 +136,8 @@ ti_find_hover_at_cursor(
 
   pm_parser_init(
     &parser,
-    (const uint8_t *)source,
-    (size_t)source_byte_length,
+    (const uint8_t *)source_bytes,
+    (size_t)source->source_byte_length,
     NULL
   );
 
@@ -133,27 +149,28 @@ ti_find_hover_at_cursor(
 
   TiContext context = {
     .parser = &parser,
-    .source = (const uint8_t *)source,
-    .source_length = (size_t)source_byte_length,
+    .source = (const uint8_t *)source_bytes,
+    .source_length = (size_t)source->source_byte_length,
   };
 
   TiHoverSearch search = {
-    .source = (const uint8_t *)source,
+    .source = (const uint8_t *)source_bytes,
     .cursor_byte_offset = cursor_byte_offset,
   };
 
-  if (ti_evaluation_loop(&context, root) && !ti_did_arena_overflow())
+  if (!ti_did_arena_overflow())
     pm_visit_node(root, find_hover_target_on_visit, &search);
 
   if (search.call) {
     TiSuggestionList suggestions;
+    memset(&suggestions, 0, sizeof(suggestions));
 
     int method_name_end_byte_offset =
       (int)(search.call->message_loc.end - context.source);
 
-    ti_fill_suggestions_at_cursor(
-      source,
-      source_byte_length,
+    ti_collect_suggestions_at_cursor(
+      &context,
+      root,
       method_name_end_byte_offset,
       &suggestions
     );
@@ -188,7 +205,7 @@ ti_find_hover_at_cursor(
 
   uint16_t name_id;
   if (!search.call && search.name != 0 &&
-      ti_convert_constant_id(search.name, &name_id)) {
+      ti_convert_constant_id(&context, search.name, &name_id)) {
     const pm_constant_t *constant = ti_get_constant(&context, search.name);
     uint16_t t_node_index = ti_get_value_t(name_id);
 
@@ -196,7 +213,6 @@ ti_find_hover_at_cursor(
       constant &&
       t_node_index != 0 &&
       ti_type_to_string(
-        &context,
         t_node_index,
         out->type_name,
         sizeof(out->type_name)

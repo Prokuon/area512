@@ -4,6 +4,7 @@
 #include "area512_ti_context.h"
 #include "area512_ti_define_info.h"
 #include "area512_ti_eval.h"
+#include "area512_ti_name.h"
 #include "area512_ti_t.h"
 #include "area512_ti_type.h"
 #include <stddef.h>
@@ -45,7 +46,11 @@ find_suggest_prefix(
     start--;
 
   *has_receiver = start > 0 && context->source[start - 1] == '.';
-  *dot_offset = *has_receiver ? start - 1 : start;
+  *dot_offset = start;
+
+  if (*has_receiver)
+    *dot_offset = start - 1;
+
   *prefix = context->source + start;
   *prefix_length = cursor - start;
 
@@ -165,19 +170,26 @@ append_builtin_suggestions(
     suggestion->contents = name;
     suggestion->contents_length = (int)strlen(name);
 
-    suggestion->class_name =
-      show_class_name ? ti_get_builtin_class_name(class_id) : NULL;
+    suggestion->class_name = NULL;
+
+    if (show_class_name)
+      suggestion->class_name = ti_get_builtin_class_name(class_id);
   }
 }
 
 static char *
-copy_constant_to_arena(const pm_constant_t *constant) {
-  char *copy = ti_allocate_from_arena(constant->length + 1);
+copy_name_to_arena(const TiName *name) {
+  const uint8_t *bytes = ti_get_name_bytes(name);
+
+  if (!bytes)
+    return NULL;
+
+  char *copy = ti_allocate_from_arena((size_t)name->byte_length + 1);
   if (!copy)
     return NULL;
 
-  memcpy(copy, constant->start, constant->length);
-  copy[constant->length] = '\0';
+  memcpy(copy, bytes, name->byte_length);
+  copy[name->byte_length] = '\0';
 
   return copy;
 }
@@ -250,38 +262,37 @@ append_defined_class_suggestions(
     if (!define_info || !define_info->is_class)
       continue;
 
-    const pm_constant_t *name = ti_get_constant(context, define_info->name_id);
+    const TiName *name = ti_get_name(define_info->name_id);
+    const uint8_t *name_bytes = ti_get_name_bytes(name);
 
     if (
-      !name ||
-      !matches_prefix(name->start, name->length, prefix, prefix_length)
+      !name_bytes ||
+      !matches_prefix(name_bytes, name->byte_length, prefix, prefix_length)
     ) {
       continue;
     }
 
-    char *contents = copy_constant_to_arena(name);
+    char *contents = copy_name_to_arena(name);
 
     if (!contents) {
       context->failed = 1;
       return;
     }
 
-    append_class_suggestion(contents, name->length, out);
+    append_class_suggestion(contents, name->byte_length, out);
   }
 }
 
 static char *
 make_signature_content(
-  TiContext *context,
   const TiDefineInfo *define_info,
-  const pm_constant_t *name
+  const TiName *name
 ) {
 
   char return_type[TI_TYPE_STRING_CAPACITY];
 
   size_t return_type_length =
     (size_t)ti_type_to_string(
-      context,
       define_info->return_t_node_index,
       return_type,
       sizeof(return_type)
@@ -292,14 +303,14 @@ make_signature_content(
     return_type_length = sizeof("untyped") - 1;
   }
 
-  size_t length = name->length + 2;
+  size_t length = name->byte_length + 2;
 
   for (int index = 0; index < define_info->define_arg_count; index++) {
-    const pm_constant_t *define_arg =
-      ti_get_constant(context, define_info->define_arg_name_ids[index]);
+    const TiName *define_arg =
+      ti_get_name(define_info->define_arg_name_ids[index]);
 
     if (define_arg)
-      length += define_arg->length;
+      length += define_arg->byte_length;
 
     if (index > 0)
       length += 2;
@@ -311,14 +322,18 @@ make_signature_content(
   if (!detail)
     return NULL;
 
+  const uint8_t *name_bytes = ti_get_name_bytes(name);
+  if (!name_bytes)
+    return NULL;
+
   size_t offset = 0;
-  memcpy(detail + offset, name->start, name->length);
-  offset += name->length;
+  memcpy(detail + offset, name_bytes, name->byte_length);
+  offset += name->byte_length;
   detail[offset++] = '(';
 
   for (int index = 0; index < define_info->define_arg_count; index++) {
-    const pm_constant_t *define_arg =
-      ti_get_constant(context, define_info->define_arg_name_ids[index]);
+    const TiName *define_arg =
+      ti_get_name(define_info->define_arg_name_ids[index]);
 
     if (index > 0) {
       detail[offset++] = ',';
@@ -326,8 +341,13 @@ make_signature_content(
     }
 
     if (define_arg) {
-      memcpy(detail + offset, define_arg->start, define_arg->length);
-      offset += define_arg->length;
+      const uint8_t *define_arg_bytes = ti_get_name_bytes(define_arg);
+
+      if (!define_arg_bytes)
+        return NULL;
+
+      memcpy(detail + offset, define_arg_bytes, define_arg->byte_length);
+      offset += define_arg->byte_length;
     }
   }
 
@@ -365,17 +385,18 @@ append_define_info_suggestions_for_owner(
       continue;
     }
 
-    const pm_constant_t *name = ti_get_constant(context, define_info->name_id);
+    const TiName *name = ti_get_name(define_info->name_id);
+    const uint8_t *name_bytes = ti_get_name_bytes(name);
 
     if (
-      !name ||
-      !matches_prefix(name->start, name->length, prefix, prefix_length)
+      !name_bytes ||
+      !matches_prefix(name_bytes, name->byte_length, prefix, prefix_length)
     ) {
       continue;
     }
 
-    char *contents = copy_constant_to_arena(name);
-    char *detail = make_signature_content(context, define_info, name);
+    char *contents = copy_name_to_arena(name);
+    char *detail = make_signature_content(define_info, name);
 
     if (!contents || !detail) {
       context->failed = 1;
@@ -389,7 +410,7 @@ append_define_info_suggestions_for_owner(
     suggestion->detail = detail;
     suggestion->document = "";
     suggestion->contents = contents;
-    suggestion->contents_length = (int)name->length;
+    suggestion->contents_length = (int)name->byte_length;
     suggestion->class_name = NULL;
   }
 }
@@ -428,8 +449,8 @@ append_define_info_suggestions(
   }
 }
 
-static int
-collect_suggestions(
+int
+ti_collect_suggestions_at_cursor(
   TiContext *context,
   const pm_node_t *root,
   int cursor_byte_offset,
@@ -478,7 +499,13 @@ collect_suggestions(
     if (class_search.target) {
       uint16_t class_name_id;
 
-      if (ti_convert_constant_id(class_search.target->name, &class_name_id)) {
+      if (
+        ti_convert_constant_id(
+          context,
+          class_search.target->name,
+          &class_name_id
+        )
+      ) {
 
         uint8_t class_id = ti_get_defined_class_id(class_name_id);
 
@@ -576,8 +603,7 @@ collect_suggestions(
 
 int
 ti_fill_suggestions_at_cursor(
-  const char *source,
-  int source_byte_length,
+  const TiSourceList *sources,
   int cursor_byte_offset,
   TiSuggestionList *out
 ) {
@@ -585,8 +611,24 @@ ti_fill_suggestions_at_cursor(
   if (out)
     memset(out, 0, sizeof(*out));
 
-  if (!source || source_byte_length < 0 || !out || cursor_byte_offset < 0 ||
-      cursor_byte_offset > source_byte_length) {
+  if (
+    !sources || !sources->items || sources->count <= 0 || !out
+  ) {
+    return 0;
+  }
+
+  const TiSource *source = &sources->items[sources->count - 1];
+  const char *source_bytes = "";
+
+  if (source->source)
+    source_bytes = source->source;
+
+  if (
+    (!source->source && source->source_byte_length > 0) ||
+    cursor_byte_offset < 0 ||
+    cursor_byte_offset > source->source_byte_length ||
+    !ti_evaluate_sources(sources, NULL)
+  ) {
 
     return 0;
   }
@@ -595,8 +637,8 @@ ti_fill_suggestions_at_cursor(
 
   pm_parser_init(
     &parser,
-    (const uint8_t *)source,
-    (size_t)source_byte_length,
+    (const uint8_t *)source_bytes,
+    (size_t)source->source_byte_length,
     NULL
   );
 
@@ -609,12 +651,12 @@ ti_fill_suggestions_at_cursor(
 
   TiContext context = {
     .parser = &parser,
-    .source = (const uint8_t *)source,
-    .source_length = (size_t)source_byte_length,
+    .source = (const uint8_t *)source_bytes,
+    .source_length = (size_t)source->source_byte_length,
   };
 
-  if (ti_evaluation_loop(&context, root) && !ti_did_arena_overflow()) {
-    collect_suggestions(&context, root, cursor_byte_offset, out);
+  if (!ti_did_arena_overflow()) {
+    ti_collect_suggestions_at_cursor(&context, root, cursor_byte_offset, out);
   }
 
   pm_node_destroy(&parser, root);

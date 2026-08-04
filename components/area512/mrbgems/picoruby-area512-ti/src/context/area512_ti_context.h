@@ -17,7 +17,11 @@ typedef struct TiContext {
   TiDiagnosticList *diagnostics;
 } TiContext;
 
-int ti_convert_constant_id(pm_constant_id_t constant_id, uint16_t *name_id);
+int ti_convert_constant_id(
+  TiContext *context,
+  pm_constant_id_t constant_id,
+  uint16_t *name_id
+);
 const pm_constant_t *
 ti_get_constant(const TiContext *context, pm_constant_id_t constant_id);
 uint16_t ti_calculate_row(const TiContext *context, const uint8_t *location);
