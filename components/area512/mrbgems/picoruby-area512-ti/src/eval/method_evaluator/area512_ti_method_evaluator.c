@@ -22,6 +22,8 @@ typedef struct {
   TiCallArgument keyword_arguments[TI_CALL_ARGUMENT_CAPACITY];
   int positional_argument_count;
   int keyword_argument_count;
+  int has_positional_splat;
+  int has_keyword_splat;
 } TiCallArguments;
 
 typedef struct {
@@ -140,6 +142,11 @@ collect_keyword_arguments(
     const pm_node_t *keyword_argument_node =
       keyword_hash_node->elements.nodes[keyword_argument_index];
 
+    if (PM_NODE_TYPE(keyword_argument_node) == PM_ASSOC_SPLAT_NODE) {
+      call_arguments->has_keyword_splat = 1;
+      continue;
+    }
+
     if (PM_NODE_TYPE(keyword_argument_node) == PM_ASSOC_NODE) {
       const pm_node_t *keyword_name_node =
         ((const pm_assoc_node_t *)keyword_argument_node)->key;
@@ -215,6 +222,11 @@ collect_call_arguments(
 
     const pm_node_t *call_argument_node =
       call_node->arguments->arguments.nodes[call_argument_index];
+
+    if (PM_NODE_TYPE(call_argument_node) == PM_SPLAT_NODE) {
+      call_arguments->has_positional_splat = 1;
+      continue;
+    }
 
     if (PM_NODE_TYPE(call_argument_node) == PM_KEYWORD_HASH_NODE) {
       collect_keyword_arguments(
@@ -332,7 +344,6 @@ make_argument_t_node_index(const TiBuiltinArgument *builtin_argument) {
 
 static void
 set_type_mismatch(
-  TiContext *context,
   const char *class_name,
   const char *method_name,
   const TiBuiltinArgument *builtin_argument,
@@ -344,14 +355,12 @@ set_type_mismatch(
   char actual_type_string[TI_TYPE_STRING_CAPACITY];
 
   ti_type_to_string(
-    context,
     make_argument_t_node_index(builtin_argument),
     expected_type_string,
     sizeof(expected_type_string)
   );
 
   ti_type_to_string(
-    context,
     call_argument->t_node_index,
     actual_type_string,
     sizeof(actual_type_string)
@@ -441,7 +450,6 @@ keyword_name_matches(
 
 static int
 match_argument_type_or_set_mismatch(
-  TiContext *context,
   const char *class_name,
   const char *method_name,
   const TiBuiltinArgument *builtin_argument,
@@ -460,7 +468,6 @@ match_argument_type_or_set_mismatch(
   }
 
   set_type_mismatch(
-    context,
     class_name,
     method_name,
     builtin_argument,
@@ -473,7 +480,6 @@ match_argument_type_or_set_mismatch(
 
 static int
 match_builtin_method(
-  TiContext *context,
   const pm_call_node_t *call_node,
   const char *class_name,
   const char *method_name,
@@ -505,6 +511,9 @@ match_builtin_method(
         call_arguments->positional_argument_count
       ) {
 
+        if (call_arguments->has_positional_splat)
+          break;
+
         set_argument_count_mismatch(
           call_node,
           class_name,
@@ -518,7 +527,6 @@ match_builtin_method(
 
       if (
         !match_argument_type_or_set_mismatch(
-          context,
           class_name,
           method_name,
           builtin_argument,
@@ -554,7 +562,6 @@ match_builtin_method(
 
       if (
         !match_argument_type_or_set_mismatch(
-          context,
           class_name,
           method_name,
           builtin_argument,
@@ -582,7 +589,6 @@ match_builtin_method(
       while (positional_argument_index < rest_positional_end_index) {
         if (
           !match_argument_type_or_set_mismatch(
-            context,
             class_name,
             method_name,
             builtin_argument,
@@ -625,7 +631,8 @@ match_builtin_method(
 
       if (matching_keyword_argument_index < 0) {
         if (
-          builtin_argument->kind == TI_BUILTIN_ARGUMENT_REQUIRED_KEYWORD
+          builtin_argument->kind == TI_BUILTIN_ARGUMENT_REQUIRED_KEYWORD &&
+          !call_arguments->has_keyword_splat
         ) {
 
           set_argument_count_mismatch(
@@ -647,7 +654,6 @@ match_builtin_method(
 
       if (
         !match_argument_type_or_set_mismatch(
-          context,
           class_name,
           method_name,
           builtin_argument,
@@ -681,7 +687,6 @@ match_builtin_method(
 
         if (
           !match_argument_type_or_set_mismatch(
-            context,
             class_name,
             method_name,
             builtin_argument,
@@ -701,7 +706,8 @@ match_builtin_method(
   }
 
   if (
-    positional_argument_index < call_arguments->positional_argument_count
+    positional_argument_index < call_arguments->positional_argument_count &&
+    !call_arguments->has_positional_splat
   ) {
 
     set_argument_count_mismatch(
@@ -715,7 +721,10 @@ match_builtin_method(
     return 0;
   }
 
-  if (!has_rest_keyword_argument) {
+  if (
+    !has_rest_keyword_argument &&
+    !call_arguments->has_keyword_splat
+  ) {
     for (
       int keyword_argument_index = 0;
       keyword_argument_index < call_arguments->keyword_argument_count;
@@ -762,7 +771,6 @@ evaluate_builtin_method(
 
   if (
     !match_builtin_method(
-      context,
       call_node,
       class_name,
       ti_get_builtin_method_name(builtin_method),
@@ -793,6 +801,7 @@ ti_eval_method(
 
   if (
     !ti_convert_constant_id(
+      context,
       call_node->name,
       &method_name_identifier
     )
@@ -809,7 +818,7 @@ ti_eval_method(
 
   if (!call_node->receiver) {
     uint16_t defined_return_t_node_index =
-      ti_get_value_t(method_name_identifier);
+      ti_get_method_t(context->current_class_id, method_name_identifier);
 
     if (defined_return_t_node_index != 0)
       return defined_return_t_node_index;
@@ -856,7 +865,10 @@ ti_eval_method(
       );
     }
 
-    return ti_get_value_t(method_name_identifier);
+    return ti_get_method_t(
+      receiver_t_node->object_class_id,
+      method_name_identifier
+    );
   }
 
   const TiBuiltinMethod *builtin_method;

@@ -2,6 +2,7 @@
 #define AREA512_TI_DIAGNOSTIC_H
 
 #include <prism.h>
+#include "area512_ti_source.h"
 
 #define TI_MAX_DIAGNOSTICS 64
 #define TI_DIAGNOSTIC_MESSAGE_CAPACITY 256
@@ -26,8 +27,7 @@ void ti_add_diagnostic(
 );
 
 int ti_fill_diagnostics(
-  const char *source,
-  int source_byte_length,
+  const TiSourceList *sources,
   TiDiagnosticList *out
 );
 

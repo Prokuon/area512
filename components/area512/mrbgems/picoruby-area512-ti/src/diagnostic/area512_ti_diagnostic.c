@@ -47,45 +47,17 @@ ti_add_diagnostic(
 
 int
 ti_fill_diagnostics(
-  const char *source,
-  int source_byte_length,
+  const TiSourceList *sources,
   TiDiagnosticList *out
 ) {
 
   if (out)
     memset(out, 0, sizeof(*out));
 
-  if (!source || source_byte_length < 0 || !out)
+  if (!sources || !out)
     return 0;
 
-  pm_parser_t parser;
-
-  pm_parser_init(
-    &parser,
-    (const uint8_t *)source,
-    (size_t)source_byte_length,
-    NULL
-  );
-
-  pm_node_t *root = pm_parse(&parser);
-  if (!root) {
-    pm_parser_free(&parser);
-    return 0;
-  }
-
-  TiContext context = {
-    .parser = &parser,
-    .source = (const uint8_t *)source,
-    .source_length = (size_t)source_byte_length,
-    .diagnostics = out,
-  };
-
-  ti_evaluation_loop(&context, root);
-
-  pm_node_destroy(&parser, root);
-  pm_parser_free(&parser);
-
-  if (context.failed || ti_did_arena_overflow()) {
+  if (!ti_evaluate_sources(sources, out)) {
     memset(out, 0, sizeof(*out));
     return 0;
   }

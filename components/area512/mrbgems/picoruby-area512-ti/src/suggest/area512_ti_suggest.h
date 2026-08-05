@@ -1,6 +1,9 @@
 #ifndef AREA512_TI_SUGGEST_H
 #define AREA512_TI_SUGGEST_H
 
+#include "area512_ti_source.h"
+#include "area512_ti_context.h"
+
 #define TI_MAX_SUGGESTIONS 64
 
 typedef struct {
@@ -16,9 +19,15 @@ typedef struct {
   int count;
 } TiSuggestionList;
 
+int ti_collect_suggestions_at_cursor(
+  TiContext *context,
+  const pm_node_t *root,
+  int cursor_byte_offset,
+  TiSuggestionList *out
+);
+
 int ti_fill_suggestions_at_cursor(
-  const char *source,
-  int source_byte_length,
+  const TiSourceList *sources,
   int cursor_byte_offset,
   TiSuggestionList *out
 );

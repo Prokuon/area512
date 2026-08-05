@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#define TI_ARENA_SIZE (8 * 1024)
+#define TI_ARENA_SIZE (16 * 1024)
 
 void ti_reset_arena(void);
 void *ti_allocate_from_arena(size_t size);

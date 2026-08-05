@@ -2,12 +2,14 @@
 #include "area512_ti_diagnostic.h"
 #include "area512_ti_hover.h"
 #include "core/diagnostic/diagnostic_popup.h"
+#include "core/hover/hover_popup.h"
 #include "core/mode/insert.h"
 #include "core/register/paste.h"
 #include "core/register/repeat.h"
 #include "core/register/search.h"
 #include "core/render/footer.h"
 #include "core/syntax/picoruby/highlight.h"
+#include "core/ti/loader.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -50,44 +52,55 @@ fill_diagnostics(Vim *vim) {
   vim_string_init(&content);
   vim_write_content(vim, &content);
 
+  TiLoadedSources loaded_sources;
+
+  if (!load_ti_sources(vim, &content, &loaded_sources)) {
+    vim_string_free(&content);
+    return;
+  }
+
   TiDiagnosticList diagnostics;
 
   ti_fill_diagnostics(
-    content.bytes,
-    content.byte_length,
+    &loaded_sources.list,
     &diagnostics
   );
 
   vim_clear_diagnostics(vim);
 
   for (int index = 0; index < diagnostics.count; index++) {
-    const TiDiagnostic *source = &diagnostics.items[index];
-    VimDiagnostic *destination = &vim->diagnostics.items[index];
+    const TiDiagnostic *source_diagnostic = &diagnostics.items[index];
 
-    destination->start_byte_offset = source->start_byte_offset;
-    destination->end_byte_offset = source->end_byte_offset;
+    VimDiagnostic *destination_diagnostic =
+      &vim->diagnostics.items[vim->diagnostics.count];
+
+    destination_diagnostic->start_byte_offset =
+      source_diagnostic->start_byte_offset;
+
+    destination_diagnostic->end_byte_offset =
+      source_diagnostic->end_byte_offset;
 
     strncpy(
-      destination->message,
-      source->message,
+      destination_diagnostic->message,
+      source_diagnostic->message,
       VIM_DIAGNOSTIC_MESSAGE_CAPACITY - 1
     );
 
-    destination->message[VIM_DIAGNOSTIC_MESSAGE_CAPACITY - 1] = '\0';
+    destination_diagnostic->message[VIM_DIAGNOSTIC_MESSAGE_CAPACITY - 1] = '\0';
+
+    vim->diagnostics.count++;
   }
 
-  vim->diagnostics.count = diagnostics.count;
-
-  if (diagnostics.count)
+  if (vim->diagnostics.count)
     show_message_c_string(vim, "Diagnostics updated");
   else
     show_message_c_string(vim, "No diagnostics");
 
-  vim_string_free(&content);
+  free_ti_sources(&loaded_sources);
 }
 
 static void
-show_type_or_diagnostic_at_cursor(Vim *vim) {
+show_hover_or_diagnostic_at_cursor(Vim *vim) {
   if (!editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length))
     return;
 
@@ -110,30 +123,55 @@ show_type_or_diagnostic_at_cursor(Vim *vim) {
   vim_string_init(&content);
   vim_write_content(vim, &content);
 
-  TiTypeInfo type_info;
+  TiLoadedSources loaded_sources;
+
+  if (!load_ti_sources(vim, &content, &loaded_sources)) {
+    vim_string_free(&content);
+    return;
+  }
+
+  TiHoverInfo hover_info;
 
   int found =
-    ti_find_type_at_cursor(
-      content.bytes,
-      content.byte_length,
+    ti_find_hover_at_cursor(
+      &loaded_sources.list,
       cursor_byte_offset,
-      &type_info
+      &hover_info
     );
 
   if (found) {
-    VimString message;
+    if (hover_info.is_method) {
+      show_hover_popup(
+        vim,
+        hover_info.method_signature,
+        (int)strlen(hover_info.method_signature),
+        hover_info.method_name_length,
+        hover_info.method_document
+      );
 
-    vim_string_init(&message);
-    vim_string_append_c_string(&message, type_info.variable_name);
-    vim_string_append_c_string(&message, ": ");
-    vim_string_append_c_string(&message, type_info.type_name);
-    show_message(vim, message.bytes, message.byte_length);
-    vim_string_free(&message);
+    } else {
+      VimString message;
+
+      vim_string_init(&message);
+      vim_string_append_c_string(&message, hover_info.variable_name);
+      vim_string_append_c_string(&message, ": ");
+      vim_string_append_c_string(&message, hover_info.type_name);
+
+      show_hover_popup(
+        vim,
+        message.bytes,
+        message.byte_length,
+        (int)strlen(hover_info.variable_name),
+        NULL
+      );
+
+      vim_string_free(&message);
+    }
   } else {
     show_message_c_string(vim, "Type information is unavailable");
   }
 
-  vim_string_free(&content);
+  free_ti_sources(&loaded_sources);
 }
 
 static VimStatus
@@ -474,7 +512,7 @@ handle_normal(
     break;
 
   case 75: // 'K'
-    show_type_or_diagnostic_at_cursor(vim);
+    show_hover_or_diagnostic_at_cursor(vim);
     REDRAW(VIM_REDRAW_FOOTER);
     break;
 
