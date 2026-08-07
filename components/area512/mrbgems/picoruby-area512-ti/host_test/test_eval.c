@@ -234,6 +234,127 @@ test_if_return(void) {
 }
 
 static void
+test_case_return(void) {
+  TiSuggestionList suggestions = suggest_source("def mixed\n"
+                                                "  case value\n"
+                                                "  when 1, 2\n"
+                                                "    1\n"
+                                                "  else\n"
+                                                "    \"x\"\n"
+                                                "  end\n"
+                                                "end\n"
+                                                "mixed().");
+  assert(has_suggestion(&suggestions, "abs"));
+  assert(has_suggestion(&suggestions, "bytes"));
+}
+
+static void
+test_case_without_else_return(void) {
+  const char *source = "result = case value\n"
+                       "when 1\n"
+                       "  1\n"
+                       "end\n"
+                       "result\n";
+  const char *target = strrchr(source, 'r');
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(
+    source,
+    (int)(target - source),
+    &hover_info
+  ));
+  assert(strcmp(hover_info.type_name, "Union<Integer NilClass>") == 0);
+}
+
+static void
+test_case_condition_evaluation(void) {
+  TiDiagnosticList diagnostics =
+    diagnose_source("result = case value\n"
+                    "when \"x\".sub(1, \"a\")\n"
+                    "  1\n"
+                    "end");
+  assert(diagnostics.count == 1);
+
+  TiSuggestionList suggestions =
+    suggest_source("result = case\n"
+                   "when assigned = 1\n"
+                   "  nil\n"
+                   "end\n"
+                   "assigned.");
+  assert(has_suggestion(&suggestions, "abs"));
+}
+
+static void
+test_case_match_return(void) {
+  TiSuggestionList suggestions = suggest_source("def mixed\n"
+                                                "  case value\n"
+                                                "  in Integer\n"
+                                                "    1\n"
+                                                "  else\n"
+                                                "    \"x\"\n"
+                                                "  end\n"
+                                                "end\n"
+                                                "mixed().");
+  assert(has_suggestion(&suggestions, "abs"));
+  assert(has_suggestion(&suggestions, "bytes"));
+}
+
+static void
+test_case_match_without_else_return(void) {
+  const char *source = "result = case value\n"
+                       "in Integer\n"
+                       "  1\n"
+                       "end\n"
+                       "result\n";
+  const char *target = strrchr(source, 'r');
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(
+    source,
+    (int)(target - source),
+    &hover_info
+  ));
+  assert(strcmp(hover_info.type_name, "Integer") == 0);
+}
+
+static void
+test_case_match_pattern_evaluation(void) {
+  TiDiagnosticList diagnostics =
+    diagnose_source("result = case value\n"
+                    "in ^(\"x\".sub(1, \"a\"))\n"
+                    "  1\n"
+                    "else\n"
+                    "  2\n"
+                    "end");
+  assert(diagnostics.count == 1);
+
+  TiSuggestionList suggestions =
+    suggest_source("result = case value\n"
+                   "in ^(assigned = 1)\n"
+                   "  nil\n"
+                   "else\n"
+                   "  nil\n"
+                   "end\n"
+                   "assigned.");
+  assert(has_suggestion(&suggestions, "abs"));
+}
+
+static void
+test_case_match_pattern_variable_has_no_binding(void) {
+  TiSuggestionList suggestions =
+    suggest_source("result = case value\n"
+                   "in captured\n"
+                   "  nil\n"
+                   "else\n"
+                   "  nil\n"
+                   "end\n"
+                   "captured.");
+  assert(suggestions.count == 0);
+}
+
+static void
 test_explicit_return(void) {
   TiSuggestionList suggestions = suggest_source("def mixed\n"
                                                 "  return 1\n"
@@ -417,6 +538,13 @@ main(void) {
   test_definition_return();
   test_definition_binding_return();
   test_if_return();
+  test_case_return();
+  test_case_without_else_return();
+  test_case_condition_evaluation();
+  test_case_match_return();
+  test_case_match_without_else_return();
+  test_case_match_pattern_evaluation();
+  test_case_match_pattern_variable_has_no_binding();
   test_explicit_return();
   test_type_at_cursor();
   test_union_type_at_cursor();
