@@ -2,6 +2,7 @@
 #include "area512_ti_arena.h"
 #include "area512_ti_bind.h"
 #include "area512_ti_builtin.h"
+#include "area512_ti_case.h"
 #include "area512_ti_class.h"
 #include "area512_ti_def.h"
 #include "area512_ti_define_info.h"
@@ -17,6 +18,16 @@
 static uint16_t
 new_builtin_t(uint8_t class_id) {
   return ti_new_t(class_id, 0, 0);
+}
+
+static bool eval_on_visit(const pm_node_t *node, void *data);
+
+void
+ti_eval_node(TiContext *context, const pm_node_t *node) {
+  if (!node || context->failed)
+    return;
+
+  pm_visit_node(node, eval_on_visit, context);
 }
 
 uint16_t
@@ -145,6 +156,16 @@ ti_eval_expression(TiContext *context, const pm_node_t *node, int depth) {
 
   case PM_IF_NODE:
     return ti_eval_ifunless(context, (const pm_if_node_t *)node, depth);
+
+  case PM_CASE_NODE:
+    return ti_eval_case(context, (const pm_case_node_t *)node, depth);
+
+  case PM_CASE_MATCH_NODE:
+    return ti_eval_case_match(
+      context,
+      (const pm_case_match_node_t *)node,
+      depth
+    );
 
   case PM_RETURN_NODE:
     return ti_eval_return(context, (const pm_return_node_t *)node, depth);
