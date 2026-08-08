@@ -4,7 +4,7 @@
 #include "area512_ti_source.h"
 #include "area512_ti_context.h"
 
-#define TI_MAX_SUGGESTIONS 64
+#define TI_SUGGESTION_CAPACITY 64
 
 typedef struct {
   const char *contents;
@@ -15,7 +15,7 @@ typedef struct {
 } TiSuggestion;
 
 typedef struct {
-  TiSuggestion items[TI_MAX_SUGGESTIONS];
+  TiSuggestion items[TI_SUGGESTION_CAPACITY];
   int count;
 } TiSuggestionList;
 

@@ -1,5 +1,6 @@
 #include "area512_ti_t.h"
 #include "area512_ti_arena.h"
+#include "area512_ti_builtin_database.h"
 #include <stddef.h>
 
 static T *t_nodes;
@@ -97,16 +98,16 @@ contains_union_next(uint16_t t_node_index, const T *union_next_t) {
 
 static uint16_t
 append_union_next(uint16_t t_node_index, const T *union_next_t) {
-  uint16_t indexes[TI_T_CAPACITY];
+  uint16_t indexes[TI_UNION_CAPACITY];
   uint16_t count = 0;
 
   while (t_node_index != 0) {
-    if (count >= TI_T_CAPACITY)
-      return 0;
-
     indexes[count++] = t_node_index;
     t_node_index = t_nodes[t_node_index].union_next;
   }
+
+  if (count >= TI_UNION_CAPACITY)
+    return ti_new_t(TI_CLASS_UNTYPED, 0, 0);
 
   uint16_t union_next_t_node_index = new_t_with_next(
     union_next_t->object_class_id,
@@ -143,17 +144,34 @@ ti_make_union(uint16_t first_t_node_index, uint16_t second_t_node_index) {
   if (second_t_node_index == 0 || first_t_node_index == second_t_node_index)
     return first_t_node_index;
 
+  if (t_nodes[first_t_node_index].object_class_id == TI_CLASS_UNTYPED)
+    return first_t_node_index;
+
   uint16_t result = first_t_node_index;
   uint16_t union_next_t_node_index = second_t_node_index;
 
   while (union_next_t_node_index != 0) {
     T union_next_t = t_nodes[union_next_t_node_index];
 
-    if (!contains_union_next(result, &union_next_t)) {
-      result = append_union_next(result, &union_next_t);
+    if (union_next_t.object_class_id == TI_CLASS_UNTYPED)
+      return ti_new_t(
+        TI_CLASS_UNTYPED,
+        0,
+        0
+      );
+
+    if (
+      !contains_union_next(result, &union_next_t)
+    ) {
+
+      result =
+        append_union_next(result, &union_next_t);
 
       if (result == 0)
         return 0;
+
+      if (t_nodes[result].object_class_id == TI_CLASS_UNTYPED)
+        return result;
     }
 
     union_next_t_node_index = union_next_t.union_next;

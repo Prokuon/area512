@@ -4,8 +4,8 @@
 #include <prism.h>
 #include "area512_ti_source.h"
 
-#define TI_MAX_DIAGNOSTICS 64
-#define TI_DIAGNOSTIC_MESSAGE_CAPACITY 256
+#define TI_DIAGNOSTIC_CAPACITY 64
+#define TI_BUILTIN_METHOD_MISMATCH_MESSAGE_CAPACITY 256
 
 typedef struct {
   int start_byte_offset;
@@ -14,7 +14,7 @@ typedef struct {
 } TiDiagnostic;
 
 typedef struct {
-  TiDiagnostic items[TI_MAX_DIAGNOSTICS];
+  TiDiagnostic items[TI_DIAGNOSTIC_CAPACITY];
   int count;
 } TiDiagnosticList;
 

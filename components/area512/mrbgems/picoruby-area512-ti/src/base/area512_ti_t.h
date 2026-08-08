@@ -6,6 +6,7 @@
 #define TI_T_FLAG_DEFINED_CLASS 1U
 #define TI_T_FLAG_STATIC 2U
 #define TI_T_CAPACITY 500
+#define TI_UNION_CAPACITY 5
 
 typedef struct {
   uint8_t object_class_id;

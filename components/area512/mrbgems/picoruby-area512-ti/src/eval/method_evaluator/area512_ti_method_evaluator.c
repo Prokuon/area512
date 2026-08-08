@@ -28,7 +28,7 @@ typedef struct {
 
 typedef struct {
   pm_location_t diagnostic_location;
-  char diagnostic_message[TI_DIAGNOSTIC_MESSAGE_CAPACITY];
+  char diagnostic_message[TI_BUILTIN_METHOD_MISMATCH_MESSAGE_CAPACITY];
 } TiBuiltinMethodMismatch;
 
 static int

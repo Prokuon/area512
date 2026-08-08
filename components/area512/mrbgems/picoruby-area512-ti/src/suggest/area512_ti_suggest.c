@@ -137,9 +137,9 @@ append_builtin_suggestions(
   TiSuggestionList *out
 ) {
 
-  const TiBuiltinMethod *methods[TI_MAX_SUGGESTIONS];
+  const TiBuiltinMethod *methods[TI_SUGGESTION_CAPACITY];
   int initial_count = out->count;
-  if (out->count >= TI_MAX_SUGGESTIONS)
+  if (out->count >= TI_SUGGESTION_CAPACITY)
     return;
 
   int method_count =
@@ -149,7 +149,7 @@ append_builtin_suggestions(
       prefix,
       prefix_length,
       methods,
-      TI_MAX_SUGGESTIONS
+      TI_SUGGESTION_CAPACITY
     );
 
   for (int index = 0; index < method_count; index++) {
@@ -160,7 +160,7 @@ append_builtin_suggestions(
     if (has_suggestion(out, name, signature))
       continue;
 
-    if (out->count >= TI_MAX_SUGGESTIONS ||
+    if (out->count >= TI_SUGGESTION_CAPACITY ||
         out->count - initial_count >= max_additions)
       return;
 
@@ -222,7 +222,7 @@ append_builtin_class_suggestions(
   for (
     uint8_t class_id = 1;
     class_id < ti_builtin_class_count &&
-    out->count < TI_MAX_SUGGESTIONS;
+    out->count < TI_SUGGESTION_CAPACITY;
     class_id++
   ) {
 
@@ -253,7 +253,7 @@ append_defined_class_suggestions(
 
   for (
     int index = 0;
-    index < ti_get_define_info_count() && out->count < TI_MAX_SUGGESTIONS;
+    index < ti_get_define_info_count() && out->count < TI_SUGGESTION_CAPACITY;
     index++
   ) {
 
@@ -371,7 +371,8 @@ append_define_info_suggestions_for_owner(
 ) {
 
   for (int index = 0;
-       index < ti_get_define_info_count() && out->count < TI_MAX_SUGGESTIONS;
+       index < ti_get_define_info_count() &&
+       out->count < TI_SUGGESTION_CAPACITY;
        index++) {
 
     TiDefineInfo *define_info = ti_get_define_info(index);
@@ -527,7 +528,7 @@ ti_collect_suggestions_at_cursor(
       0,
       prefix,
       prefix_length,
-      TI_MAX_SUGGESTIONS,
+      TI_SUGGESTION_CAPACITY,
       out
     );
 
@@ -537,7 +538,7 @@ ti_collect_suggestions_at_cursor(
       0,
       prefix,
       prefix_length,
-      TI_MAX_SUGGESTIONS,
+      TI_SUGGESTION_CAPACITY,
       out
     );
 
@@ -570,7 +571,7 @@ ti_collect_suggestions_at_cursor(
     counted_target_t = ti_get_t(counted_target_t->union_next);
   }
 
-  int max_additions = TI_MAX_SUGGESTIONS / target_count;
+  int max_additions = TI_SUGGESTION_CAPACITY / target_count;
 
   while (target_t) {
     if ((target_t->t_flags & TI_T_FLAG_DEFINED_CLASS) != 0) {

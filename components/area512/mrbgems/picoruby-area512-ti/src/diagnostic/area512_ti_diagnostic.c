@@ -17,7 +17,7 @@ ti_add_diagnostic(
     context->round != 2 ||
     !context->diagnostics ||
     !message ||
-    context->diagnostics->count >= TI_MAX_DIAGNOSTICS
+    context->diagnostics->count >= TI_DIAGNOSTIC_CAPACITY
   ) {
     return;
   }

@@ -1,6 +1,9 @@
+#include "area512_ti_arena.h"
+#include "area512_ti_builtin_database.h"
 #include "area512_ti_diagnostic.h"
 #include "area512_ti_hover.h"
 #include "area512_ti_suggest.h"
+#include "area512_ti_t.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -479,6 +482,45 @@ test_union_binding(void) {
 }
 
 static void
+test_union_capacity(void) {
+  uint8_t class_identifiers[TI_UNION_CAPACITY] = {
+    TI_CLASS_INTEGER,
+    TI_CLASS_FLOAT,
+    TI_CLASS_STRING,
+    TI_CLASS_SYMBOL,
+    TI_CLASS_TRUE,
+  };
+
+  ti_reset_arena();
+  assert(ti_initialize_t());
+
+  uint16_t union_t_node_index = 0;
+
+  for (int index = 0; index < TI_UNION_CAPACITY; index++) {
+    uint16_t t_node_index = ti_new_t(class_identifiers[index], 0, 0);
+    union_t_node_index = ti_make_union(union_t_node_index, t_node_index);
+  }
+
+  int union_member_count = 0;
+
+  for (const T *union_t = ti_get_t(union_t_node_index);
+       union_t;
+       union_t = ti_get_t(union_t->union_next)) {
+    union_member_count++;
+  }
+
+  assert(union_member_count == TI_UNION_CAPACITY);
+
+  uint16_t t_node_index = ti_new_t(TI_CLASS_FALSE, 0, 0);
+  union_t_node_index = ti_make_union(union_t_node_index, t_node_index);
+
+  const T *union_t = ti_get_t(union_t_node_index);
+  assert(union_t);
+  assert(union_t->object_class_id == TI_CLASS_UNTYPED);
+  assert(union_t->union_next == 0);
+}
+
+static void
 test_unknown_return(void) {
   TiSuggestionList suggestions =
     suggest_source("def orphan(x) = x.foo\norphan().");
@@ -553,6 +595,7 @@ main(void) {
   test_forward_definition();
   test_preload_source_definition();
   test_union_binding();
+  test_union_capacity();
   test_unknown_return();
   test_binding_overflow();
 
