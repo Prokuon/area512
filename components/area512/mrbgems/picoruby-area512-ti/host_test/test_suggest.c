@@ -51,9 +51,9 @@ test_string_suggestion(void) {
 
 static void
 test_prefix_suggestion(void) {
-  TiSuggestionList suggestions = suggest_source("s = \"abc\"\ns.su");
+  TiSuggestionList suggestions = suggest_source("s = \"abc\"\ns.spl");
   assert(suggestions.count == 1);
-  assert(strcmp(suggestions.items[0].contents, "sub") == 0);
+  assert(strcmp(suggestions.items[0].contents, "split") == 0);
 }
 
 static void
@@ -151,7 +151,7 @@ test_union_prefix_suggestion(void) {
   TiSuggestionList suggestions = suggest_source("v = 1\nv = \"s\"\nv.s");
   const TiSuggestion *integer_suggestion =
     find_suggestion(&suggestions, "sleep");
-  const TiSuggestion *string_suggestion = find_suggestion(&suggestions, "sub");
+  const TiSuggestion *string_suggestion = find_suggestion(&suggestions, "size");
 
   assert(integer_suggestion);
   assert(string_suggestion);

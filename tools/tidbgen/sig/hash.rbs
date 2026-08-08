@@ -1,28 +1,21 @@
 # Area512 built-in type declaration.
 
-class Hash < Enumerable
-  def <: (Hash other) -> bool
-
-  def <=: (Hash other) -> bool
-
+class Hash
+  include Enumerable
   # Perform equality comparison
   def ==: (untyped other) -> bool
-
-  def >: (Hash other) -> bool
-
-  def >=: (Hash other) -> bool
 
   # Get value for specified key
   def []: (untyped key) -> untyped
 
   # Set value for specified key
-  def []=: (untyped value) -> self
+  def []=: (untyped key, untyped value) -> self
 
   # Remove all elements from hash
   def clear: () -> Hash
 
   # Delete specified key
-  def delete: ((String | Symbol) key) -> (untyped | nil)
+  def delete: (untyped key) -> (untyped | nil)
 
   # Execute block for each key and value
   def each: () { (untyped key, untyped value) -> untyped } -> self
@@ -31,7 +24,7 @@ class Hash < Enumerable
   def empty?: () -> bool
 
   # Check if specified key exists
-  def has_key?: ((String | Symbol) key) -> bool
+  def has_key?: (untyped key) -> bool
 
   # Check if specified value exists
   def has_value?: (untyped value) -> bool
@@ -39,22 +32,19 @@ class Hash < Enumerable
   # Return string representation for debugging
   def inspect: () -> String
 
-  def key: (untyped value) -> (String | Symbol | nil)
+  def key: (untyped value) -> (untyped | nil)
 
   # Return all keys as array
   def keys: () -> Array[untyped]
 
   # Return number of elements in hash
-  def length: () -> bool
+  def length: () -> Integer
 
   # Return new hash merged with another hash
-  def merge: (Hash other) { (Symbol key, untyped old_value, untyped new_value) -> untyped } -> self
+  def merge: (Hash other) -> self
 
   # Merge hash destructively
-  def merge!: (Hash other) { (Symbol key, untyped old_value, untyped new_value) -> untyped } -> self
-
-  # Remove and return first key-value pair
-  def shift: () -> Array
+  def merge!: (Hash other) -> self
 
   # Return self as hash
   def to_h: () -> self

@@ -70,29 +70,29 @@ diagnose_source(const char *source) {
 static void
 test_builtin_argument_type_diagnostic(void) {
   TiDiagnosticList diagnostics =
-    diagnose_source("\"x\".sub(1, \"a\")");
+    diagnose_source("\"x\".tr(1, \"a\")");
 
   assert(diagnostics.count == 1);
   assert(strcmp(
     diagnostics.items[0].message,
-    "type mismatch: expected String, but got Integer for String.sub"
+    "type mismatch: expected String, but got Integer for String.tr"
   ) == 0);
-  assert(diagnostics.items[0].start_byte_offset == 8);
-  assert(diagnostics.items[0].end_byte_offset == 9);
+  assert(diagnostics.items[0].start_byte_offset == 7);
+  assert(diagnostics.items[0].end_byte_offset == 8);
 
   diagnostics =
-    diagnose_source("v = 1\nv = \"x\"\n\"x\".sub(v, \"a\")");
+    diagnose_source("v = 1\nv = \"x\"\n\"x\".tr(v, \"a\")");
   assert(diagnostics.count == 0);
 
   diagnostics =
-    diagnose_source("v = 1\nv = []\n\"x\".sub(v, \"a\")");
+    diagnose_source("v = 1\nv = []\n\"x\".tr(v, \"a\")");
   assert(diagnostics.count == 1);
 }
 
 static void
 test_unknown_argument_has_no_diagnostic(void) {
   TiDiagnosticList diagnostics =
-    diagnose_source("\"x\".sub(unknown, \"a\")");
+    diagnose_source("\"x\".tr(unknown, \"a\")");
 
   assert(diagnostics.count == 0);
 }
@@ -100,7 +100,7 @@ test_unknown_argument_has_no_diagnostic(void) {
 static void
 test_array_and_hash_contents_have_no_diagnostic(void) {
   TiDiagnosticList array_diagnostics =
-    diagnose_source("[1].concat([\"x\"])");
+    diagnose_source("[1] + [\"x\"]");
   TiDiagnosticList hash_diagnostics =
     diagnose_source("{a: 1}.merge({a: \"x\"})");
 
@@ -110,27 +110,27 @@ test_array_and_hash_contents_have_no_diagnostic(void) {
 
 static void
 test_builtin_argument_count_diagnostic(void) {
-  TiDiagnosticList diagnostics = diagnose_source("1.to_s()");
+  TiDiagnosticList diagnostics = diagnose_source("1.to_s(10, 2)");
 
   assert(diagnostics.count == 1);
   assert(strcmp(
     diagnostics.items[0].message,
-    "too few arguments for Integer.to_s"
+    "too many arguments for Integer.to_s"
   ) == 0);
 }
 
 static void
 test_splat_arguments_have_no_argument_count_diagnostic(void) {
   TiDiagnosticList diagnostics =
-    diagnose_source("a = [\"a\", \"b\"]\n\"x\".sub(*a)");
+    diagnose_source("a = [\"a\", \"b\"]\n\"x\".tr(*a)");
   assert(diagnostics.count == 0);
 
   diagnostics =
-    diagnose_source("a = []\n\"x\".sub(\"a\", \"b\", *a)");
+    diagnose_source("a = []\n\"x\".tr(\"a\", \"b\", *a)");
   assert(diagnostics.count == 0);
 
   diagnostics =
-    diagnose_source("a = {}\n\"x\".sub(\"a\", \"b\", **a)");
+    diagnose_source("a = {}\n\"x\".tr(\"a\", \"b\", **a)");
   assert(diagnostics.count == 0);
 }
 
@@ -192,7 +192,7 @@ test_binding_lookup(void) {
 static void
 test_method_chain(void) {
   TiSuggestionList suggestions =
-    suggest_source("s = \"abc\".sub(\"a\", \"b\")\ns.le");
+    suggest_source("s = \"abc\".tr(\"a\", \"b\")\ns.le");
   assert(has_suggestion(&suggestions, "length"));
 }
 
@@ -271,7 +271,7 @@ static void
 test_case_condition_evaluation(void) {
   TiDiagnosticList diagnostics =
     diagnose_source("result = case value\n"
-                    "when \"x\".sub(1, \"a\")\n"
+                    "when \"x\".tr(1, \"a\")\n"
                     "  1\n"
                     "end");
   assert(diagnostics.count == 1);
@@ -323,7 +323,7 @@ static void
 test_case_match_pattern_evaluation(void) {
   TiDiagnosticList diagnostics =
     diagnose_source("result = case value\n"
-                    "in ^(\"x\".sub(1, \"a\"))\n"
+                    "in ^(\"x\".tr(1, \"a\"))\n"
                     "  1\n"
                     "else\n"
                     "  2\n"

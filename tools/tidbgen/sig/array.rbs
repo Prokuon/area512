@@ -1,16 +1,15 @@
 # Area512 built-in type declaration.
 
-class Array < Enumerable
+class Array
+  include Enumerable
   # Set element at specified position
-  def []=: (untyped value) -> self
+  def []=: (Integer index, untyped value) -> untyped
+           | (Integer start, Integer length, untyped value) -> untyped
 
   # Get element at specified position
   def []: (Integer index) -> untyped
 
   def &: (Array other) -> self
-
-  # Repeat array specified number of times and return new array
-  def *: ((Integer | String) count_or_separator) -> (self | String)
 
   # Concatenate arrays
   def +: (Array other) -> Array
@@ -21,10 +20,8 @@ class Array < Enumerable
   # Append element to end
   def push: (untyped object) -> Array
 
-  # Compare arrays. Returns -1 if self < other, 0 if self == other, 1 if self > other
-  def <=>: (untyped other) -> Integer
-
-  def all?: (*untyped patterns) { (untyped element) -> untyped } -> bool
+  def all?: (*untyped patterns) -> bool
+            | (*untyped patterns) { (untyped element) -> untyped } -> bool
 
   # Get element at specified position
   def at: (Integer index) -> untyped
@@ -36,9 +33,6 @@ class Array < Enumerable
   def collect!: () { (untyped element) -> untyped } -> Array[untyped]
 
   def count: () -> Integer
-
-  # Concatenate arrays
-  def concat: (Array other) -> Array
 
   # Delete element at specified position
   def delete_at: (Integer index) -> untyped
@@ -58,9 +52,6 @@ class Array < Enumerable
   # Get first element
   def first: () -> untyped
 
-  # Flatten nested array
-  def flatten: () -> self
-
   # Check if element is included
   def include?: (untyped object) -> bool
 
@@ -76,9 +67,11 @@ class Array < Enumerable
   # Return number of elements in array
   def length: () -> Integer
 
-  def max: () { (untyped left, untyped right) -> untyped } -> untyped
+  def max: () -> untyped
+           | () { (untyped left, untyped right) -> untyped } -> untyped
 
-  def min: () { (untyped left, untyped right) -> untyped } -> untyped
+  def min: () -> untyped
+           | () { (untyped left, untyped right) -> untyped } -> untyped
 
   # Remove and return last element
   def pop: (?Integer count) -> (untyped | self)
@@ -89,16 +82,16 @@ class Array < Enumerable
   # Destructively delete elements for which block returns true
   def reject!: () { (untyped element) -> untyped } -> self
 
-  def replace: (Array other) -> Array
-
   # Remove and return first element
   def shift: (?Integer count) -> (untyped | self)
 
   # Return sorted array
-  def sort: () { (untyped left, untyped right) -> untyped } -> self
+  def sort: () -> self
+            | () { (untyped left, untyped right) -> untyped } -> self
 
   # Sort destructively
-  def sort!: () { (untyped left, untyped right) -> untyped } -> self
+  def sort!: () -> self
+             | () { (untyped left, untyped right) -> untyped } -> self
 
   # Get subarray
   def slice: (untyped index_or_range) -> untyped

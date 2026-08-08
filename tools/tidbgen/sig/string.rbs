@@ -7,9 +7,6 @@ class String
   # Repeat string specified number of times
   def *: (Integer count) -> String
 
-  # Repeat string specified number of times
-  def **: (Integer count) -> String
-
   # Concatenate strings
   def +: (String other) -> String
 
@@ -80,7 +77,7 @@ class String
   def empty?: () -> bool
 
   # Check if ends with specified string
-  def end_with?: (*String suffixes) -> String
+  def end_with?: (String suffix) -> bool
 
   # Get byte value at specified position
   def getbyte: (Integer index) -> (Integer | nil)
@@ -130,11 +127,8 @@ class String
   # Split by delimiter and return array
   def split: (?String separator, ?Integer limit) -> Array[String]
 
-  # Replace the first matching substring
-  def sub: (String pattern, String replacement) -> String
-
   # Check if starts with specified string
-  def start_with?: (*String prefixes) -> bool
+  def start_with?: (String prefix) -> bool
 
   # Return string with leading and trailing whitespace removed
   def strip: () -> String

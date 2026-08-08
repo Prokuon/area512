@@ -10,8 +10,6 @@ module Kernel
   # Output object with newline
   def puts: (*untyped objects) -> nil
 
-  def system: (String command) -> bool
-
   def yield: (*untyped arguments) -> self
 
   # Create Proc object

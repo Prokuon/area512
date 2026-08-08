@@ -1,6 +1,6 @@
 # Area512 built-in type declaration.
 
-class Enumerable
+module Enumerable
   # Execute block for each element and return results as array
   def collect: () { (untyped element) -> untyped } -> Array[untyped]
 

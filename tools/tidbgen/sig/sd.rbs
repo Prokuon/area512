@@ -1,6 +1,6 @@
 # Area512 built-in type declaration.
 
-class SD
+module SD
   # Mount the microSD card; raises RuntimeError when no card is found
   def self.mount: () -> bool
 
