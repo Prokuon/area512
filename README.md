@@ -95,6 +95,24 @@ The world's finest card game. Compete for the high score!
 
 Launch it and you'll get it! That nostalgic game!
 
+### Slide — `/home/tool/slide`
+
+Displays numbered Markdown files as slides. Add files such as `1.md`, `2.md`,
+and `3.md` to `/home/tool/slide`; they are displayed in numeric order.
+
+Supported Markdown syntax:
+
+- `#`, `##`, and `###` headings
+- Lists starting with `-`
+- Inline code enclosed in backticks
+- Ruby code blocks enclosed in `` ```ruby `` and `` ``` ``
+
+| Key | Action |
+| --- | --- |
+| `h` / `l` | Previous / next page |
+| `j` / `k` | Scroll down / up |
+| Esc | Quit |
+
 ### Gallery — `/home/tool/gallery`
 
 A gallery of the built-in Widget components.
