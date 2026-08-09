@@ -736,7 +736,145 @@ cardputer_reset_local_state(void) {
 }
 
 #if defined(AREA512_CARDPUTER_V11)
-// cardputer v1.1
+
+static const gpio_num_t row_pins[3] = {
+    GPIO_NUM_8,
+    GPIO_NUM_9,
+    GPIO_NUM_11,
+};
+
+static const gpio_num_t col_pins[7] = {
+    GPIO_NUM_13,
+    GPIO_NUM_15,
+    GPIO_NUM_3,
+    GPIO_NUM_4,
+    GPIO_NUM_5,
+    GPIO_NUM_6,
+    GPIO_NUM_7,
+};
+
+typedef struct {
+    uint8_t even;
+    uint8_t odd;
+} xmap_t;
+
+static const xmap_t X_map[7] = {
+    {0, 1},
+    {2, 3},
+    {4, 5},
+    {6, 7},
+    {8, 9},
+    {10, 11},
+    {12, 13},
+};
+
+static bool input_is_initialized = false;
+
+void input_init_cardputer(void)
+{
+    gpio_config_t out = {
+        .pin_bit_mask = 0,
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+
+    for (int i = 0; i < 3; i++)
+        out.pin_bit_mask |= (1ULL << row_pins[i]);
+
+    gpio_config(&out);
+
+    for (int i = 0; i < 3; i++)
+        gpio_set_level(row_pins[i], 0);
+
+    gpio_config_t in = {
+        .pin_bit_mask = 0,
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+
+    for (int i = 0; i < 7; i++)
+        in.pin_bit_mask |= (1ULL << col_pins[i]);
+
+    gpio_config(&in);
+
+    input_is_initialized = true;
+}
+
+bool keyboard_init(void)
+{
+    // Initialize the Cardputer v1.1 keyboard matrix GPIO pins.
+    input_init_cardputer();
+    return true;
+}
+
+#define MAX_KEY_CODES 80
+
+void keyboard_poll(void)
+{
+    bool current_scan[MAX_KEY_CODES] = {0};
+
+    // Scan the GPIO keyboard matrix (Cardputer v1.1).
+    for (int i = 0; i < 8; i++) {
+        gpio_set_level(row_pins[0], (i >> 0) & 1);
+        gpio_set_level(row_pins[1], (i >> 1) & 1);
+        gpio_set_level(row_pins[2], (i >> 2) & 1);
+
+        esp_rom_delay_us(5);
+
+        for (int j = 0; j < 7; j++) {
+            // If the pin is HIGH, the key is NOT pressed.
+            if (gpio_get_level(col_pins[j])) {
+                continue;
+            }
+
+            // Calculate the physical row (0 to 3) and column (0 to 13)
+            // of the Cardputer v1.1 keyboard matrix.
+            int y_scan = (i > 3) ? (i - 4) : i;
+            int row = 3 - y_scan;
+
+            int col = (i > 3)
+                    ? X_map[j].even
+                    : X_map[j].odd;
+
+            // Translate (row, col) into the TCA8418 key code expected
+            // by cardputer_lookup_key.
+            uint8_t code = (col / 2) * 10 + 1 + (col % 2) * 4 + row;
+
+            if (code < MAX_KEY_CODES) {
+                current_scan[code] = true;
+            }
+        }
+    }
+
+    // Reset the row levels after scanning.
+    for (int i = 0; i < 3; i++) {
+        gpio_set_level(row_pins[i], 0);
+    }
+
+    // Compare the current state with the previous state and trigger
+    // key events when a key is pressed or released.
+    for (int code = 0; code < MAX_KEY_CODES; code++) {
+        bool pressed = current_scan[code];
+
+        if (pressed != s_cardputer_key_down[code]) {
+            s_cardputer_key_down[code] = pressed;
+
+            if (pressed) {
+                cardputer_set_repeat_key(code);
+            } else {
+                cardputer_clear_repeat_key(code);
+            }
+
+            cardputer_handle_key(code, pressed);
+        }
+    }
+
+    cardputer_update_repeat();
+}
 #else
 
 static bool
