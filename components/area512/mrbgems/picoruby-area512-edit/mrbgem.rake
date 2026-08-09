@@ -8,16 +8,10 @@ MRuby::Gem::Specification.new('picoruby-area512-edit') do |spec|
 
   # Syntax highlighter uses prism.
   spec.add_dependency 'mruby-compiler2'
-  spec.add_dependency 'picoruby-area512-ti'
+  spec.add_dependency 'picoruby-ti'
   spec.add_dependency 'picoruby-io-console'
   spec.cc.include_paths << "#{spec.dir}/../../../area512_hal/include"
   spec.cc.include_paths << "#{MRUBY_ROOT}/mrbgems/mruby-compiler2/lib/prism/include"
-  spec.cc.include_paths << "#{spec.dir}/../picoruby-area512-ti/src/base"
-  spec.cc.include_paths << "#{spec.dir}/../picoruby-area512-ti/src/context"
-  spec.cc.include_paths << "#{spec.dir}/../picoruby-area512-ti/src/diagnostic"
-  spec.cc.include_paths << "#{spec.dir}/../picoruby-area512-ti/src/hover"
-  spec.cc.include_paths << "#{spec.dir}/../picoruby-area512-ti/src/suggest"
-
   # mruby's default source glob is non-recursive; pick up src/ subdirectories.
   spec.cc.include_paths << "#{spec.dir}/src"
   exts = spec.compilers.flat_map { |c| c.source_exts } * ","

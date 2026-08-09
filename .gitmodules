@@ -10,3 +10,6 @@
 [submodule "components/M5Unified"]
 	path = components/M5Unified
 	url = https://github.com/m5stack/M5Unified.git
+[submodule "components/area512/mrbgems/picoruby-ti"]
+	path = components/area512/mrbgems/picoruby-ti
+	url = git@github.com:engneer-hamachan/picoruby-ti.git

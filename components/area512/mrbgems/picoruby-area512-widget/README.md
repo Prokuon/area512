@@ -181,5 +181,6 @@ view.draw(sp)
 
 `storage/home/tool/gallery` shows every component across six tabs
 (PARTS / TABLE / CHART / LIST / TEXT / MODAL) and doubles as the on-device
-test. Type signatures for the ti checker live in `tools/tidbgen/sig/widget.rbs`,
-`widget_list.rbs`, and `widget_text_view.rbs`.
+test. Type signatures for the ti checker live in
+`components/area512/mrbgems/picoruby-ti/sig/widget.rbs`, `widget_list.rbs`, and
+`widget_text_view.rbs`.

@@ -1,5 +1,0 @@
-class Box[T]
-  def value: () -> T
-end
-class StringBox < Box[String]
-end

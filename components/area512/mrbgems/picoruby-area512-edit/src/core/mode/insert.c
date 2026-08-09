@@ -1,5 +1,5 @@
 #include "core/mode/insert.h"
-#include "area512_ti_suggest.h"
+#include "picoruby_ti_suggest.h"
 #include "core/complete/complete_popup.h"
 #include "core/syntax/picoruby/highlight.h"
 #include "core/syntax/picoruby/indent.h"

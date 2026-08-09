@@ -3,7 +3,7 @@ PICORB     := $(ROOT)/R2P2-ESP32/components/picoruby-esp32/picoruby
 PICORB_ESP := $(ROOT)/components/area512
 PICORBC    := $(PICORB)/bin/picorbc
 HOME_DIR   := $(ROOT)/storage/home
-TI_GENERATED := $(ROOT)/components/area512/mrbgems/picoruby-area512-ti/src/generated
+TI_GENERATED := $(ROOT)/components/area512/mrbgems/picoruby-ti/src/generated
 
 FIRMWARE   := $(ROOT)/firmware
 
@@ -19,7 +19,7 @@ FMT_FILES := $(shell find $(ROOT)/main $(ROOT)/components \
 	-not -path '*/M5Unified/*' \
 	-not -path '*/managed_components/*')
 
-.PHONY: build flash monitor clean fullclean compile-home-mrb flash-firmware save-firmware gendb gendb-test format format-check run-emulator help
+.PHONY: build flash monitor clean fullclean compile-home-mrb flash-firmware save-firmware gendb format format-check run-emulator help
 
 help:
 	@echo "Targets:"
@@ -32,7 +32,6 @@ help:
 	@echo "  make flash-firmware   - flash committed firmware/ binaries (no rebuild)"
 	@echo "  make save-firmware    - copy build/ artifacts into firmware/ (refresh snapshot)"
 	@echo "  make gendb            - regenerate the built-in TI database"
-	@echo "  make gendb-test       - regenerate the built-in TI database and run its host tests"
 	@echo "  make fullclean  - nuke everything: build/, picoruby/build/ (esp32-*, host, repos),"
 	@echo "                    generated mrb/*.c. Use after editing build_config/*.rb."
 	@echo "  make format     - clang-format -i over our own C/C++ (skips vendored trees)"
@@ -73,13 +72,9 @@ compile-home-mrb:
 	find $(HOME_DIR) -type f -name '*.rb' -exec $(PICORBC) {} \;
 
 gendb:
-	ruby ./tools/tidbgen/main.rb \
-	  --manifest ./tools/tidbgen/manifest.rb \
+	ruby ./components/area512/mrbgems/picoruby-ti/tidbgen/main.rb \
+	  --sig-dir ./components/area512/sig \
 	  --out $(TI_GENERATED)
-
-gendb-test: gendb
-	ruby ./tools/tidbgen/test/tidbgen_test.rb
-	$(MAKE) -C ./components/area512/mrbgems/picoruby-area512-ti/host_test test
 
 fullclean:
 	rm -rf $(ROOT)/build

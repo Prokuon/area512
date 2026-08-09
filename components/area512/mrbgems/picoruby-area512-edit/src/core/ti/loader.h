@@ -2,7 +2,7 @@
 #define AREA512_EDIT_TI_LOADER_H
 
 #include "core/editor.h"
-#include "area512_ti_source.h"
+#include "picoruby_ti_source.h"
 
 typedef struct {
   VimString *contents;

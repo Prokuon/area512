@@ -1,6 +1,6 @@
 #include "core/mode/normal.h"
-#include "area512_ti_diagnostic.h"
-#include "area512_ti_hover.h"
+#include "picoruby_ti_diagnostic.h"
+#include "picoruby_ti_hover.h"
 #include "core/diagnostic/diagnostic_popup.h"
 #include "core/hover/hover_popup.h"
 #include "core/mode/insert.h"

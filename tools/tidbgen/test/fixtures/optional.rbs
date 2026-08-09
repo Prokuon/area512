@@ -1,3 +1,0 @@
-class Optional[T]
-  def value: () -> T?
-end
