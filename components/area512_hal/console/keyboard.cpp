@@ -1,4 +1,4 @@
-// Cardputer onboard keyboard: scans the TCA8418 I2C key matrix, applies
+// Cardputer onboard keyboard: scans the selected keyboard matrix, applies
 // modifier/Fn/Ctrl mapping and auto-repeat, and runs a romaji->kana IME.
 // Decoded bytes are pushed into the console stdin queue.
 #include "console_internal.h"
@@ -8,7 +8,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "driver/gpio.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -733,6 +735,10 @@ cardputer_reset_local_state(void) {
   cardputer_clear_repeat_state();
 }
 
+#if defined(AREA512_CARDPUTER_V11)
+// cardputer v1.1
+#else
+
 static bool
 cardputer_configure_tca8418(void) {
   bool ok = true;
@@ -865,3 +871,5 @@ keyboard_poll(void) {
 
   cardputer_update_repeat();
 }
+
+#endif

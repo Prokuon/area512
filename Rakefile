@@ -54,9 +54,21 @@ task :setup do
   end
 end
 
+desc "Generate the built-in TI database"
+task :gendb do
+  sh "make gendb"
+end
+
 desc "Build the Cardputer firmware"
-task :build do
-  idf_py "build"
+task :build => :gendb do
+  idf_py "build -DAREA512_CARDPUTER_V11=OFF"
+end
+
+namespace :build do
+  desc "Build the Cardputer v1.1 firmware"
+  task :"v1.1" => :gendb do
+    idf_py "build -DAREA512_CARDPUTER_V11=ON"
+  end
 end
 
 desc "Flash the built firmware"

@@ -28,6 +28,13 @@ idf_component_register(
     nvs_flash
 )
 
+if(AREA512_CARDPUTER_V11)
+  set_source_files_properties(
+    console/keyboard.cpp
+    PROPERTIES COMPILE_DEFINITIONS "AREA512_CARDPUTER_V11"
+  )
+endif()
+
 # Define the VM macro here too; area512's add_definitions() doesn't reach
 # this component, and without it the stats fall through #else and return 0.
 set_source_files_properties(
