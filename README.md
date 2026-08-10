@@ -186,7 +186,12 @@ git submodule update --init --recursive
 ### Build and Flash
 
 ```sh
+# cardputer adv build
 rake build
+
+# cardputer 1.1 build
+rake build:v1.1
+
 rake flash
 ```
 
