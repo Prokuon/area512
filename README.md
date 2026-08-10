@@ -6,7 +6,7 @@
 
 Welcome to AREA512!
 
-AREA512 is an OS built for the Cardputer ADV,
+AREA512 is an OS built for the Cardputer ADV and Cardputer v1.1,
 a tiny device with just 512KB of RAM and 8MB of flash storage!
 
 It is based on FemtoRuby,
@@ -19,11 +19,16 @@ All you need is esptool:
 
 ```sh
 pip install esptool
-make flash-firmware
+
+# Cardputer ADV
+esptool.py -c esp32s3 -b 460800 write_flash --flash_mode dio --flash_size 8MB --flash_freq 80m 0x0 firmware/Area512Adv.bin
+
+# Cardputer v1.1
+esptool.py -c esp32s3 -b 460800 write_flash --flash_mode dio --flash_size 8MB --flash_freq 80m 0x0 firmware/Area512V11.bin
 ```
 
-- If the port is not auto-detected, specify it like `ESPPORT=/dev/ttyACM0 make flash-firmware`.
-- Insert a FAT32-formatted microSD card into the Cardputer ADV (it is used to store app data).
+- If the port is not auto-detected, add `-p /dev/ttyACM0` to the `esptool.py` command.
+- Insert a FAT32-formatted microSD card into the Cardputer (it is used to store app data).
 
 ## Using AREA512
 
@@ -165,7 +170,7 @@ Applications can use the built-in Widget components with `require 'area512-widge
 
 - ESP-IDF v5.5+
 - Ruby + Bundler
-- M5 Cardputer ADV
+- M5 Cardputer ADV or Cardputer v1.1
 - USB-C cable
 
 ### Setup
@@ -186,10 +191,10 @@ git submodule update --init --recursive
 ### Build and Flash
 
 ```sh
-# cardputer adv build
+# Cardputer ADV build
 rake build
 
-# cardputer 1.1 build
+# Cardputer v1.1 build
 rake build:v1.1
 
 rake flash
