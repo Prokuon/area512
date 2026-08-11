@@ -40,7 +40,7 @@ run_filer_interaction(Filer *filer) {
 
     int key = area512_filer_read_key();
 
-    FileEntry *entry = filer->count > 0 ? &filer->entries[filer->index] : NULL;
+    FileEntry *entry = fetch_selected_entry(filer);
 
     switch (key) {
     case KEY_DOWN:
@@ -66,14 +66,19 @@ run_filer_interaction(Filer *filer) {
       if (entry->type == ENTRY_TYPE_DIR)
         return ACTION_OPEN_DIR;
 
-      if (entry->type == ENTRY_TYPE_APP) {
-        area512_filer_teardown_ui(filer);
-        return entry->has_mrb ? ACTION_RUN_MRB : ACTION_COMPILE;
-      }
-
       if (is_selected_markdown_file(filer)) {
         area512_filer_teardown_ui(filer);
         return ACTION_VIEW_MARKDOWN;
+      }
+
+      if (is_selected_ruby_file(filer)) {
+        area512_filer_teardown_ui(filer);
+        return ACTION_RUN_RUBY;
+      }
+
+      if (is_selected_python_file(filer)) {
+        area512_filer_teardown_ui(filer);
+        return ACTION_RUN_PYTHON;
       }
 
       set_message(filer, "Not runnable");
@@ -81,7 +86,7 @@ run_filer_interaction(Filer *filer) {
       break;
 
     case KEY_COMPILE:
-      if (entry && entry->type == ENTRY_TYPE_APP && entry->has_rb) {
+      if (is_selected_source_file(filer)) {
         area512_filer_teardown_ui(filer);
 
         return ACTION_COMPILE;

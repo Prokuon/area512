@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 // -----------------------------------------------------------------------------
 // mruby/c value glue
@@ -34,17 +35,6 @@ copy_string(char *destination, int destination_size, mrbc_value *string_value) {
   memcpy(destination, string_value->string->data, length);
 
   destination[length] = 0;
-}
-
-static int
-value_is_truthy(mrbc_value *value) {
-  if (value->tt == MRBC_TT_TRUE)
-    return 1;
-
-  if (value->tt == MRBC_TT_INTEGER && value->i != 0)
-    return 1;
-
-  return 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -103,16 +93,24 @@ c_filer_clear_entries(
   filer->count = 0;
 }
 
-// add_entry(name, type, has_rb, has_mrb)
+static int
+compare_entry_order(const FileEntry *left, const FileEntry *right) {
+  if (left->type != right->type)
+    return left->type < right->type ? -1 : 1;
+
+  return strcasecmp(left->name, right->name);
+}
+
+// add_entry(name, type)
 static void
 c_filer_add_entry(mrbc_vm *virtual_machine, mrbc_value *v, int argument_count) {
   Filer *filer = get_filer(v);
 
-  if (argument_count < 4) {
+  if (argument_count < 2) {
     mrbc_raise(
       virtual_machine,
       MRBC_CLASS(ArgumentError),
-      "wrong number of arguments (expected 4)"
+      "wrong number of arguments (expected 2)"
     );
 
     return;
@@ -121,15 +119,22 @@ c_filer_add_entry(mrbc_vm *virtual_machine, mrbc_value *v, int argument_count) {
   if (filer->count >= MAX_ENTRIES)
     return;
 
-  FileEntry *entry = &filer->entries[filer->count];
+  FileEntry entry;
 
-  copy_string(entry->name, NAME_MAX, &v[1]);
+  copy_string(entry.name, NAME_MAX, &v[1]);
 
-  entry->type =
-    (uint8_t)(v[2].tt == MRBC_TT_INTEGER ? v[2].i : ENTRY_TYPE_OTHER);
+  entry.type =
+    (uint8_t)(v[2].tt == MRBC_TT_INTEGER ? v[2].i : ENTRY_TYPE_FILE);
 
-  entry->has_rb = (uint8_t)value_is_truthy(&v[3]);
-  entry->has_mrb = (uint8_t)value_is_truthy(&v[4]);
+  int position = filer->count;
+
+  while (position > 0
+      && compare_entry_order(&filer->entries[position - 1], &entry) > 0) {
+    filer->entries[position] = filer->entries[position - 1];
+    position--;
+  }
+
+  filer->entries[position] = entry;
 
   filer->count++;
 }
@@ -224,41 +229,9 @@ c_filer_selected_type(
   Filer *filer = get_filer(v);
 
   int type =
-    (filer->count > 0) ? filer->entries[filer->index].type : ENTRY_TYPE_OTHER;
+    (filer->count > 0) ? filer->entries[filer->index].type : ENTRY_TYPE_FILE;
 
   SET_INT_RETURN(type);
-}
-
-static void
-c_filer_selected_rb(
-  mrbc_vm *virtual_machine,
-  mrbc_value *v,
-  int argument_count
-) {
-
-  (void)virtual_machine;
-  (void)argument_count;
-
-  Filer *filer = get_filer(v);
-  int has_rb = (filer->count > 0) ? filer->entries[filer->index].has_rb : 0;
-
-  SET_BOOL_RETURN(has_rb);
-}
-
-static void
-c_filer_selected_mrb(
-  mrbc_vm *virtual_machine,
-  mrbc_value *v,
-  int argument_count
-) {
-
-  (void)virtual_machine;
-  (void)argument_count;
-
-  Filer *filer = get_filer(v);
-  int has_mrb = (filer->count > 0) ? filer->entries[filer->index].has_mrb : 0;
-
-  SET_BOOL_RETURN(has_mrb);
 }
 
 static void
@@ -352,20 +325,6 @@ mrbc_area512_filer_init(mrbc_vm *virtual_machine) {
     class_Filer,
     "selected_type",
     c_filer_selected_type
-  );
-
-  mrbc_define_method(
-    virtual_machine,
-    class_Filer,
-    "selected_rb",
-    c_filer_selected_rb
-  );
-
-  mrbc_define_method(
-    virtual_machine,
-    class_Filer,
-    "selected_mrb",
-    c_filer_selected_mrb
   );
 
   mrbc_define_method(

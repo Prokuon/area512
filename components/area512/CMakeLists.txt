@@ -25,6 +25,7 @@ endif()
 idf_component_register(
   SRCS
     ${COMPONENT_DIR}/area512.c
+    ${COMPONENT_DIR}/ports/tree_sitter_port.c
     # esp32 machine port forked here for console (screen+keyboard) integration.
     ${COMPONENT_DIR}/ports/machine_port.c
     ${PURE_PICORUBY}/mrbgems/picoruby-machine/ports/common/machine.c
@@ -45,6 +46,8 @@ idf_component_register(
     ${PURE_PICORUBY}/mrbgems/mruby-compiler2/include
     ${PURE_PICORUBY}/mrbgems/mruby-compiler2/lib/prism/include
     ${ADDITIONAL_INCLUDE_DIRS}
+  PRIV_INCLUDE_DIRS
+    ${COMPONENT_DIR}/mrbgems/micropython-ti/include
   PRIV_REQUIRES
     esp_driver_gpio
     esp_driver_i2c
@@ -55,6 +58,8 @@ idf_component_register(
     nvs_flash
     esp_driver_usb_serial_jtag
     area512_hal
+    area512_micropython
+    area512_tree_sitter
 )
 
 add_definitions(

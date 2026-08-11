@@ -2,8 +2,10 @@ ROOT       := $(CURDIR)
 PICORB     := $(ROOT)/R2P2-ESP32/components/picoruby-esp32/picoruby
 PICORB_ESP := $(ROOT)/components/area512
 PICORBC    := $(PICORB)/bin/picorbc
+MPY_CROSS  := $(ROOT)/components/micropython/mpy-cross/build/mpy-cross
 HOME_DIR   := $(ROOT)/storage/home
 TI_GENERATED := $(ROOT)/components/area512/mrbgems/picoruby-ti/src/generated
+MICROPYTHON_TI := $(ROOT)/components/area512/mrbgems/micropython-ti
 
 FIRMWARE   := $(ROOT)/firmware
 
@@ -19,7 +21,7 @@ FMT_FILES := $(shell find $(ROOT)/main $(ROOT)/components \
 	-not -path '*/M5Unified/*' \
 	-not -path '*/managed_components/*')
 
-.PHONY: build flash monitor clean fullclean compile-home-mrb flash-firmware save-firmware gendb format format-check run-emulator help
+.PHONY: build flash monitor clean fullclean compile-home-mrb compile-home-mpy flash-firmware save-firmware gendb format format-check run-emulator help
 
 help:
 	@echo "Targets:"
@@ -28,6 +30,7 @@ help:
 	@echo "  make monitor    - idf.py monitor"
 	@echo "  make clean      - idf.py clean (light)"
 	@echo "  make compile-home-mrb - recursively compile storage/home/**/*.rb to .mrb"
+	@echo "  make compile-home-mpy - recursively compile storage/home/**/*.py to .mpy"
 	@echo "                    (storage/ is the seed copied to the SD card's Area512_data/ on first boot)"
 	@echo "  make flash-firmware   - flash committed firmware/ binaries (no rebuild)"
 	@echo "  make save-firmware    - copy build/ artifacts into firmware/ (refresh snapshot)"
@@ -71,10 +74,16 @@ compile-home-mrb:
 	test -x $(PICORBC)
 	find $(HOME_DIR) -type f -name '*.rb' -exec $(PICORBC) {} \;
 
+compile-home-mpy:
+	$(MAKE) -C $(ROOT)/components/micropython/mpy-cross
+	test -x $(MPY_CROSS)
+	find $(HOME_DIR) -type f -name '*.py' -exec $(MPY_CROSS) {} \;
+
 gendb:
 	ruby ./components/area512/mrbgems/picoruby-ti/tidbgen/main.rb \
-	  --sig-dir ./components/area512/sig \
+	  --sig-dir ./components/area512/sig/picoruby \
 	  --out $(TI_GENERATED)
+	$(MAKE) -C $(MICROPYTHON_TI) gendb
 
 fullclean:
 	rm -rf $(ROOT)/build

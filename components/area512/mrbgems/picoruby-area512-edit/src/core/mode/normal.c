@@ -1,4 +1,7 @@
 #include "core/mode/normal.h"
+#include "micropython_ti_diagnostic.h"
+#include "micropython_ti_hover.h"
+#include "micropython_ti_parse_budget.h"
 #include "picoruby_ti_diagnostic.h"
 #include "picoruby_ti_hover.h"
 #include "core/diagnostic/diagnostic_popup.h"
@@ -8,8 +11,9 @@
 #include "core/register/repeat.h"
 #include "core/register/search.h"
 #include "core/render/footer.h"
-#include "core/syntax/picoruby/highlight.h"
+#include "core/syntax/syntax.h"
 #include "core/ti/loader.h"
+#include "core/ti/parse_message.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -45,7 +49,13 @@ calculate_cursor_offset(Vim *vim) {
 
 static void
 fill_diagnostics(Vim *vim) {
-  if (!editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length))
+  int is_ruby =
+    editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length);
+
+  int is_python =
+    editor_is_python_filename(vim->filepath.bytes, vim->filepath.byte_length);
+
+  if (!is_ruby && !is_python)
     return;
 
   VimString content;
@@ -61,14 +71,19 @@ fill_diagnostics(Vim *vim) {
 
   TiDiagnosticList diagnostics;
 
-  ti_fill_diagnostics(
-    &loaded_sources.list,
-    &diagnostics
-  );
+  if (is_python)
+    micropython_ti_fill_diagnostics(&loaded_sources.list, &diagnostics);
+  else
+    ti_fill_diagnostics(&loaded_sources.list, &diagnostics);
 
   vim_clear_diagnostics(vim);
 
-  for (int index = 0; index < diagnostics.count; index++) {
+  for (
+    int index = 0;
+    index < diagnostics.count && vim->diagnostics.count < VIM_MAX_DIAGNOSTICS;
+    index++
+  ) {
+
     const TiDiagnostic *source_diagnostic = &diagnostics.items[index];
 
     VimDiagnostic *destination_diagnostic =
@@ -93,6 +108,8 @@ fill_diagnostics(Vim *vim) {
 
   if (vim->diagnostics.count)
     show_message_c_string(vim, "Diagnostics updated");
+  else if (is_python && micropython_ti_did_cancel_parse())
+    show_ti_parse_cancelled_message(vim, &loaded_sources);
   else
     show_message_c_string(vim, "No diagnostics");
 
@@ -101,7 +118,13 @@ fill_diagnostics(Vim *vim) {
 
 static void
 show_hover_or_diagnostic_at_cursor(Vim *vim) {
-  if (!editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length))
+  int is_ruby =
+    editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length);
+
+  int is_python =
+    editor_is_python_filename(vim->filepath.bytes, vim->filepath.byte_length);
+
+  if (!is_ruby && !is_python)
     return;
 
   int cursor_byte_offset = calculate_cursor_offset(vim);
@@ -132,12 +155,22 @@ show_hover_or_diagnostic_at_cursor(Vim *vim) {
 
   TiHoverInfo hover_info;
 
-  int found =
-    ti_find_hover_at_cursor(
-      &loaded_sources.list,
-      cursor_byte_offset,
-      &hover_info
-    );
+  int found;
+  if (is_python) {
+    found =
+      micropython_ti_find_hover_at_cursor(
+        &loaded_sources.list,
+        cursor_byte_offset,
+        &hover_info
+      );
+  } else {
+    found =
+      ti_find_hover_at_cursor(
+        &loaded_sources.list,
+        cursor_byte_offset,
+        &hover_info
+      );
+  }
 
   if (found) {
     if (hover_info.is_method) {
@@ -167,6 +200,8 @@ show_hover_or_diagnostic_at_cursor(Vim *vim) {
 
       vim_string_free(&message);
     }
+  } else if (is_python && micropython_ti_did_cancel_parse()) {
+    show_ti_parse_cancelled_message(vim, &loaded_sources);
   } else {
     show_message_c_string(vim, "Type information is unavailable");
   }

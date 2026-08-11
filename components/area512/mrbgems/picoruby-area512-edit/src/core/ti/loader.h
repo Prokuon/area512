@@ -6,6 +6,7 @@
 
 typedef struct {
   VimString *contents;
+  VimString *paths;
   TiSource *sources;
   TiSourceList list;
 } TiLoadedSources;

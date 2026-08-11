@@ -1,0 +1,43 @@
+def draw(game):
+    game.sprite.fill(COLOR_BACKGROUND)
+    draw_status(game)
+    draw_terrain(game)
+    draw_debris(game)
+    draw_ship(game)
+    draw_overlay(game)
+    game.sprite.push(0, 0)
+
+
+def draw_end(game):
+    game.sprite.fill(COLOR_BACKGROUND)
+    game.sprite.text(0, 0, "Space Lander", COLOR_SHIP)
+    text = "Bye."
+
+    if is_landed(game):
+        text = "Landed."
+    elif is_crashed(game):
+        text = "Crashed."
+
+    game.sprite.text(0, 2 * CHARACTER_HEIGHT, text, COLOR_TEXT)
+    game.sprite.text(
+        0,
+        3 * CHARACTER_HEIGHT,
+        "Level {}".format(game.level),
+        COLOR_DIM
+    )
+    game.sprite.text(
+        0,
+        4 * CHARACTER_HEIGHT,
+        "Fuel {}".format(int(game.fuel)),
+        COLOR_DIM
+    )
+    game.sprite.text(
+        0,
+        6 * CHARACTER_HEIGHT,
+        "V {} H {}".format(
+            format_one_decimal(game.velocity_y),
+            format_one_decimal(game.velocity_x)
+        ),
+        COLOR_DIM
+    )
+    game.sprite.push(0, 0)

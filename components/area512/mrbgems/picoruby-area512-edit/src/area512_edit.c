@@ -64,7 +64,7 @@ c_vim_new(mrbc_vm *virtual_machine, mrbc_value *values, int argument_count) {
 
   vim_init(core, columns, rows);
 
-  core->screen.highlight = highlight_edit_segment;
+  core->screen.highlight = highlight_visible_row_text;
 
   if (argument_count >= 1 && mrbc_type(values[1]) == MRBC_TT_STRING &&
       values[1].string->size > 0) {

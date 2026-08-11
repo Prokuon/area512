@@ -94,6 +94,9 @@ append_ti_preload_source(
       source_content
     )
   ) {
+    loaded_sources->paths[loaded_sources->list.count] = resolved_preload_path;
+    vim_string_init(&resolved_preload_path);
+
     loaded_sources->list.count++;
   }
 
@@ -114,9 +117,11 @@ free_ti_sources(TiLoadedSources *loaded_sources) {
   ) {
 
     vim_string_free(&loaded_sources->contents[source_index]);
+    vim_string_free(&loaded_sources->paths[source_index]);
   }
 
   free(loaded_sources->contents);
+  free(loaded_sources->paths);
   free(loaded_sources->sources);
 
   memset(loaded_sources, 0, sizeof(*loaded_sources));
@@ -173,10 +178,17 @@ load_ti_sources(
   loaded_sources->contents =
     calloc((size_t)source_capacity, sizeof(VimString));
 
+  loaded_sources->paths =
+    calloc((size_t)source_capacity, sizeof(VimString));
+
   loaded_sources->sources =
     calloc((size_t)source_capacity, sizeof(TiSource));
 
-  if (!loaded_sources->contents || !loaded_sources->sources) {
+  if (
+    !loaded_sources->contents ||
+    !loaded_sources->paths ||
+    !loaded_sources->sources
+  ) {
     free_ti_sources(loaded_sources);
     vim_string_free(&loader_manifest);
     vim_string_free(&loader_path);
@@ -232,6 +244,12 @@ load_ti_sources(
   }
 
   if (loaded) {
+    vim_string_append(
+      &loaded_sources->paths[loaded_sources->list.count],
+      vim->filepath.bytes,
+      vim->filepath.byte_length
+    );
+
     loaded_sources->contents[loaded_sources->list.count++] = *content;
     vim_string_init(content);
 

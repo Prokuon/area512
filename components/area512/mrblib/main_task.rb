@@ -6,6 +6,7 @@ require "io/console"
 require "sandbox"
 require "area512-sandbox"
 require "area512-compile"
+require "area512-micropython"
 require "area512-console"
 require "vim"
 
@@ -29,12 +30,11 @@ ARGV = [] unless Object.const_defined?(:ARGV)
 # Must match filer.c.
 T_UP = 0 unless Object.const_defined?(:T_UP)
 T_DIR = 1 unless Object.const_defined?(:T_DIR)
-T_APP = 2 unless Object.const_defined?(:T_APP)
-T_OTHER = 3 unless Object.const_defined?(:T_OTHER)
+T_FILE = 2 unless Object.const_defined?(:T_FILE)
 ACT_QUIT = 0 unless Object.const_defined?(:ACT_QUIT)
 ACT_OPEN_DIR = 1 unless Object.const_defined?(:ACT_OPEN_DIR)
 ACT_UP = 2 unless Object.const_defined?(:ACT_UP)
-ACT_RUN_MRB = 3 unless Object.const_defined?(:ACT_RUN_MRB)
+ACT_RUN_RUBY = 3 unless Object.const_defined?(:ACT_RUN_RUBY)
 ACT_COMPILE = 4 unless Object.const_defined?(:ACT_COMPILE)
 ACT_COMPILE_ALL = 5 unless Object.const_defined?(:ACT_COMPILE_ALL)
 ACT_RUN_DIR = 6 unless Object.const_defined?(:ACT_RUN_DIR)
@@ -45,11 +45,12 @@ ACT_DELETE = 10 unless Object.const_defined?(:ACT_DELETE)
 ACT_REBOOT = 11 unless Object.const_defined?(:ACT_REBOOT)
 ACT_MOVE = 12 unless Object.const_defined?(:ACT_MOVE)
 ACT_VIEW_MARKDOWN = 13 unless Object.const_defined?(:ACT_VIEW_MARKDOWN)
+ACT_RUN_PYTHON = 14 unless Object.const_defined?(:ACT_RUN_PYTHON)
 
 def run_sd_error_screen(filer)
   filer.cwd = "/"
   filer.clear_entries
-  filer.add_entry("Retry SD mount", T_UP, false, false)
+  filer.add_entry("Retry SD mount", T_UP)
   filer.message = "No SD card: Enter = retry, r = reboot"
 
   while true
@@ -106,31 +107,24 @@ def dir_name(path)
 end
 
 def strip_extension(name)
-  if name.end_with?(".mrb")
+  if name.end_with?(".mrb") || name.end_with?(".mpy")
     name[0, name.length - 4]
-  elsif name.end_with?(".rb")
+  elsif name.end_with?(".rb") || name.end_with?(".py")
     name[0, name.length - 3]
   else
     name
   end
 end
 
-# --- Build the entry list (fed to C) ---
-
-def add_app(apps, base, has_rb, has_mrb)
-  i = 0
-  while i < apps.length
-    if apps[i][0] == base
-      apps[i][1] = true if has_rb
-      apps[i][2] = true if has_mrb
-      return
-    end
-
-    i += 1
-  end
-
-  apps << [base, has_rb, has_mrb]
+def ruby_bytecode_name(name)
+  name.end_with?(".rb") ? "#{strip_extension(name)}.mrb" : name
 end
+
+def python_bytecode_name(name)
+  name.end_with?(".py") ? "#{strip_extension(name)}.mpy" : name
+end
+
+# --- Build the entry list (fed to C) ---
 
 def entry_names(cwd)
   names = []
@@ -149,48 +143,35 @@ end
 
 def build_entries(filer, cwd)
   dirs = []
-  apps = []
-  others = []
+  files = []
 
   names = entry_names(cwd)
 
   i = 0
   while i < names.length
     name = names[i]
-    full = join_path(cwd, name)
 
-    if File.directory?(full)
+    if File.directory?(join_path(cwd, name))
       dirs << name
-    elsif name.end_with?(".mrb")
-      add_app(apps, strip_extension(name), false, true)
-    elsif name.end_with?(".rb")
-      add_app(apps, strip_extension(name), true, false)
     else
-      others << name
+      files << name
     end
 
     i += 1
   end
 
   filer.clear_entries
-  filer.add_entry("..", T_UP, false, false) unless cwd == "/"
+  filer.add_entry("..", T_UP) unless cwd == "/"
 
   i = 0
   while i < dirs.length
-    filer.add_entry(dirs[i], T_DIR, false, false)
+    filer.add_entry(dirs[i], T_DIR)
     i += 1
   end
 
   i = 0
-  while i < apps.length
-    app = apps[i]
-    filer.add_entry(app[0], T_APP, app[1], app[2])
-    i += 1
-  end
-
-  i = 0
-  while i < others.length
-    filer.add_entry(others[i], T_OTHER, false, false)
+  while i < files.length
+    filer.add_entry(files[i], T_FILE)
     i += 1
   end
 end
@@ -198,66 +179,78 @@ end
 # --- Compile/run (Sandbox) and edit (Vim) ---
 # These return a status string for the filer status line, not terminal output.
 
-def compile(src)
-  dst = src[0, src.length - 3] + ".mrb"
+def compile_source(cwd, name)
+  source_path = join_path(cwd, name)
 
   begin
-    Area512.compile_file(src, dst)
+    if name.end_with?(".py")
+      bytecode_path = join_path(cwd, python_bytecode_name(name))
+      Console.reset
+
+      begin
+        MicroPython.compile_file(source_path, bytecode_path)
+      ensure
+        Console.wait_key_if_output
+      end
+    else
+      bytecode_path = join_path(cwd, ruby_bytecode_name(name))
+      Area512.compile_file(source_path, bytecode_path)
+    end
+
     nil
   rescue => e
     "#{e.class}: #{e.message}"
   end
 end
 
-def compile_one(cwd, base)
-  err = compile(join_path(cwd, "#{base}.rb"))
-  err ? err : "Compiled #{base}"
+def compile_selected(cwd, name)
+  error_message = compile_source(cwd, name)
+  error_message ? error_message : "Compiled #{name}"
 end
 
 def compile_all(cwd)
-  bases = []
   names = entry_names(cwd)
+  compiled_count = 0
+  error_message = nil
 
   i = 0
   while i < names.length
     name = names[i]
-    if name.end_with?(".rb")
-      base = strip_extension(name)
-      bases << base unless bases.include?(base)
+
+    if name.end_with?(".rb") || name.end_with?(".py")
+      error_message = compile_source(cwd, name)
+      break if error_message
+
+      compiled_count += 1
     end
+
     i += 1
   end
 
-  return "No .rb here" if bases.empty?
+  return error_message if error_message
+  return "No source here" if compiled_count == 0
 
-  compiled = 0
-  error = nil
-
-  j = 0
-  while j < bases.length
-    err = compile(join_path(cwd, "#{bases[j]}.rb"))
-    if err
-      error = "#{bases[j]}: #{err}"
-      break
-    end
-    compiled += 1
-    j += 1
-  end
-
-  error ? error : "Compiled #{compiled} file(s)"
+  "Compiled #{compiled_count} file(s)"
 end
 
-def run_mrb(path, label = nil)
-  label ||= strip_extension(base_name(path))
+def run_mrb(path, label = strip_extension(base_name(path)))
   Console.reset
   sandbox = Sandbox.new(label)
 
   result =
     begin
       sandbox.load_file(path)
-      sandbox.error ? "Error: #{label}" : "Returned: #{label}"
+      exception_message = sandbox.area512_exception_message
 
-    rescue
+      if exception_message
+        puts "Error: #{label}: #{exception_message}"
+        "Error: #{label}"
+      else
+        "Returned: #{label}"
+      end
+
+    rescue => e
+      puts "Error: #{label}: #{e.message} (#{e.class})"
       "Error: #{label}"
     ensure
       sandbox.cleanup
@@ -275,9 +268,17 @@ def run_manifest(dir, manifest_path, label)
   result =
     begin
       sandbox.load_manifest(dir, manifest_path)
-      sandbox.error ? "Error: #{label}" : "Returned: #{label}"
+      exception_message = sandbox.area512_exception_message
 
-    rescue
+      if exception_message
+        puts "Error: #{label}: #{exception_message}"
+        "Error: #{label}"
+      else
+        "Returned: #{label}"
+      end
+
+    rescue => e
+      puts "Error: #{label}: #{e.message} (#{e.class})"
       "Error: #{label}"
     ensure
       sandbox.cleanup
@@ -286,6 +287,55 @@ def run_manifest(dir, manifest_path, label)
 
   Console.wait_key_if_output
   result
+end
+
+def run_mpy(
+  python_bytecode_path,
+  label = strip_extension(base_name(python_bytecode_path))
+)
+  Console.reset
+
+  run_message =
+    begin
+      MicroPython.run_bytecode_file(python_bytecode_path)
+      "Returned: #{label}"
+    rescue
+      "Error: #{label}"
+    end
+
+  Console.wait_key_if_output
+
+  run_message
+end
+
+def run_python_manifest(dir, manifest_path, label)
+  Console.reset
+
+  run_message =
+    begin
+      MicroPython.run_manifest(dir, manifest_path)
+      "Returned: #{label}"
+    rescue
+      "Error: #{label}"
+    end
+
+  Console.wait_key_if_output
+
+  run_message
+end
+
+def run_ruby(cwd, name)
+  error_message = name.end_with?(".rb") ? compile_source(cwd, name) : nil
+  return error_message if error_message
+
+  run_mrb(join_path(cwd, ruby_bytecode_name(name)))
+end
+
+def run_python(cwd, name)
+  error_message = name.end_with?(".py") ? compile_source(cwd, name) : nil
+  return error_message if error_message
+
+  run_mpy(join_path(cwd, python_bytecode_name(name)))
 end
 
 def show_app_image(dir)
@@ -299,20 +349,58 @@ def show_app_image(dir)
   end
 end
 
+def python_manifest?(manifest_path)
+  file = File.open(manifest_path, "r")
+
+  begin
+    text = file.read
+  ensure
+    file.close
+  end
+
+  return false unless text
+
+  lines = text.split("\n")
+
+  i = 0
+  while i < lines.length
+    line = lines[i].strip
+    i += 1
+
+    next if line.empty? || line.start_with?("#")
+
+    return line.end_with?(".mpy")
+  end
+
+  false
+end
+
 def run_selected_dir(cwd, name)
   dir = join_path(cwd, name)
 
   manifest_path = join_path(dir, "main.manifest")
-  main_path = join_path(dir, "main.mrb")
+  ruby_main_path = join_path(dir, "main.mrb")
+  python_main_path = join_path(dir, "main.mpy")
 
   if File.exist?(manifest_path)
     show_app_image(dir)
-    run_manifest(dir, manifest_path, name)
-  elsif File.exist?(main_path)
+
+    if python_manifest?(manifest_path)
+      run_python_manifest(dir, manifest_path, name)
+    else
+      run_manifest(dir, manifest_path, name)
+    end
+
+  elsif File.exist?(ruby_main_path)
     show_app_image(dir)
-    run_mrb(main_path, name)
+    run_mrb(ruby_main_path, name)
+
+  elsif File.exist?(python_main_path)
+    show_app_image(dir)
+    run_mpy(python_main_path, name)
+
   else
-    "No main.manifest or main.mrb in #{name}"
+    "No main.manifest, main.mrb or main.mpy in #{name}"
   end
 end
 
@@ -325,11 +413,9 @@ def view_markdown(cwd, name)
   end
 end
 
-def edit_entry(cwd, name, type)
-  src = (type == T_APP) ? join_path(cwd, "#{name}.rb") : join_path(cwd, name)
-
+def edit_entry(cwd, name)
   begin
-    Vim.new(src).start
+    Vim.new(join_path(cwd, name)).start
     "Returned from vim"
   rescue => e
     "#{e.class}: #{e.message}"
@@ -383,13 +469,10 @@ def remove_tree(path)
   end
 end
 
-def delete_entry(cwd, name, type, has_rb, has_mrb)
+def delete_entry(cwd, name, type)
   begin
     if type == T_DIR
       remove_tree(join_path(cwd, name))
-    elsif type == T_APP
-      File.unlink(join_path(cwd, "#{name}.rb"))  if has_rb
-      File.unlink(join_path(cwd, "#{name}.mrb")) if has_mrb
     else
       File.unlink(join_path(cwd, name))
     end
@@ -434,16 +517,7 @@ def normalize_path(path)
   result
 end
 
-def moved_file_names(name, type, has_rb, has_mrb)
-  return [name] unless type == T_APP
-
-  names = []
-  names << "#{name}.rb" if has_rb
-  names << "#{name}.mrb" if has_mrb
-  names
-end
-
-def move_entry(cwd, name, type, has_rb, has_mrb, input)
+def move_entry(cwd, name, type, input)
   return "Empty path" if input.nil? || input.empty?
 
   destination =
@@ -461,23 +535,10 @@ def move_entry(cwd, name, type, has_rb, has_mrb, input)
     end
   end
 
-  names = moved_file_names(name, type, has_rb, has_mrb)
-
-  i = 0
-  while i < names.length
-    if File.exist?(join_path(destination, names[i]))
-      return "Already exists: #{names[i]}"
-    end
-
-    i += 1
-  end
+  return "Already exists: #{name}" if File.exist?(join_path(destination, name))
 
   begin
-    i = 0
-    while i < names.length
-      File.rename(join_path(cwd, names[i]), join_path(destination, names[i]))
-      i += 1
-    end
+    File.rename(join_path(cwd, name), join_path(destination, name))
 
     "Moved #{name} -> #{destination}"
   rescue => e
@@ -508,11 +569,11 @@ def run_filer(filer, root)
       cwd = dir_name(cwd)
       filer.index = 0
 
-    when ACT_RUN_MRB
-      msg = run_mrb(join_path(cwd, "#{filer.selected_name}.mrb"))
+    when ACT_RUN_RUBY
+      msg = run_ruby(cwd, filer.selected_name)
 
     when ACT_COMPILE
-      msg = compile_one(cwd, filer.selected_name)
+      msg = compile_selected(cwd, filer.selected_name)
 
     when ACT_COMPILE_ALL
       msg = compile_all(cwd)
@@ -523,8 +584,11 @@ def run_filer(filer, root)
     when ACT_VIEW_MARKDOWN
       msg = view_markdown(cwd, filer.selected_name)
 
+    when ACT_RUN_PYTHON
+      msg = run_python(cwd, filer.selected_name)
+
     when ACT_EDIT
-      msg = edit_entry(cwd, filer.selected_name, filer.selected_type)
+      msg = edit_entry(cwd, filer.selected_name)
 
     when ACT_NEW_FILE
       msg = create_file(cwd, filer.input_text)
@@ -533,22 +597,14 @@ def run_filer(filer, root)
       msg = create_dir(cwd, filer.input_text)
 
     when ACT_DELETE
-      msg =
-        delete_entry(
-          cwd,
-          filer.selected_name,
-          filer.selected_type,
-          filer.selected_rb,
-          filer.selected_mrb
-        )
+      msg = delete_entry(cwd, filer.selected_name, filer.selected_type)
+
     when ACT_MOVE
       msg =
         move_entry(
           cwd,
           filer.selected_name,
           filer.selected_type,
-          filer.selected_rb,
-          filer.selected_mrb,
           filer.input_text
         )
 

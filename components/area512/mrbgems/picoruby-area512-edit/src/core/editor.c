@@ -5,7 +5,7 @@
 #include "core/mode/operator.h"
 #include "core/mode/visual.h"
 #include "core/render/footer.h"
-#include "core/syntax/picoruby/highlight.h"
+#include "core/syntax/syntax.h"
 #include "core/text/utf8.h"
 #include <string.h>
 
@@ -35,7 +35,7 @@ vim_init(Vim *vim, int width, int height) {
   vim_screen_init(&vim->screen, width, height);
   vim->screen.footer_height = 1;
 
-  vim->screen.syntax_highlight = 0;
+  vim->screen.syntax = VIM_SYNTAX_NONE;
   vim->screen.footer = draw_vim_footer;
   vim->screen.footer_context = vim;
   vim->screen.draw_cursor = draw_vim_cursor;
@@ -191,7 +191,7 @@ vim_draw_diagnostics(
 void
 vim_set_filepath(Vim *vim, const char *text, int byte_length) {
   vim_string_set(&vim->filepath, text, byte_length);
-  vim->screen.syntax_highlight = editor_is_ruby_filename(text, byte_length);
+  vim->screen.syntax = editor_syntax_for_filename(text, byte_length);
 }
 
 void

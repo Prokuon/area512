@@ -283,6 +283,35 @@ c_sandbox_area512_release_kept_code(
   SET_NIL_RETURN();
 }
 
+static void
+c_sandbox_area512_exception_message(
+  mrbc_vm *virtual_machine,
+  mrbc_value *v,
+  int argument_count
+) {
+
+  (void)argument_count;
+
+  SANDBOX_STATE();
+
+  mrbc_vm *sandbox_virtual_machine = (mrbc_vm *)&sandbox_state->tcb->vm;
+
+  if (!mrbc_israised(sandbox_virtual_machine)) {
+    SET_NIL_RETURN();
+
+    return;
+  }
+
+  const mrbc_exception *exception =
+    sandbox_virtual_machine->exception.exception;
+
+  const char *message = exception->message
+    ? (const char *)exception->message
+    : mrbc_symid_to_str(exception->cls->sym_id);
+
+  SET_RETURN(mrbc_string_new_cstr(virtual_machine, message));
+}
+
 void
 mrbc_area512_sandbox_init(mrbc_vm *virtual_machine) {
   mrbc_class *class_Sandbox = mrbc_get_class_by_name("Sandbox");
@@ -302,6 +331,13 @@ mrbc_area512_sandbox_init(mrbc_vm *virtual_machine) {
     class_Sandbox,
     "area512_release_kept_code",
     c_sandbox_area512_release_kept_code
+  );
+
+  mrbc_define_method(
+    virtual_machine,
+    class_Sandbox,
+    "area512_exception_message",
+    c_sandbox_area512_exception_message
   );
 }
 

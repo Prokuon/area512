@@ -75,7 +75,8 @@ draw_vim_footer(void *vim_context, VimCanvas *canvas) {
       canvas->context,
       vim->status.command.byte_length,
       vim->screen.height - 1,
-      1
+      1,
+      vim->input.mode
     );
 }
 
@@ -92,6 +93,7 @@ draw_vim_cursor(void *vim_context, VimCanvas *canvas) {
     canvas->context,
     vim->screen.visual_cursor_column + VIM_GUTTER_WIDTH,
     vim->screen.visual_cursor_row,
-    1
+    1,
+    vim->input.mode
   );
 }

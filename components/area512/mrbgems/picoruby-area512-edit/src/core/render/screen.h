@@ -4,6 +4,8 @@
 #include <stdint.h>
 
 #include "core/buffer/buffer.h"
+#include "core/mode/mode.h"
+#include "core/syntax/syntax.h"
 
 #define VIM_GUTTER_WIDTH 4
 
@@ -33,14 +35,23 @@ typedef struct {
     uint32_t color
   );
   void (*set_font_size)(void *context, int font_size);
-  void (*draw_cursor)(void *context, int column, int row_index, int visible);
+  void (*draw_cursor)(
+    void *context,
+    int column,
+    int row_index,
+    int visible,
+    VimMode mode
+  );
 } VimCanvas;
 
 typedef void (*vim_highlight_function)(
   VimCanvas *canvas,
+  VimSyntax syntax,
   int column,
-  const char *segment,
-  int segment_byte_length
+  const char *text,
+  int text_byte_length,
+  int visible_byte_begin,
+  int visible_byte_end
 );
 typedef void (*vim_footer_function)(void *vim_context, VimCanvas *canvas);
 typedef void (*vim_draw_cursor_function)(void *vim_context, VimCanvas *canvas);
@@ -69,7 +80,7 @@ typedef struct {
   int content_margin_height;
   int visual_offset;
   int visual_cursor_column, visual_cursor_row;
-  int syntax_highlight;
+  VimSyntax syntax;
 
   VimBuffer buffer;
   VimRedraw redraw_mode;

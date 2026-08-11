@@ -20,6 +20,63 @@
 #define AREA512_SPRITE_FONT (&lgfx::v1::fonts::efontJA_10)
 #define AREA512_FILER_FONT (&lgfx::v1::fonts::efontJA_12)
 
+static constexpr int SPRITE_PIXEL_BYTE_SIZE = 2;
+static constexpr int SCREEN_SLOT_WIDTH = 240;
+static constexpr int SCREEN_SLOT_HEIGHT = 135;
+static constexpr int ROW_SLOT_WIDTH = 240;
+static constexpr int ROW_SLOT_HEIGHT = 13;
+static constexpr int ROW_SLOT_COUNT = 2;
+static constexpr size_t SCREEN_SLOT_BYTE_SIZE = (size_t)SCREEN_SLOT_WIDTH *
+  SCREEN_SLOT_HEIGHT * SPRITE_PIXEL_BYTE_SIZE;
+static constexpr size_t ROW_SLOT_BYTE_SIZE = (size_t)ROW_SLOT_WIDTH *
+  ROW_SLOT_HEIGHT * SPRITE_PIXEL_BYTE_SIZE;
+static constexpr int SPRITE_SLOT_COUNT = ROW_SLOT_COUNT + 1;
+
+typedef struct {
+  uint8_t *buffer;
+  size_t buffer_byte_size;
+  void *occupying_sprite;
+} SpriteSlot;
+
+alignas(4) static uint8_t s_screen_slot_buffer[SCREEN_SLOT_BYTE_SIZE];
+alignas(4) static uint8_t
+  s_row_slot_buffers[ROW_SLOT_COUNT][ROW_SLOT_BYTE_SIZE];
+
+static SpriteSlot s_sprite_slots[SPRITE_SLOT_COUNT] = {
+  {s_row_slot_buffers[0], ROW_SLOT_BYTE_SIZE, nullptr},
+  {s_row_slot_buffers[1], ROW_SLOT_BYTE_SIZE, nullptr},
+  {s_screen_slot_buffer, SCREEN_SLOT_BYTE_SIZE, nullptr},
+};
+
+static SpriteSlot *
+find_free_sprite_slot(size_t required_byte_size) {
+  for (int slot_index = 0; slot_index < SPRITE_SLOT_COUNT; slot_index++) {
+    SpriteSlot *slot = &s_sprite_slots[slot_index];
+
+    if (
+      slot->occupying_sprite == nullptr &&
+      slot->buffer_byte_size >= required_byte_size
+    ) {
+
+      return slot;
+    }
+  }
+
+  return nullptr;
+}
+
+static SpriteSlot *
+find_sprite_slot_holding(const void *sprite) {
+  for (int slot_index = 0; slot_index < SPRITE_SLOT_COUNT; slot_index++) {
+    SpriteSlot *slot = &s_sprite_slots[slot_index];
+
+    if (slot->occupying_sprite == sprite)
+      return slot;
+  }
+
+  return nullptr;
+}
+
 static lgfx::v1::LGFX_Device *
 area512_gfx_device(void) {
   return static_cast<lgfx::v1::LGFX_Device *>(area512_display_device());
@@ -39,11 +96,21 @@ area512_sprite_new_with_font(int w, int h, const lgfx::v1::IFont *font) {
 
   spr->setColorDepth(16);
 
-  // Cardputer has no PSRAM; keep the sprite in internal RAM.
-  spr->setPsram(false);
-  if (spr->createSprite(w, h) == nullptr) {
-    delete spr;
-    return nullptr;
+  size_t required_byte_size = (size_t)w * (size_t)h * SPRITE_PIXEL_BYTE_SIZE;
+  SpriteSlot *slot = find_free_sprite_slot(required_byte_size);
+
+  if (slot != nullptr) {
+    spr->setBuffer(slot->buffer, w, h, 16);
+    slot->occupying_sprite = spr;
+
+  } else {
+    // Cardputer has no PSRAM; keep the sprite in internal RAM.
+    spr->setPsram(false);
+
+    if (spr->createSprite(w, h) == nullptr) {
+      delete spr;
+      return nullptr;
+    }
   }
 
   spr->setFont(font);
@@ -185,6 +252,11 @@ area512_sprite_delete(void *p) {
   }
 
   lgfx::v1::LGFX_Sprite *spr = static_cast<lgfx::v1::LGFX_Sprite *>(p);
+  SpriteSlot *slot = find_sprite_slot_holding(spr);
+
+  if (slot != nullptr)
+    slot->occupying_sprite = nullptr;
+
   spr->deleteSprite();
 
   delete spr;

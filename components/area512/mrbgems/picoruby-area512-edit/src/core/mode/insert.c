@@ -1,11 +1,59 @@
 #include "core/mode/insert.h"
+#include "micropython_ti_suggest.h"
 #include "picoruby_ti_suggest.h"
 #include "core/complete/complete_popup.h"
-#include "core/syntax/picoruby/highlight.h"
 #include "core/syntax/picoruby/indent.h"
+#include "core/syntax/python/indent.h"
+#include "core/syntax/syntax.h"
 #include "core/ti/loader.h"
+#include "core/ti/parse_message.h"
 #include <stddef.h>
 #include <string.h>
+
+static int
+auto_indent_should_increase(
+  VimSyntax syntax,
+  const char *line,
+  int line_byte_length,
+  const char *previous_line,
+  int previous_line_byte_length
+) {
+
+  switch (syntax) {
+  case VIM_SYNTAX_RUBY:
+    return editor_auto_indent_should_increase(
+      line,
+      line_byte_length,
+      previous_line,
+      previous_line_byte_length
+    );
+
+  case VIM_SYNTAX_PYTHON:
+    return editor_python_auto_indent_should_increase(line, line_byte_length);
+
+  default:
+    return 0;
+  }
+}
+
+static int
+auto_indent_should_decrease(
+  VimSyntax syntax,
+  const char *line,
+  int line_byte_length
+) {
+
+  switch (syntax) {
+  case VIM_SYNTAX_RUBY:
+    return editor_auto_indent_should_decrease(line, line_byte_length);
+
+  case VIM_SYNTAX_PYTHON:
+    return editor_python_auto_indent_should_decrease(line, line_byte_length);
+
+  default:
+    return 0;
+  }
+}
 
 void
 enter_insert(Vim *vim) {
@@ -37,13 +85,16 @@ put_auto_indented_newline(Vim *vim) {
   }
 
   int extra_indent = 0;
-  if (editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length) &&
-      editor_auto_indent_should_increase(
-        line,
-        byte_length,
-        previous_line,
-        previous_byte_length
-      )) {
+
+  if (
+    auto_indent_should_increase(
+      vim->screen.syntax,
+      line,
+      byte_length,
+      previous_line,
+      previous_byte_length
+    )
+  ) {
 
     extra_indent = INDENT_UNIT_BYTE_LENGTH;
   }
@@ -89,9 +140,20 @@ is_block_outdent_keyword(const char *text, int byte_length) {
   return 0;
 }
 
+static int
+is_python_block_outdent_keyword(const char *keyword, int keyword_byte_length) {
+  return matches_keyword(keyword, keyword_byte_length, "elif") ||
+         matches_keyword(keyword, keyword_byte_length, "else") ||
+         matches_keyword(keyword, keyword_byte_length, "except") ||
+         matches_keyword(keyword, keyword_byte_length, "finally") ||
+         matches_keyword(keyword, keyword_byte_length, "case");
+}
+
 static void
 maybe_outdent_current_line(Vim *vim) {
-  if (!editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length))
+  VimSyntax syntax = vim->screen.syntax;
+
+  if (syntax == VIM_SYNTAX_NONE)
     return;
 
   VimString *line = &BUFFER->lines[BUFFER->cursor_line_index];
@@ -109,10 +171,22 @@ maybe_outdent_current_line(Vim *vim) {
   if (keyword_byte_length <= 0)
     return;
 
-  if (!is_block_outdent_keyword(line->bytes + start, keyword_byte_length))
-    return;
+  if (syntax == VIM_SYNTAX_RUBY) {
+    if (!is_block_outdent_keyword(line->bytes + start, keyword_byte_length))
+      return;
 
-  if (!editor_auto_indent_should_decrease(line->bytes, line->byte_length))
+  } else if (syntax == VIM_SYNTAX_PYTHON) {
+    if (
+      !is_python_block_outdent_keyword(
+        line->bytes + start,
+        keyword_byte_length
+      )
+    ) {
+      return;
+    }
+  }
+
+  if (!auto_indent_should_decrease(syntax, line->bytes, line->byte_length))
     return;
 
   vim_buffer_outdent_line(BUFFER, INDENT_UNIT, INDENT_UNIT_BYTE_LENGTH);
@@ -143,12 +217,65 @@ narrows_completion(int key, const char *character, int character_byte_length) {
          byte == '?';
 }
 
+static int
+is_numeric_literal_before(const VimString *line, int byte_offset) {
+  int digit_start_offset = byte_offset;
+
+  while (
+    digit_start_offset > 0 &&
+    line->bytes[digit_start_offset - 1] >= '0' &&
+    line->bytes[digit_start_offset - 1] <= '9'
+  ) {
+
+    digit_start_offset--;
+  }
+
+  if (digit_start_offset == byte_offset)
+    return 0;
+
+  if (digit_start_offset == 0)
+    return 1;
+
+  char preceding_byte = line->bytes[digit_start_offset - 1];
+
+  return !(
+    (preceding_byte >= 'a' && preceding_byte <= 'z') ||
+    (preceding_byte >= 'A' && preceding_byte <= 'Z') ||
+    preceding_byte == '_'
+  );
+}
+
+static int
+is_completion_trigger(
+  const VimBuffer *buffer,
+  const char *character,
+  int character_byte_length
+) {
+
+  if (character_byte_length != 1)
+    return 0;
+
+  if (character[0] >= 'A' && character[0] <= 'Z')
+    return 1;
+
+  if (character[0] != '.')
+    return 0;
+
+  return !is_numeric_literal_before(
+    &buffer->lines[buffer->cursor_line_index],
+    buffer->cursor_byte_offset - 1
+  );
+}
+
 static void
 start_completion(Vim *vim) {
-  if (!editor_is_ruby_filename(
-        vim->filepath.bytes,
-        vim->filepath.byte_length
-      )) {
+  int is_ruby =
+    editor_is_ruby_filename(vim->filepath.bytes, vim->filepath.byte_length);
+
+  int is_python =
+    editor_is_python_filename(vim->filepath.bytes, vim->filepath.byte_length);
+
+  if (!is_ruby && !is_python) {
     return;
   }
 
@@ -166,17 +293,29 @@ start_completion(Vim *vim) {
 
     TiSuggestionList suggestions;
 
-    int cursor_offset =
-      calculate_completion_cursor_offset(vim);
+    int cursor_offset = calculate_completion_cursor_offset(vim);
 
-    int suggestion_count =
-      ti_fill_suggestions_at_cursor(
-        &loaded_sources.list,
-        cursor_offset,
-        &suggestions
-      );
+    int suggestion_count;
+    if (is_python) {
+      suggestion_count =
+        micropython_ti_fill_suggestions_at_cursor(
+          &loaded_sources.list,
+          cursor_offset,
+          &suggestions
+        );
+    } else {
+      suggestion_count =
+        ti_fill_suggestions_at_cursor(
+          &loaded_sources.list,
+          cursor_offset,
+          &suggestions
+        );
+    }
 
     if (suggestion_count <= 0) {
+      if (is_python)
+        show_ti_parse_cancelled_message(vim, &loaded_sources);
+
       free_ti_sources(&loaded_sources);
       return;
     }
@@ -296,11 +435,7 @@ handle_insert(
       vim_buffer_put_string(BUFFER, character, character_byte_length);
       maybe_outdent_current_line(vim);
 
-      if (
-        character_byte_length == 1 &&
-        (character[0] == '.' || (character[0] >= 'A' && character[0] <= 'Z'))
-      ) {
-
+      if (is_completion_trigger(BUFFER, character, character_byte_length)) {
         if (vim->active_canvas)
           vim_screen_refresh_if_needed(&vim->screen, vim->active_canvas);
 

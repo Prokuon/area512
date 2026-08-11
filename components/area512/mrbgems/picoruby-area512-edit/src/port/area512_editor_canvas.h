@@ -63,14 +63,18 @@ void draw_editor_canvas_cursor(
   void *context,
   int column,
   int row_index,
-  int visible
+  int visible,
+  VimMode mode
 );
 
-void highlight_edit_segment(
+void highlight_visible_row_text(
   VimCanvas *canvas,
+  VimSyntax syntax,
   int column,
-  const char *segment,
-  int segment_byte_length
+  const char *text,
+  int text_byte_length,
+  int visible_byte_begin,
+  int visible_byte_end
 );
 
 #endif

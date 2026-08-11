@@ -6,12 +6,6 @@
 #include "core/syntax/picoruby/highlight.h"
 #include <prism.h>
 
-bool
-editor_is_ruby_filename(const char *path, int byte_length) {
-  return path && byte_length >= 3 &&
-         memcmp(path + byte_length - 3, ".rb", 3) == 0;
-}
-
 typedef enum {
   EDIT_HIGHLIGHT_DEFAULT = 0,
   EDIT_HIGHLIGHT_KEYWORD,

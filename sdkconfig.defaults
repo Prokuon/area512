@@ -13,6 +13,9 @@ CONFIG_ESPTOOLPY_FLASHSIZE="8MB"
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 
+# Optimize firmware size to keep the application in the 4M factory partition.
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+
 # PicoRuby main task stack. Parsing/loading .rb on device is stack heavy;
 # 8K/16K overflows, so use 32K.
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=32768

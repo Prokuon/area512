@@ -1,25 +1,15 @@
 #ifndef EDIT_EDITOR_H
 #define EDIT_EDITOR_H
 
+#include "core/mode/mode.h"
 #include "core/render/screen.h"
 
 #define INDENT_UNIT "  "
 #define INDENT_UNIT_BYTE_LENGTH 2
-#define VIM_MAX_DIAGNOSTICS 64
+#define VIM_MAX_DIAGNOSTICS 4
 #define VIM_DIAGNOSTIC_MESSAGE_CAPACITY 256
 #define BUFFER (&vim->screen.buffer)
 #define REDRAW(mode) (vim->screen.redraw_mode = (mode))
-
-typedef enum {
-  VIM_MODE_NORMAL = 0,
-  VIM_MODE_OPERATOR,
-  VIM_MODE_COMMAND,
-  VIM_MODE_SEARCH,
-  VIM_MODE_INSERT,
-  VIM_MODE_VISUAL,
-  VIM_MODE_VISUAL_LINE,
-  VIM_MODE_VISUAL_BLOCK
-} VimMode;
 
 typedef enum {
   VIM_OPERATOR_NONE = 0,
