@@ -4,6 +4,7 @@
 #include "core/filer.h"
 
 #include <stddef.h>
+#include <string.h>
 
 #define PANEL_WIDTH 90
 #define PANEL_INSET_RIGHT 14
@@ -80,47 +81,70 @@ jump_to(Filer *filer, int offset) {
 }
 
 static int
-is_markdown_file_name(const char *name) {
-  const char *suffix = ".md";
-  int name_length = 0, suffix_length = 0;
+has_file_name_suffix(const char *file_name, const char *suffix) {
+  size_t file_name_byte_length = strlen(file_name);
+  size_t suffix_byte_length = strlen(suffix);
 
-  while (name[name_length])
-    name_length++;
-
-  while (suffix[suffix_length])
-    suffix_length++;
-
-  if (name_length < suffix_length)
+  if (file_name_byte_length < suffix_byte_length)
     return 0;
 
-  for (int i = 0; i < suffix_length; i++)
-    if (name[name_length - suffix_length + i] != suffix[i])
-      return 0;
+  return memcmp(
+    file_name + file_name_byte_length - suffix_byte_length,
+    suffix,
+    suffix_byte_length
+  ) == 0;
+}
 
-  return 1;
+FileEntry *
+fetch_selected_entry(Filer *filer) {
+  if (filer->count == 0)
+    return NULL;
+
+  return &filer->entries[filer->index];
 }
 
 int
 is_selected_markdown_file(Filer *filer) {
-  if (filer->count == 0)
-    return 0;
+  FileEntry *entry = fetch_selected_entry(filer);
 
-  FileEntry *entry = &filer->entries[filer->index];
+  return entry && entry->type == ENTRY_TYPE_FILE &&
+    has_file_name_suffix(entry->name, ".md");
+}
 
-  return entry->type == ENTRY_TYPE_OTHER && is_markdown_file_name(entry->name);
+int
+is_selected_ruby_file(Filer *filer) {
+  FileEntry *entry = fetch_selected_entry(filer);
+
+  return entry && entry->type == ENTRY_TYPE_FILE &&
+    (has_file_name_suffix(entry->name, ".rb") ||
+     has_file_name_suffix(entry->name, ".mrb"));
+}
+
+int
+is_selected_python_file(Filer *filer) {
+  FileEntry *entry = fetch_selected_entry(filer);
+
+  return entry && entry->type == ENTRY_TYPE_FILE &&
+    (has_file_name_suffix(entry->name, ".py") ||
+     has_file_name_suffix(entry->name, ".mpy"));
+}
+
+int
+is_selected_source_file(Filer *filer) {
+  FileEntry *entry = fetch_selected_entry(filer);
+
+  return entry && entry->type == ENTRY_TYPE_FILE &&
+    (has_file_name_suffix(entry->name, ".rb") ||
+     has_file_name_suffix(entry->name, ".py"));
 }
 
 int
 is_selected_editable(Filer *filer) {
-  if (filer->count == 0)
-    return 0;
+  FileEntry *entry = fetch_selected_entry(filer);
 
-  FileEntry *entry = &filer->entries[filer->index];
-
-  if (entry->type == ENTRY_TYPE_APP)
-    return entry->has_rb;
-
-  return entry->type == ENTRY_TYPE_OTHER;
+  return entry && entry->type == ENTRY_TYPE_FILE &&
+    !has_file_name_suffix(entry->name, ".mrb") &&
+    !has_file_name_suffix(entry->name, ".mpy");
 }
 
 #endif

@@ -25,12 +25,11 @@
 
 #define ENTRY_TYPE_UP 0
 #define ENTRY_TYPE_DIR 1
-#define ENTRY_TYPE_APP 2
-#define ENTRY_TYPE_OTHER 3
+#define ENTRY_TYPE_FILE 2
 
 #define ACTION_OPEN_DIR 1
 #define ACTION_UP 2
-#define ACTION_RUN_MRB 3
+#define ACTION_RUN_RUBY 3
 #define ACTION_COMPILE 4
 #define ACTION_COMPILE_ALL 5
 #define ACTION_RUN_DIR 6
@@ -41,6 +40,7 @@
 #define ACTION_REBOOT 11
 #define ACTION_MOVE 12
 #define ACTION_VIEW_MARKDOWN 13
+#define ACTION_RUN_PYTHON 14
 
 #define KEY_UP 1001
 #define KEY_DOWN 1002
@@ -59,8 +59,6 @@
 typedef struct {
   char name[NAME_MAX];
   uint8_t type;
-  uint8_t has_rb;
-  uint8_t has_mrb;
 } FileEntry;
 
 typedef struct {
@@ -81,8 +79,12 @@ void init_filer_state(Filer *filer);
 void clamp_index(Filer *filer);
 void move_cursor(Filer *filer, int delta);
 void jump_to(Filer *filer, int offset);
+FileEntry *fetch_selected_entry(Filer *filer);
 int is_selected_editable(Filer *filer);
 int is_selected_markdown_file(Filer *filer);
+int is_selected_ruby_file(Filer *filer);
+int is_selected_python_file(Filer *filer);
+int is_selected_source_file(Filer *filer);
 
 void fit_string(
   char *destination,

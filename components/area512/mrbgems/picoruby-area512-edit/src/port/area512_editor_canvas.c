@@ -1,6 +1,7 @@
 #include "port/area512_editor_canvas.h"
 
 #include "core/syntax/picoruby/highlight.h"
+#include "core/syntax/python/highlight.h"
 #include "core/text/utf8.h"
 
 #include <stdint.h>
@@ -177,7 +178,8 @@ draw_editor_canvas_cursor(
   void *context,
   int column,
   int row_index,
-  int visible
+  int visible,
+  VimMode mode
 ) {
   Area512EditorCanvas *canvas = (Area512EditorCanvas *)context;
 
@@ -186,14 +188,24 @@ draw_editor_canvas_cursor(
 
   area512_sprite_fill(canvas->cursor_sprite, EDIT_CURSOR_KEY);
 
-  area512_sprite_fill_rect(
-    canvas->cursor_sprite,
-    0,
-    canvas->row_height - 2,
-    canvas->char_width,
-    2,
-    EDIT_FOREGROUND
-  );
+  if (mode == VIM_MODE_INSERT)
+    area512_sprite_fill_rect(
+      canvas->cursor_sprite,
+      0,
+      1,
+      2,
+      canvas->row_height - 2,
+      EDIT_FOREGROUND
+    );
+  else
+    area512_sprite_fill_rect(
+      canvas->cursor_sprite,
+      0,
+      canvas->row_height - 2,
+      canvas->char_width,
+      2,
+      EDIT_FOREGROUND
+    );
 
   area512_sprite_push_transparent(
     canvas->cursor_sprite,
@@ -206,6 +218,9 @@ draw_editor_canvas_cursor(
 typedef struct {
   VimCanvas *canvas;
   int column;
+  int next_segment_byte_offset;
+  int visible_byte_begin;
+  int visible_byte_end;
 } highlight_canvas_context;
 
 static void
@@ -219,41 +234,104 @@ draw_highlight_segment(
   highlight_canvas_context *context =
     (highlight_canvas_context *)writer_context;
 
+  int segment_byte_begin = context->next_segment_byte_offset;
+  int segment_byte_end = segment_byte_begin + byte_length;
+
+  context->next_segment_byte_offset = segment_byte_end;
+
+  int drawn_byte_begin = segment_byte_begin;
+  if (drawn_byte_begin < context->visible_byte_begin)
+    drawn_byte_begin = context->visible_byte_begin;
+
+  int drawn_byte_end = segment_byte_end;
+  if (drawn_byte_end > context->visible_byte_end)
+    drawn_byte_end = context->visible_byte_end;
+
+  if (drawn_byte_end <= drawn_byte_begin)
+    return;
+
+  const char *drawn_text = text + (drawn_byte_begin - segment_byte_begin);
+  int drawn_byte_length = drawn_byte_end - drawn_byte_begin;
+
   context->canvas->draw_row_text(
     context->canvas->context,
     context->column,
-    text,
-    byte_length,
+    drawn_text,
+    drawn_byte_length,
     color,
     0,
     0
   );
 
-  context->column += vim_display_width(text, byte_length);
+  context->column += vim_display_width(drawn_text, drawn_byte_length);
 }
 
-void
-highlight_edit_segment(
-  VimCanvas *canvas,
-  int column,
-  const char *segment,
-  int segment_byte_length
+static void
+run_ruby_highlight(
+  highlight_canvas_context *writer_context,
+  const char *text,
+  int text_byte_length
 ) {
-
-  if (segment_byte_length <= 0)
-    return;
-
-  highlight_canvas_context writer_context = {canvas, column};
 
   editor_highlight_context_t highlight_context;
 
   editor_highlight_init(
     &highlight_context,
-    (const uint8_t *)segment,
-    segment_byte_length,
+    (const uint8_t *)text,
+    text_byte_length,
     draw_highlight_segment,
-    &writer_context
+    writer_context
   );
 
   editor_highlight_run(&highlight_context);
+}
+
+void
+highlight_visible_row_text(
+  VimCanvas *canvas,
+  VimSyntax syntax,
+  int column,
+  const char *text,
+  int text_byte_length,
+  int visible_byte_begin,
+  int visible_byte_end
+) {
+
+  if (visible_byte_end <= visible_byte_begin)
+    return;
+
+  highlight_canvas_context writer_context = {
+    canvas,
+    column,
+    0,
+    visible_byte_begin,
+    visible_byte_end,
+  };
+
+  switch (syntax) {
+  case VIM_SYNTAX_RUBY:
+    run_ruby_highlight(&writer_context, text, text_byte_length);
+    break;
+
+  case VIM_SYNTAX_PYTHON:
+    editor_python_highlight_run(
+      (const uint8_t *)text,
+      text_byte_length,
+      draw_highlight_segment,
+      &writer_context
+    );
+    break;
+
+  default:
+    canvas->draw_row_text(
+      canvas->context,
+      column,
+      text + visible_byte_begin,
+      visible_byte_end - visible_byte_begin,
+      0,
+      0,
+      0
+    );
+    break;
+  }
 }

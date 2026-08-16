@@ -94,7 +94,7 @@ end
 
 desc "Erase factory partition and flash firmware binary"
 task :flash_factory do
-  sh "esptool.py -b 460800 erase_region 0x10000 0x400000"
+  sh "esptool.py -b 460800 erase_region 0x10000 0x600000"
   sh "esptool.py -b 460800 write_flash 0x10000 build/Area512.bin"
 end
 

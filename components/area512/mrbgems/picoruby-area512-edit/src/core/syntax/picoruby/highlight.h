@@ -31,8 +31,6 @@ typedef struct {
   bool expect_method_name;
 } editor_highlight_context_t;
 
-bool editor_is_ruby_filename(const char *path, int byte_length);
-
 void editor_highlight_init(
   editor_highlight_context_t *context,
   const uint8_t *source,

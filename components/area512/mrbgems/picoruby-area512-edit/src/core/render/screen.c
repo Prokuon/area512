@@ -204,9 +204,17 @@ draw_segment(
   VimBuffer *buffer = &screen->buffer;
   int has_selection = vim_buffer_has_selection(buffer);
 
-  if (screen->syntax_highlight && !has_selection) {
+  if (screen->syntax != VIM_SYNTAX_NONE && !has_selection) {
     if (screen->highlight)
-      screen->highlight(canvas, draw_column, segment, segment_byte_length);
+      screen->highlight(
+        canvas,
+        screen->syntax,
+        draw_column,
+        line,
+        byte_length,
+        byte_begin,
+        byte_end
+      );
     else
       draw_plain_row_text(canvas, draw_column, segment, segment_byte_length, 0);
     return;

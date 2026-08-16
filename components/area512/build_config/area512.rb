@@ -58,8 +58,11 @@ MRuby::CrossBuild.new("esp32-femtoruby") do |conf|
   # Separate from Sandbox: the Sandbox compile path leaks heap per compile.
   conf.gem gemdir: File.expand_path('../mrbgems/picoruby-area512-compile', __dir__)
 
+  conf.gem gemdir: File.expand_path('../mrbgems/picoruby-area512-micropython', __dir__)
+
   # Native C editor replacing upstream vim/editor; still required as "vim".
   conf.gem gemdir: File.expand_path('../mrbgems/picoruby-ti', __dir__)
+  conf.gem gemdir: File.expand_path('../mrbgems/micropython-ti', __dir__)
   conf.gem gemdir: File.expand_path('../mrbgems/picoruby-area512-edit', __dir__)
 
   # Console/HAL C helpers: Cardputer keyboard (I2C) and battery ADC status.

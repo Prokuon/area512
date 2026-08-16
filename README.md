@@ -9,9 +9,9 @@ Welcome to AREA512!
 AREA512 is an OS built for the Cardputer ADV and Cardputer v1.1,
 a tiny device with just 512KB of RAM and 8MB of flash storage!
 
-It is based on FemtoRuby,
-so you can write Ruby right on the Cardputer,
-then compile and run it — all on the device!
+It is based on FemtoRuby and includes MicroPython,
+so you can write Ruby and Python right on the Cardputer,
+then compile and run them — all on the device!
 
 ## Quick Install
 
@@ -34,19 +34,19 @@ esptool.py -c esp32s3 -b 460800 write_flash --flash_mode dio --flash_size 8MB --
 
 ![The AREA512 file manager running on a Cardputer ADV](image/cardputer.jpg)
 
-The screen shows a listing of the current directory: directories first, then applications (`.rb` / `.mrb` are merged into a single entry without the extension), then other files.
+The screen shows a listing of the current directory: directories first, then files. Source files (`.rb` / `.py`) and compiled files (`.mrb` / `.mpy`) are shown as separate entries with their extensions.
 
 The following keys are available.
 
 | Key | Action |
 | --- | --- |
 | `;` / `.` (or `k` / `j`) | Move the cursor up / down |
-| `/` or Enter | Open (enter a directory / run an app / view a Markdown file) |
+| `/` or Enter | Open (enter a directory / run a Ruby or Python file / view a Markdown file) |
 | `,` or BS | Go to the parent directory |
 | `1`–`9` | Jump to the n-th entry |
 | `e` | Edit the selected file |
-| `c` | Compile the selected app's `.rb` |
-| `a` | Compile every `.rb` in the current directory |
+| `c` | Compile the selected `.rb` or `.py` file |
+| `a` | Compile every `.rb` and `.py` file in the current directory |
 | `R` | Run the selected directory as an application |
 | `N` | Create a new file (you type the name) |
 | `K` | Create a new directory (you type the name) |
@@ -100,6 +100,10 @@ The world's finest card game. Compete for the high score!
 
 Launch it and you'll get it! That nostalgic game!
 
+### Space Lander — `/home/game/space_lander`
+
+A lunar landing game written in Python.
+
 ### Slide — `/home/tool/slide`
 
 Displays numbered Markdown files as slides. Add files such as `1.md`, `2.md`,
@@ -124,9 +128,9 @@ A gallery of the built-in Widget components.
 
 ## Editing Code
 
-The editor opened with `e` is a tiny vim running on the device. It has normal, insert, visual, operator, and command modes, plus search, syntax highlighting, automatic indentation, and Ruby code completion. The keys your fingers remember mostly just work!
+The editor opened with `e` is a tiny vim running on the device. It has normal, insert, visual, operator, and command modes, plus search. Ruby and Python files have syntax highlighting, automatic indentation, code completion, diagnostics, and hover information. The keys your fingers remember mostly just work!
 
-In insert mode, press `Ctrl-N` to open completion; it also opens automatically after `.` and uppercase letters in `.rb` files.
+In insert mode, press `Ctrl-N` to open completion; it also opens automatically after `.` and uppercase letters in `.rb` and `.py` files.
 
 ![Editing Ruby code in the on-device vim](image/editor.jpg)
 
@@ -139,12 +143,35 @@ In insert mode, press `Ctrl-N` to open completion; it also opens automatically a
 
 ## Compiling and Running
 
-The device compiles `.rb` into `.mrb` (bytecode) on the spot (see `c` / `a` in the key list).
-Everything runs inside a sandbox.
+The device compiles `.rb` into `.mrb` and `.py` into `.mpy` (bytecode) on the spot (see `c` / `a` in the key list). Ruby bytecode runs inside a sandbox, and Python bytecode runs with MicroPython.
 
 ## Application Development
 
 New applications should follow this layout.
+
+### Available Features
+
+AREA512 provides the following features as built-ins. PicoRuby does not require
+`require`, and MicroPython does not require `import`, to use them.
+
+| Feature | PicoRuby | MicroPython |
+| --- | --- | --- |
+| Display | Yes | Yes |
+| Sprite | Yes | Yes |
+| Widget | Yes | Yes |
+| WidgetList | Yes | Yes |
+| WidgetTextView | Yes | Yes |
+| GPIO | Yes | Yes |
+| ADC | — | Yes |
+| I2C | Yes | — |
+| SD / File / Dir | Yes | Yes |
+| IO | Yes | Yes |
+| RNG | Yes | Yes |
+| Sandbox | Yes | — |
+| Console | — | Yes |
+
+See [PicoRuby features](PicoRuby.md) and
+[MicroPython features](MicroPython.md) for the available APIs.
 
 ### Directory Layout
 
@@ -152,17 +179,20 @@ An application is a single directory. Press `R` in the file manager to run it.
 
 ```
 myapp/
-├── main.manifest   # optional: lists the .mrb files to load, one per line
-├── main.mrb        # entry point when there is no main.manifest
-├── *.rb / *.mrb    # your modules
+├── main.manifest   # optional: lists .mrb or .mpy files to load, one per line
+├── main.mrb        # Ruby entry point when there is no main.manifest
+├── main.mpy        # Python entry point when there is no main.manifest or main.mrb
+├── *.rb / *.mrb    # Ruby modules
+├── *.py / *.mpy    # Python modules
 └── image.h         # optional: splash image shown at launch
 ```
 
-- If `main.manifest` exists, the listed `.mrb` files are loaded into a single sandbox in order. Put dependencies first and `main.mrb` last.
-- Without `main.manifest`, only `main.mrb` is executed.
-- If neither exists, `No main.manifest or main.mrb` is shown.
+- If `main.manifest` lists `.mrb` files, they are loaded into a single sandbox in order. Put dependencies first and `main.mrb` last.
+- If `main.manifest` lists `.mpy` files, MicroPython runs them in order. Put dependencies first and `main.mpy` last.
+- Without `main.manifest`, `main.mrb` is executed if it exists; otherwise, `main.mpy` is executed.
+- If none exists, `No main.manifest, main.mrb or main.mpy in <directory>` is shown.
 
-Applications can use the built-in Widget components with `require 'area512-widget'`. See [the Widget component documentation](components/area512/mrbgems/picoruby-area512-widget/README.md) and the preinstalled `/home/tool/gallery` app.
+Applications can use the built-in Widget components directly. See [the Widget component documentation](components/area512/mrbgems/picoruby-area512-widget/README.md) and the preinstalled `/home/tool/gallery` app.
 
 ## Building
 

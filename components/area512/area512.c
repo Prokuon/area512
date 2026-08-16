@@ -1,6 +1,7 @@
 // Firmware entry: brings up NVS, the mruby/c VM heap, and the main Ruby
 // task, then runs the VM. Called once from the ESP-IDF app_main.
 #include "picoruby.h"
+#include "ports/tree_sitter_port.h"
 #include "sdkconfig.h"
 #include <inttypes.h>
 #include <nvs_flash.h>
@@ -49,6 +50,9 @@ area512_main(void) {
   setup();
 
   mrbc_init(s_heap_pool, HEAP_SIZE);
+
+  area512_route_tree_sitter_allocations_to_mrubyc_pool();
+  area512_register_tree_sitter_parse_budget();
 
   mrbc_tcb *main_tcb = mrbc_create_task(main_task, 0);
   mrbc_set_task_name(main_tcb, "main_task");

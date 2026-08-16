@@ -25,13 +25,6 @@ scrollbar_color(Filer *filer, int row) {
                                                               : COLOR_FAINT;
 }
 
-static uint32_t
-color_for(FileEntry *entry) {
-  if (entry->type == ENTRY_TYPE_APP && !entry->has_mrb)
-    return COLOR_AMBER; // needs compile
-  return COLOR_DIM;
-}
-
 static void
 format_file_label(FileEntry *entry, char *out, int out_size) {
   if (entry->type == ENTRY_TYPE_UP)
@@ -48,20 +41,10 @@ draw_entry(Filer *filer, int y, int index, int row, const PanelInfo *info) {
   if (index < filer->count) {
     FileEntry *entry = &filer->entries[index];
     int selected = (index == filer->index);
-    char sigil = ' ';
-    if (entry->type == ENTRY_TYPE_APP)
-      sigil = entry->has_mrb ? '*' : '+';
     char label_text[NAME_MAX + 2];
     format_file_label(entry, label_text, sizeof label_text);
     char line[LINE_MAX];
-    snprintf(
-      line,
-      sizeof line,
-      "%c %c %s",
-      selected ? '>' : ' ',
-      sigil,
-      label_text
-    );
+    snprintf(line, sizeof line, "%c %s", selected ? '>' : ' ', label_text);
     // clip list text before the panel only on rows the box covers
     int list_columns = panel_covers_row(filer, row, info)
                          ? filer->list_columns_panel
@@ -73,7 +56,7 @@ draw_entry(Filer *filer, int y, int index, int row, const PanelInfo *info) {
       filer->content_x,
       0,
       fitted,
-      selected ? COLOR_GOLD : color_for(entry)
+      selected ? COLOR_GOLD : COLOR_DIM
     );
   }
   int scrollbar = scrollbar_color(filer, row);

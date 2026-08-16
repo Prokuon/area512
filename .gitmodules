@@ -13,3 +13,12 @@
 [submodule "components/area512/mrbgems/picoruby-ti"]
 	path = components/area512/mrbgems/picoruby-ti
 	url = https://github.com/engneer-hamachan/picoruby-ti.git
+[submodule "components/micropython"]
+	path = components/micropython
+	url = https://github.com/micropython/micropython.git
+[submodule "components/area512_tree_sitter/tree-sitter"]
+	path = components/area512_tree_sitter/tree-sitter
+	url = https://github.com/tree-sitter/tree-sitter.git
+[submodule "components/area512_tree_sitter/tree-sitter-python"]
+	path = components/area512_tree_sitter/tree-sitter-python
+	url = https://github.com/tree-sitter/tree-sitter-python.git
