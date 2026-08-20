@@ -7,7 +7,9 @@ extern "C" {
 
 int editor_python_auto_indent_should_increase(
   const char *line,
-  int line_byte_length
+  int line_byte_length,
+  const char *previous_line,
+  int previous_line_byte_length
 );
 int editor_python_auto_indent_should_decrease(
   const char *line,

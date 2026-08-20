@@ -12,7 +12,8 @@ typedef struct MicroPythonTiContext {
   int source_byte_length;
   uint16_t current_class_name_id;
   uint8_t current_class_id;
-  uint16_t return_t_node_index;
+  uint16_t current_define_name_id;
+  int is_preload_source;
   int round;
   int failed;
   TiDiagnosticList *diagnostics;
@@ -30,5 +31,9 @@ const uint8_t *micropython_ti_get_node_bytes(
 );
 uint16_t micropython_ti_calculate_row(TSNode node);
 int micropython_ti_node_type_equals(TSNode node, const char *node_type);
+int micropython_ti_node_is_self_identifier(
+  const MicroPythonTiContext *context,
+  TSNode node
+);
 
 #endif

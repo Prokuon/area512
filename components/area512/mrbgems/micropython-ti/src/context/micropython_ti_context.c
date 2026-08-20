@@ -71,3 +71,20 @@ micropython_ti_node_type_equals(TSNode node, const char *node_type) {
   return !ts_node_is_null(node) &&
     strcmp(ts_node_type(node), node_type) == 0;
 }
+
+int
+micropython_ti_node_is_self_identifier(
+  const MicroPythonTiContext *context,
+  TSNode node
+) {
+
+  if (!micropython_ti_node_type_equals(node, "identifier"))
+    return 0;
+
+  size_t byte_length;
+
+  const uint8_t *bytes =
+    micropython_ti_get_node_bytes(context, node, &byte_length);
+
+  return bytes && byte_length == 4 && memcmp(bytes, "self", 4) == 0;
+}

@@ -2,11 +2,13 @@
 #include "micropython_ti_builtin.h"
 #include "micropython_ti_collect_suggestions.h"
 #include "micropython_ti_context.h"
+#include "micropython_ti_cursor_scope.h"
 #include "micropython_ti_define_info.h"
 #include "micropython_ti_eval.h"
 #include "micropython_ti_name.h"
 #include "micropython_ti_parse_budget.h"
 #include "micropython_ti_t.h"
+#include "micropython_ti_t_frame.h"
 #include "micropython_ti_type.h"
 #include "picoruby_ti_arena.h"
 #include <stddef.h>
@@ -18,12 +20,6 @@ typedef struct {
   TSNode target;
   uint32_t target_byte_length;
 } SuggestTargetSearch;
-
-typedef struct {
-  uint32_t cursor_byte_offset;
-  TSNode target;
-  uint32_t target_byte_length;
-} EnclosingClassSearch;
 
 static int
 is_identifier_byte(uint8_t byte) {
@@ -60,43 +56,6 @@ find_suggest_prefix(
   *prefix_length = cursor - start;
 
   return 1;
-}
-
-static void
-find_enclosing_class(TSNode node, int depth, EnclosingClassSearch *search) {
-  if (depth > MICROPYTHON_TI_EVAL_DEPTH_LIMIT)
-    return;
-
-  uint32_t start_byte_offset = ts_node_start_byte(node);
-  uint32_t end_byte_offset = ts_node_end_byte(node);
-
-  if (
-    search->cursor_byte_offset < start_byte_offset ||
-    search->cursor_byte_offset > end_byte_offset
-  )
-    return;
-
-  if (micropython_ti_node_type_equals(node, "class_definition")) {
-    uint32_t byte_length = end_byte_offset - start_byte_offset;
-
-    if (
-      ts_node_is_null(search->target) ||
-      byte_length < search->target_byte_length
-    ) {
-
-      search->target = node;
-      search->target_byte_length = byte_length;
-    }
-  }
-
-  uint32_t child_count = ts_node_named_child_count(node);
-
-  for (uint32_t child_index = 0; child_index < child_count; child_index++)
-    find_enclosing_class(
-      ts_node_named_child(node, child_index),
-      depth + 1,
-      search
-    );
 }
 
 static void
@@ -171,12 +130,12 @@ append_builtin_suggestions(
   int show_class_name,
   const uint8_t *prefix,
   size_t prefix_length,
-  int max_additions,
+  int max_addition_count,
   TiSuggestionList *out
 ) {
 
   const MicroPythonTiBuiltinMethod *methods[TI_SUGGESTION_CAPACITY];
-  int initial_count = out->count;
+  int initial_suggestion_count = out->count;
 
   if (out->count >= TI_SUGGESTION_CAPACITY)
     return;
@@ -201,7 +160,7 @@ append_builtin_suggestions(
 
     if (
       out->count >= TI_SUGGESTION_CAPACITY ||
-      out->count - initial_count >= max_additions
+      out->count - initial_suggestion_count >= max_addition_count
     )
       return;
 
@@ -333,50 +292,87 @@ append_defined_class_suggestions(
   }
 }
 
+static size_t
+write_type_string_or_untyped(
+  uint16_t t_node_index,
+  char *buffer,
+  size_t capacity
+) {
+
+  int written_length =
+    micropython_ti_type_to_string(t_node_index, buffer, capacity);
+
+  if (written_length > 0)
+    return (size_t)written_length;
+
+  if (capacity < sizeof("untyped"))
+    return 0;
+
+  memcpy(buffer, "untyped", sizeof("untyped"));
+
+  return sizeof("untyped") - 1;
+}
+
+static size_t
+count_define_arg_splat_bytes(uint8_t define_arg_kind) {
+  if (define_arg_kind == MICROPYTHON_TI_DEFINE_ARG_REST)
+    return 1;
+
+  if (define_arg_kind == MICROPYTHON_TI_DEFINE_ARG_KEYWORD_REST)
+    return 2;
+
+  return 0;
+}
+
 static char *
 make_signature_content(
   const MicroPythonTiDefineInfo *define_info,
   const MicroPythonTiName *name
 ) {
 
-  char return_type[MICROPYTHON_TI_TYPE_STRING_CAPACITY];
-
-  size_t return_type_length =
-    (size_t)micropython_ti_type_to_string(
-      define_info->return_t_node_index,
-      return_type,
-      sizeof(return_type)
-    );
-
-  if (return_type_length == 0) {
-    memcpy(return_type, "untyped", sizeof("untyped"));
-    return_type_length = sizeof("untyped") - 1;
-  }
-
+  char type_string[MICROPYTHON_TI_TYPE_STRING_CAPACITY];
   size_t length = name->byte_length + 2;
 
-  for (int index = 0; index < define_info->define_arg_count; index++) {
-    const MicroPythonTiName *define_arg =
-      micropython_ti_get_name(define_info->define_arg_name_ids[index]);
+  for (
+    int define_arg_index = 0;
+    define_arg_index < define_info->define_arg_count;
+    define_arg_index++
+  ) {
 
-    if (define_arg)
-      length += define_arg->byte_length;
+    const MicroPythonTiName *define_arg_name =
+      micropython_ti_get_name(
+        define_info->define_arg_name_ids[define_arg_index]
+      );
 
-    if (define_info->define_arg_kinds[index] == MICROPYTHON_TI_DEFINE_ARG_REST)
-      length++;
-    else if (
-      define_info->define_arg_kinds[index] ==
-      MICROPYTHON_TI_DEFINE_ARG_KEYWORD_REST
-    ) {
+    if (define_arg_name)
+      length += define_arg_name->byte_length;
 
-      length += 2;
-    }
+    length +=
+      count_define_arg_splat_bytes(
+        define_info->define_arg_kinds[define_arg_index]
+      );
 
-    if (index > 0)
+    length += sizeof(": ") - 1;
+
+    length +=
+      write_type_string_or_untyped(
+        define_info->define_arg_t_node_indexes[define_arg_index],
+        type_string,
+        sizeof(type_string)
+      );
+
+    if (define_arg_index > 0)
       length += 2;
   }
 
-  length += sizeof(" -> ") - 1 + return_type_length;
+  length += sizeof(" -> ") - 1;
+
+  length +=
+    write_type_string_or_untyped(
+      define_info->return_t_node_index,
+      type_string,
+      sizeof(type_string)
+    );
 
   char *detail = ti_allocate_from_arena(length + 1);
 
@@ -393,46 +389,114 @@ make_signature_content(
   offset += name->byte_length;
   detail[offset++] = '(';
 
-  for (int index = 0; index < define_info->define_arg_count; index++) {
-    const MicroPythonTiName *define_arg =
-      micropython_ti_get_name(define_info->define_arg_name_ids[index]);
+  for (
+    int define_arg_index = 0;
+    define_arg_index < define_info->define_arg_count;
+    define_arg_index++
+  ) {
 
-    if (index > 0) {
+    const MicroPythonTiName *define_arg_name =
+      micropython_ti_get_name(
+        define_info->define_arg_name_ids[define_arg_index]
+      );
+
+    if (define_arg_index > 0) {
       detail[offset++] = ',';
       detail[offset++] = ' ';
     }
 
-    if (define_arg) {
-      const uint8_t *define_arg_bytes =
-        micropython_ti_get_name_bytes(define_arg);
+    if (!define_arg_name)
+      continue;
 
-      if (!define_arg_bytes)
-        return NULL;
+    const uint8_t *define_arg_name_bytes =
+      micropython_ti_get_name_bytes(define_arg_name);
 
-      if (
-        define_info->define_arg_kinds[index] == MICROPYTHON_TI_DEFINE_ARG_REST
-      ) {
+    if (!define_arg_name_bytes)
+      return NULL;
 
-        detail[offset++] = '*';
-      } else if (
-        define_info->define_arg_kinds[index] ==
-        MICROPYTHON_TI_DEFINE_ARG_KEYWORD_REST
-      ) {
+    size_t splat_byte_count =
+      count_define_arg_splat_bytes(
+        define_info->define_arg_kinds[define_arg_index]
+      );
 
-        detail[offset++] = '*';
-        detail[offset++] = '*';
-      }
+    for (size_t splat_byte_index = 0; splat_byte_index < splat_byte_count;
+         splat_byte_index++)
+      detail[offset++] = '*';
 
-      memcpy(detail + offset, define_arg_bytes, define_arg->byte_length);
-      offset += define_arg->byte_length;
-    }
+    memcpy(
+      detail + offset,
+      define_arg_name_bytes,
+      define_arg_name->byte_length
+    );
+
+    offset += define_arg_name->byte_length;
+
+    detail[offset++] = ':';
+    detail[offset++] = ' ';
+
+    offset +=
+      write_type_string_or_untyped(
+        define_info->define_arg_t_node_indexes[define_arg_index],
+        detail + offset,
+        length + 1 - offset
+      );
   }
 
   detail[offset++] = ')';
   memcpy(detail + offset, " -> ", sizeof(" -> ") - 1);
   offset += sizeof(" -> ") - 1;
-  memcpy(detail + offset, return_type, return_type_length);
-  offset += return_type_length;
+
+  offset +=
+    write_type_string_or_untyped(
+      define_info->return_t_node_index,
+      detail + offset,
+      length + 1 - offset
+    );
+
+  detail[offset] = '\0';
+
+  return detail;
+}
+
+static char *
+make_instance_attribute_detail(
+  const MicroPythonTiName *name,
+  uint16_t t_node_index
+) {
+
+  char type_string[MICROPYTHON_TI_TYPE_STRING_CAPACITY];
+
+  size_t type_string_length =
+    write_type_string_or_untyped(
+      t_node_index,
+      type_string,
+      sizeof(type_string)
+    );
+
+  const uint8_t *name_bytes = micropython_ti_get_name_bytes(name);
+
+  if (!name_bytes)
+    return NULL;
+
+  size_t detail_length =
+    name->byte_length + (sizeof(": ") - 1) + type_string_length;
+
+  char *detail = ti_allocate_from_arena(detail_length + 1);
+
+  if (!detail)
+    return NULL;
+
+  size_t offset = 0;
+
+  memcpy(detail + offset, name_bytes, name->byte_length);
+  offset += name->byte_length;
+
+  memcpy(detail + offset, ": ", sizeof(": ") - 1);
+  offset += sizeof(": ") - 1;
+
+  memcpy(detail + offset, type_string, type_string_length);
+  offset += type_string_length;
+
   detail[offset] = '\0';
 
   return detail;
@@ -444,13 +508,18 @@ append_define_info_suggestions_for_owner(
   uint16_t class_name_id,
   const uint8_t *prefix,
   size_t prefix_length,
+  const char *class_name,
+  int max_addition_count,
   TiSuggestionList *out
 ) {
+
+  int initial_suggestion_count = out->count;
 
   for (
     int index = 0;
     index < micropython_ti_get_define_info_count() &&
-    out->count < TI_SUGGESTION_CAPACITY;
+    out->count < TI_SUGGESTION_CAPACITY &&
+    out->count - initial_suggestion_count < max_addition_count;
     index++
   ) {
 
@@ -495,20 +564,13 @@ append_define_info_suggestions_for_owner(
     suggestion->document = "";
     suggestion->contents = contents;
     suggestion->contents_length = (int)name->byte_length;
-    suggestion->class_name = NULL;
+    suggestion->class_name = class_name;
   }
 }
 
-static void
-append_define_info_suggestions(
-  MicroPythonTiContext *context,
-  uint8_t class_id,
-  const uint8_t *prefix,
-  size_t prefix_length,
-  TiSuggestionList *out
-) {
-
-  int user_class_index = class_id - MICROPYTHON_TI_CLASS_USER_BASE;
+static MicroPythonTiDefineInfo *
+find_user_class_define_info(uint8_t object_class_id) {
+  int user_class_index = object_class_id - MICROPYTHON_TI_CLASS_USER_BASE;
   int current_class_index = 0;
 
   for (int index = 0; index < micropython_ti_get_define_info_count(); index++) {
@@ -518,19 +580,119 @@ append_define_info_suggestions(
     if (!define_info || !define_info->is_class)
       continue;
 
-    if (current_class_index == user_class_index) {
-      append_define_info_suggestions_for_owner(
-        context,
-        define_info->name_id,
-        prefix,
-        prefix_length,
-        out
-      );
+    if (current_class_index == user_class_index)
+      return define_info;
 
+    current_class_index++;
+  }
+
+  return NULL;
+}
+
+static const char *
+make_user_class_name(uint8_t object_class_id) {
+  MicroPythonTiDefineInfo *class_define_info =
+    find_user_class_define_info(object_class_id);
+
+  if (!class_define_info)
+    return NULL;
+
+  return copy_name_to_arena(
+    micropython_ti_get_name(class_define_info->name_id)
+  );
+}
+
+static void
+append_define_info_suggestions(
+  MicroPythonTiContext *context,
+  uint8_t object_class_id,
+  const uint8_t *prefix,
+  size_t prefix_length,
+  const char *class_name,
+  int max_addition_count,
+  TiSuggestionList *out
+) {
+
+  MicroPythonTiDefineInfo *class_define_info =
+    find_user_class_define_info(object_class_id);
+
+  if (!class_define_info)
+    return;
+
+  append_define_info_suggestions_for_owner(
+    context,
+    class_define_info->name_id,
+    prefix,
+    prefix_length,
+    class_name,
+    max_addition_count,
+    out
+  );
+}
+
+static void
+append_instance_attribute_suggestions(
+  MicroPythonTiContext *context,
+  uint8_t object_class_id,
+  const uint8_t *prefix,
+  size_t prefix_length,
+  const char *class_name,
+  int max_addition_count,
+  TiSuggestionList *out
+) {
+
+  int initial_suggestion_count = out->count;
+  int search_slot_index = 0;
+  uint16_t instance_attribute_name_id;
+  uint16_t instance_attribute_t_node_index;
+
+  while (
+    micropython_ti_find_instance_attribute_and_advance_slot(
+      object_class_id,
+      &search_slot_index,
+      &instance_attribute_name_id,
+      &instance_attribute_t_node_index
+    )
+  ) {
+
+    const MicroPythonTiName *name =
+      micropython_ti_get_name(instance_attribute_name_id);
+
+    const uint8_t *name_bytes = micropython_ti_get_name_bytes(name);
+
+    if (
+      !name_bytes ||
+      !matches_prefix(name_bytes, name->byte_length, prefix, prefix_length)
+    ) {
+
+      continue;
+    }
+
+    char *contents = copy_name_to_arena(name);
+
+    char *detail =
+      make_instance_attribute_detail(name, instance_attribute_t_node_index);
+
+    if (!contents || !detail) {
+      context->failed = 1;
       return;
     }
 
-    current_class_index++;
+    if (has_suggestion(out, contents, detail))
+      continue;
+
+    if (
+      out->count >= TI_SUGGESTION_CAPACITY ||
+      out->count - initial_suggestion_count >= max_addition_count
+    )
+      return;
+
+    TiSuggestion *suggestion = &out->items[out->count++];
+    suggestion->detail = detail;
+    suggestion->document = "";
+    suggestion->contents = contents;
+    suggestion->contents_length = (int)name->byte_length;
+    suggestion->class_name = class_name;
   }
 }
 
@@ -572,38 +734,21 @@ micropython_ti_collect_suggestions_at_cursor(
       0,
       prefix,
       prefix_length,
+      NULL,
+      TI_SUGGESTION_CAPACITY,
       out
     );
 
-    EnclosingClassSearch class_search = {
-      .cursor_byte_offset = (uint32_t)cursor_byte_offset,
-    };
-
-    find_enclosing_class(root, 0, &class_search);
-
-    if (!ts_node_is_null(class_search.target)) {
-      uint16_t class_name_id;
-
-      if (
-        micropython_ti_intern_node_name(
-          context,
-          ts_node_child_by_field_name(class_search.target, "name", 4),
-          &class_name_id
-        )
-      ) {
-
-        uint8_t class_id = micropython_ti_get_defined_class_id(class_name_id);
-
-        if (class_id != MICROPYTHON_TI_CLASS_NONE) {
-          append_define_info_suggestions(
-            context,
-            class_id,
-            prefix,
-            prefix_length,
-            out
-          );
-        }
-      }
+    if (context->current_class_name_id != 0) {
+      append_define_info_suggestions_for_owner(
+        context,
+        context->current_class_name_id,
+        prefix,
+        prefix_length,
+        NULL,
+        TI_SUGGESTION_CAPACITY,
+        out
+      );
     }
 
     append_builtin_suggestions(
@@ -655,20 +800,44 @@ micropython_ti_collect_suggestions_at_cursor(
     counted_target_t = micropython_ti_get_t(counted_target_t->union_next);
   }
 
-  int max_additions = TI_SUGGESTION_CAPACITY / target_count;
+  int max_addition_count = TI_SUGGESTION_CAPACITY / target_count;
 
   while (target_t) {
     if ((target_t->t_flags & MICROPYTHON_TI_T_FLAG_DEFINED_CLASS) != 0) {
-      if (
-        !show_class_name &&
-        (target_t->t_flags & MICROPYTHON_TI_T_FLAG_STATIC) == 0
-      ) {
+      if ((target_t->t_flags & MICROPYTHON_TI_T_FLAG_STATIC) == 0) {
+        const char *class_name = NULL;
+
+        if (show_class_name) {
+          class_name = make_user_class_name(target_t->object_class_id);
+
+          if (!class_name) {
+            context->failed = 1;
+            return 0;
+          }
+        }
+
+        int initial_suggestion_count = out->count;
 
         append_define_info_suggestions(
           context,
           target_t->object_class_id,
           prefix,
           prefix_length,
+          class_name,
+          max_addition_count,
+          out
+        );
+
+        int remaining_addition_count =
+          max_addition_count - (out->count - initial_suggestion_count);
+
+        append_instance_attribute_suggestions(
+          context,
+          target_t->object_class_id,
+          prefix,
+          prefix_length,
+          class_name,
+          remaining_addition_count,
           out
         );
       }
@@ -679,7 +848,7 @@ micropython_ti_collect_suggestions_at_cursor(
         show_class_name,
         prefix,
         prefix_length,
-        max_additions,
+        max_addition_count,
         out
       );
     }
@@ -746,10 +915,18 @@ micropython_ti_fill_suggestions_at_cursor(
     .source_byte_length = source->source_byte_length,
   };
 
+  TSNode root = ts_tree_root_node(tree);
+
+  micropython_ti_set_context_scope_at_cursor(
+    &context,
+    root,
+    cursor_byte_offset
+  );
+
   if (!ti_did_arena_overflow()) {
     micropython_ti_collect_suggestions_at_cursor(
       &context,
-      ts_tree_root_node(tree),
+      root,
       cursor_byte_offset,
       out
     );

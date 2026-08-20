@@ -74,6 +74,8 @@ area512_filer_read_key(void) {
     return KEY_REBOOT;
   case 'm':
     return KEY_MOVE;
+  case 'C':
+    return KEY_COPY;
   default:
     return first_byte;
   }

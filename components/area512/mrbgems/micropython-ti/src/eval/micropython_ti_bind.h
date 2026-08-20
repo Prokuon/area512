@@ -6,8 +6,7 @@
 
 uint16_t micropython_ti_bind_scalar_assignment(
   MicroPythonTiContext *context,
-  TSNode target_node,
-  TSNode value_node,
+  TSNode assignment_node,
   int depth
 );
 

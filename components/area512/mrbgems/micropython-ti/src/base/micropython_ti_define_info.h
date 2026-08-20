@@ -20,8 +20,8 @@ typedef struct {
   uint8_t define_arg_count;
   uint8_t is_class;
   uint16_t define_arg_name_ids[MICROPYTHON_TI_DEFINE_ARG_CAPACITY];
-  MicroPythonTiDefineArgKind
-    define_arg_kinds[MICROPYTHON_TI_DEFINE_ARG_CAPACITY];
+  uint16_t define_arg_t_node_indexes[MICROPYTHON_TI_DEFINE_ARG_CAPACITY];
+  uint8_t define_arg_kinds[MICROPYTHON_TI_DEFINE_ARG_CAPACITY];
 } MicroPythonTiDefineInfo;
 
 int micropython_ti_initialize_define_infos(void);

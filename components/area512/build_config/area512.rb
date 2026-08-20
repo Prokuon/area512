@@ -71,6 +71,8 @@ MRuby::CrossBuild.new("esp32-femtoruby") do |conf|
   conf.gem gemdir: File.join(pure, 'picoruby-i2c')
   conf.gem gemdir: File.join(pure, 'picoruby-adc')
 
+  conf.gem gemdir: File.join(pure, 'picoruby-spi')
+
   # Flicker-free text drawing (Sprite) for the launcher and small apps.
   conf.gem gemdir: File.expand_path('../mrbgems/picoruby-area512-sprite', __dir__)
 

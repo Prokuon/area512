@@ -163,6 +163,20 @@ run_filer_interaction(Filer *filer) {
 
       break;
 
+    case KEY_COPY:
+      if (!entry)
+        break;
+
+      if (entry->type == ENTRY_TYPE_UP) {
+        set_message(filer, "Cannot copy ..");
+        break;
+      }
+
+      if (read_text_input(filer, "Copy to: "))
+        return ACTION_COPY;
+
+      break;
+
     case KEY_REBOOT:
       area512_filer_teardown_ui(filer);
 

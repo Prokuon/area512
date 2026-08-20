@@ -20,7 +20,7 @@ collect_python_auto_indent_tokens(
   TSNode node
 ) {
 
-  if (ts_node_is_missing(node))
+  if (ts_node_start_byte(node) == ts_node_end_byte(node))
     return;
 
   uint32_t child_count = ts_node_child_count(node);
@@ -105,31 +105,6 @@ python_auto_indent_tokenize(
 }
 
 static int
-python_auto_indent_is_suite_keyword(const char *node_type) {
-  return strcmp(node_type, "if") == 0 || strcmp(node_type, "elif") == 0 ||
-         strcmp(node_type, "else") == 0 || strcmp(node_type, "for") == 0 ||
-         strcmp(node_type, "while") == 0 || strcmp(node_type, "def") == 0 ||
-         strcmp(node_type, "class") == 0 || strcmp(node_type, "try") == 0 ||
-         strcmp(node_type, "except") == 0 ||
-         strcmp(node_type, "finally") == 0 ||
-         strcmp(node_type, "with") == 0 || strcmp(node_type, "match") == 0 ||
-         strcmp(node_type, "case") == 0;
-}
-
-static int
-python_auto_indent_is_continuation_type(const char *node_type) {
-  return strcmp(node_type, ".") == 0 || strcmp(node_type, ",") == 0 ||
-         strcmp(node_type, "+") == 0 || strcmp(node_type, "-") == 0 ||
-         strcmp(node_type, "*") == 0 || strcmp(node_type, "**") == 0 ||
-         strcmp(node_type, "/") == 0 || strcmp(node_type, "//") == 0 ||
-         strcmp(node_type, "%") == 0 || strcmp(node_type, "@") == 0 ||
-         strcmp(node_type, "and") == 0 || strcmp(node_type, "or") == 0 ||
-         strcmp(node_type, "|") == 0 || strcmp(node_type, "&") == 0 ||
-         strcmp(node_type, "^") == 0 || strcmp(node_type, "=") == 0 ||
-         strcmp(node_type, ":=") == 0;
-}
-
-static int
 python_auto_indent_has_unclosed_delimiter(
   const editor_python_auto_indent_tokens_t *tokens
 ) {
@@ -139,26 +114,49 @@ python_auto_indent_has_unclosed_delimiter(
 }
 
 static int
-python_auto_indent_line_ends_with_colon(
-  const char *line,
-  int line_byte_length
+python_auto_indent_last_token_is_colon(
+  const editor_python_auto_indent_tokens_t *tokens
 ) {
 
-  while (
-    line_byte_length > 0 &&
-    (line[line_byte_length - 1] == ' ' || line[line_byte_length - 1] == '\t')
-  ) {
+  return tokens->token_count > 0 &&
+         strcmp(tokens->node_types[tokens->token_count - 1], ":") == 0;
+}
 
-    line_byte_length--;
-  }
+static int
+python_auto_indent_last_token_is_continuation(
+  const editor_python_auto_indent_tokens_t *tokens
+) {
 
-  return line_byte_length > 0 && line[line_byte_length - 1] == ':';
+  if (tokens->token_count == 0)
+    return 0;
+
+  const char *last_token_type = tokens->node_types[tokens->token_count - 1];
+
+  return strcmp(last_token_type, ".") == 0 ||
+         strcmp(last_token_type, ",") == 0 ||
+         strcmp(last_token_type, "+") == 0 ||
+         strcmp(last_token_type, "-") == 0 ||
+         strcmp(last_token_type, "*") == 0 ||
+         strcmp(last_token_type, "**") == 0 ||
+         strcmp(last_token_type, "/") == 0 ||
+         strcmp(last_token_type, "//") == 0 ||
+         strcmp(last_token_type, "%") == 0 ||
+         strcmp(last_token_type, "@") == 0 ||
+         strcmp(last_token_type, "and") == 0 ||
+         strcmp(last_token_type, "or") == 0 ||
+         strcmp(last_token_type, "|") == 0 ||
+         strcmp(last_token_type, "&") == 0 ||
+         strcmp(last_token_type, "^") == 0 ||
+         strcmp(last_token_type, "=") == 0 ||
+         strcmp(last_token_type, ":=") == 0;
 }
 
 int
 editor_python_auto_indent_should_increase(
   const char *line,
-  int line_byte_length
+  int line_byte_length,
+  const char *previous_line,
+  int previous_line_byte_length
 ) {
 
   editor_python_auto_indent_tokens_t tokens;
@@ -167,22 +165,26 @@ editor_python_auto_indent_should_increase(
   if (tokens.token_count == 0)
     return 0;
 
-  const char *last_token_type = tokens.node_types[tokens.token_count - 1];
-
-  if (python_auto_indent_line_ends_with_colon(line, line_byte_length)) {
-    for (int token_index = 0; token_index < tokens.token_count; token_index++)
-      if (
-        python_auto_indent_is_suite_keyword(
-          tokens.node_types[token_index]
-        )
-      )
-        return 1;
-  }
+  if (python_auto_indent_last_token_is_colon(&tokens))
+    return 1;
 
   if (python_auto_indent_has_unclosed_delimiter(&tokens))
     return 1;
 
-  return python_auto_indent_is_continuation_type(last_token_type);
+  if (!python_auto_indent_last_token_is_continuation(&tokens))
+    return 0;
+
+  editor_python_auto_indent_tokens_t previous_tokens;
+
+  python_auto_indent_tokenize(
+    &previous_tokens,
+    previous_line,
+    previous_line_byte_length
+  );
+
+  return !python_auto_indent_last_token_is_continuation(&previous_tokens) &&
+         !python_auto_indent_has_unclosed_delimiter(&previous_tokens) &&
+         !python_auto_indent_last_token_is_colon(&previous_tokens);
 }
 
 int

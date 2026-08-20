@@ -183,6 +183,17 @@ eval_attribute(MicroPythonTiContext *context, TSNode node, int depth) {
       return 0;
     }
 
+    if ((receiver_t_node->t_flags & MICROPYTHON_TI_T_FLAG_STATIC) == 0) {
+      uint16_t instance_attribute_t_node_index =
+        micropython_ti_get_instance_attribute_t(
+          receiver_t_node->object_class_id,
+          attribute_name_id
+        );
+
+      if (instance_attribute_t_node_index != 0)
+        return instance_attribute_t_node_index;
+    }
+
     return micropython_ti_get_method_t(
       receiver_t_node->object_class_id,
       attribute_name_id
@@ -326,12 +337,7 @@ micropython_ti_eval_expression(
     return micropython_ti_eval_return(context, node, depth);
 
   if (strcmp(node_type, "assignment") == 0)
-    return micropython_ti_bind_scalar_assignment(
-      context,
-      ts_node_child_by_field_name(node, "left", 4),
-      ts_node_child_by_field_name(node, "right", 5),
-      depth
-    );
+    return micropython_ti_bind_scalar_assignment(context, node, depth);
 
   if (strcmp(node_type, "block") == 0 || strcmp(node_type, "module") == 0)
     return micropython_ti_eval_block(context, node, depth);
@@ -405,7 +411,14 @@ bind_imported_module(MicroPythonTiContext *context, TSNode name_node) {
   uint16_t module_t_node_index =
     micropython_ti_new_t(module_class_id, MICROPYTHON_TI_T_FLAG_STATIC, 0);
 
-  if (!micropython_ti_set_value_t(name_id, module_t_node_index))
+  if (
+    !micropython_ti_set_value_t(
+      context->current_class_name_id,
+      context->current_define_name_id,
+      name_id,
+      module_t_node_index
+    )
+  )
     context->failed = 1;
 }
 
@@ -506,6 +519,18 @@ eval_import_from(MicroPythonTiContext *context, TSNode node) {
   }
 }
 
+static void
+eval_assignment_children(MicroPythonTiContext *context, TSNode node) {
+  uint32_t child_count = ts_node_named_child_count(node);
+
+  for (uint32_t child_index = 0; child_index < child_count; child_index++) {
+    TSNode child_node = ts_node_named_child(node, child_index);
+
+    if (micropython_ti_node_type_equals(child_node, "assignment"))
+      micropython_ti_eval_expression(context, child_node, 0);
+  }
+}
+
 void
 micropython_ti_eval_node(MicroPythonTiContext *context, TSNode node) {
   if (ts_node_is_null(node) || context->failed)
@@ -536,7 +561,10 @@ micropython_ti_eval_node(MicroPythonTiContext *context, TSNode node) {
 
     uint16_t outer_class_name_id = context->current_class_name_id;
     uint8_t outer_class_id = context->current_class_id;
+    uint16_t outer_define_name_id = context->current_define_name_id;
+
     context->current_class_name_id = class_name_id;
+    context->current_define_name_id = 0;
 
     context->current_class_id =
       micropython_ti_get_defined_class_id(class_name_id);
@@ -549,26 +577,42 @@ micropython_ti_eval_node(MicroPythonTiContext *context, TSNode node) {
 
     context->current_class_name_id = outer_class_name_id;
     context->current_class_id = outer_class_id;
+    context->current_define_name_id = outer_define_name_id;
 
     return;
   }
 
   if (strcmp(node_type, "import_statement") == 0) {
-    eval_import(context, node);
+    if (!context->is_preload_source)
+      eval_import(context, node);
+
     return;
   }
 
   if (strcmp(node_type, "import_from_statement") == 0) {
-    eval_import_from(context, node);
+    if (!context->is_preload_source)
+      eval_import_from(context, node);
+
     return;
   }
 
-  if (
-    strcmp(node_type, "return_statement") == 0 ||
-    strcmp(node_type, "assignment") == 0 ||
-    strcmp(node_type, "expression_statement") == 0
-  ) {
+  if (strcmp(node_type, "expression_statement") == 0) {
+    if (context->is_preload_source)
+      eval_assignment_children(context, node);
+    else
+      micropython_ti_eval_expression(context, node, 0);
 
+    return;
+  }
+
+  if (strcmp(node_type, "return_statement") == 0) {
+    if (!context->is_preload_source)
+      micropython_ti_eval_expression(context, node, 0);
+
+    return;
+  }
+
+  if (strcmp(node_type, "assignment") == 0) {
     micropython_ti_eval_expression(context, node, 0);
     return;
   }
@@ -600,6 +644,7 @@ static int
 evaluate_source(
   const TiSource *source,
   int source_index,
+  int is_preload_source,
   int round,
   TiDiagnosticList *diagnostics
 ) {
@@ -643,6 +688,7 @@ evaluate_source(
   MicroPythonTiContext context = {
     .source = source_bytes,
     .source_byte_length = source->source_byte_length,
+    .is_preload_source = is_preload_source,
     .round = round,
     .diagnostics = diagnostics,
   };
@@ -676,14 +722,16 @@ micropython_ti_evaluate_sources(
   for (int round = 1; round <= 2; round++) {
     for (int source_index = 0; source_index < sources->count; source_index++) {
       TiDiagnosticList *source_diagnostics = NULL;
+      int is_preload_source = source_index < sources->count - 1;
 
-      if (round == 2 && source_index == sources->count - 1)
+      if (round == 2 && !is_preload_source)
         source_diagnostics = diagnostics;
 
       if (
         !evaluate_source(
           &sources->items[source_index],
           source_index,
+          is_preload_source,
           round,
           source_diagnostics
         )
