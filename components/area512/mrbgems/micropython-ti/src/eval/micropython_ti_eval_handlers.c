@@ -35,5 +35,9 @@ micropython_ti_handle_identifier(MicroPythonTiContext *context, TSNode node) {
     );
   }
 
-  return micropython_ti_get_value_t(name_id);
+  return micropython_ti_get_value_t(
+    context->current_class_name_id,
+    context->current_define_name_id,
+    name_id
+  );
 }

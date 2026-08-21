@@ -41,6 +41,7 @@
 #define ACTION_MOVE 12
 #define ACTION_VIEW_MARKDOWN 13
 #define ACTION_RUN_PYTHON 14
+#define ACTION_COPY 15
 
 #define KEY_UP 1001
 #define KEY_DOWN 1002
@@ -55,6 +56,7 @@
 #define KEY_NEW_DIR 1012
 #define KEY_REBOOT 1013
 #define KEY_MOVE 1014
+#define KEY_COPY 1015
 
 typedef struct {
   char name[NAME_MAX];

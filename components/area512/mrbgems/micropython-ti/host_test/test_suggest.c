@@ -5,10 +5,10 @@
 static TiSuggestionList
 suggest_source(const char *source) {
   TiSuggestionList suggestions;
-  int source_length = (int)strlen(source);
+  int source_byte_length = (int)strlen(source);
   TiSource source_item = {
     .source = source,
-    .source_byte_length = source_length,
+    .source_byte_length = source_byte_length,
   };
   TiSourceList sources = {
     .items = &source_item,
@@ -17,7 +17,36 @@ suggest_source(const char *source) {
 
   micropython_ti_fill_suggestions_at_cursor(
     &sources,
-    source_length,
+    source_byte_length,
+    &suggestions
+  );
+
+  return suggestions;
+}
+
+static TiSuggestionList
+suggest_with_preload_source(const char *preload_source, const char *source) {
+  TiSuggestionList suggestions;
+  int preload_source_byte_length = (int)strlen(preload_source);
+  int source_byte_length = (int)strlen(source);
+  TiSource source_items[] = {
+    {
+      .source = preload_source,
+      .source_byte_length = preload_source_byte_length,
+    },
+    {
+      .source = source,
+      .source_byte_length = source_byte_length,
+    },
+  };
+  TiSourceList sources = {
+    .items = source_items,
+    .count = 2,
+  };
+
+  micropython_ti_fill_suggestions_at_cursor(
+    &sources,
+    source_byte_length,
     &suggestions
   );
 
@@ -73,25 +102,28 @@ test_receiverless_suggestion(void) {
 static void
 test_receiverless_top_level_function_suggestion(void) {
   TiSuggestionList suggestions =
-    suggest_source("def hello(name):\n"
+    suggest_source("def hello(name: str) -> int:\n"
                    "    return 1\n"
                    "he");
   const TiSuggestion *suggestion = find_suggestion(&suggestions, "hello");
 
   assert(suggestion);
-  assert(strcmp(suggestion->detail, "hello(name) -> int") == 0);
+  assert(strcmp(suggestion->detail, "hello(name: str) -> int") == 0);
 }
 
 static void
 test_rest_and_keyword_rest_parameter_suggestion(void) {
   TiSuggestionList suggestions =
-    suggest_source("def test(x, *a, **b):\n"
+    suggest_source("def test(x, *a, **b) -> int:\n"
                    "    return 1\n"
                    "te");
   const TiSuggestion *suggestion = find_suggestion(&suggestions, "test");
 
   assert(suggestion);
-  assert(strcmp(suggestion->detail, "test(x, *a, **b) -> int") == 0);
+  assert(strcmp(
+    suggestion->detail,
+    "test(x: untyped, *a: untyped, **b: untyped) -> int"
+  ) == 0);
 }
 
 static void
@@ -136,7 +168,8 @@ test_receiverless_lowercase_prefix_skips_class_suggestions(void) {
 
 static void
 test_union_suggestion(void) {
-  TiSuggestionList suggestions = suggest_source("v = 1\nv = \"s\"\nv.");
+  TiSuggestionList suggestions =
+    suggest_source("v = 1 if condition else \"s\"\nv.");
   const TiSuggestion *int_suggestion =
     find_suggestion(&suggestions, "to_bytes");
   const TiSuggestion *str_suggestion = find_suggestion(&suggestions, "find");
@@ -165,7 +198,7 @@ test_union_suggestion(void) {
 static void
 test_union_prefix_suggestion(void) {
   TiSuggestionList suggestions =
-    suggest_source("v = b\"x\"\nv = \"s\"\nv.spl");
+    suggest_source("v = b\"x\" if condition else \"s\"\nv.spl");
   const TiSuggestion *bytes_suggestion =
     find_suggestion(&suggestions, "split");
 
@@ -179,16 +212,45 @@ test_union_prefix_suggestion(void) {
 }
 
 static void
-test_union_skips_user_class(void) {
-  TiSuggestionList suggestions = suggest_source("class Foo:\n"
-                                                "    def bar(self):\n"
-                                                "        return 1\n"
-                                                "value = Foo()\n"
-                                                "value = 1\n"
-                                                "value.");
+test_union_includes_user_class(void) {
+  TiSuggestionList suggestions =
+    suggest_source("class Foo:\n"
+                   "    def bar(self):\n"
+                   "        return 1\n"
+                   "value = Foo() if condition else 1\n"
+                   "value.");
+  const TiSuggestion *suggestion = find_suggestion(&suggestions, "bar");
 
   assert(find_suggestion(&suggestions, "to_bytes"));
-  assert(!find_suggestion(&suggestions, "bar"));
+  assert(suggestion);
+  assert(strcmp(suggestion->class_name, "Foo") == 0);
+}
+
+static void
+test_instance_attribute_suggestion(void) {
+  TiSuggestionList suggestions =
+    suggest_source("class Holder:\n"
+                   "    def __init__(self):\n"
+                   "        self.name = \"x\"\n"
+                   "holder = Holder()\n"
+                   "holder.");
+  const TiSuggestion *suggestion = find_suggestion(&suggestions, "name");
+
+  assert(suggestion);
+  assert(strcmp(suggestion->detail, "name: str") == 0);
+}
+
+static void
+test_self_attribute_suggestion(void) {
+  TiSuggestionList suggestions =
+    suggest_source("class Holder:\n"
+                   "    def __init__(self):\n"
+                   "        self.count = 1\n"
+                   "    def run(self):\n"
+                   "        self.");
+
+  assert(find_suggestion(&suggestions, "count"));
+  assert(find_suggestion(&suggestions, "run"));
 }
 
 static void
@@ -205,15 +267,16 @@ test_imported_module_suggestion(void) {
 
 static void
 test_user_class_suggestion(void) {
-  TiSuggestionList suggestions = suggest_source("class Foo:\n"
-                                                "    def bar(self, value):\n"
-                                                "        return 1\n"
-                                                "foo = Foo()\n"
-                                                "foo.ba");
+  TiSuggestionList suggestions =
+    suggest_source("class Foo:\n"
+                   "    def bar(self, value: int) -> int:\n"
+                   "        return 1\n"
+                   "foo = Foo()\n"
+                   "foo.ba");
   const TiSuggestion *suggestion = find_suggestion(&suggestions, "bar");
 
   assert(suggestion);
-  assert(strcmp(suggestion->detail, "bar(value) -> int") == 0);
+  assert(strcmp(suggestion->detail, "bar(value: int) -> int") == 0);
 }
 
 static void
@@ -233,18 +296,19 @@ test_user_class_only_suggests_its_methods(void) {
 
 static void
 test_same_method_name_in_different_classes(void) {
-  TiSuggestionList suggestions = suggest_source("class Foo:\n"
-                                                "    def value(self, foo):\n"
-                                                "        return 1\n"
-                                                "class Bar:\n"
-                                                "    def value(self, bar):\n"
-                                                "        return 1\n"
-                                                "bar_instance = Bar()\n"
-                                                "bar_instance.val");
+  TiSuggestionList suggestions =
+    suggest_source("class Foo:\n"
+                   "    def value(self, foo):\n"
+                   "        return 1\n"
+                   "class Bar:\n"
+                   "    def value(self, bar) -> int:\n"
+                   "        return 1\n"
+                   "bar_instance = Bar()\n"
+                   "bar_instance.val");
   const TiSuggestion *suggestion = find_suggestion(&suggestions, "value");
 
   assert(suggestion);
-  assert(strcmp(suggestion->detail, "value(bar) -> int") == 0);
+  assert(strcmp(suggestion->detail, "value(bar: untyped) -> int") == 0);
 }
 
 static void
@@ -262,6 +326,90 @@ test_nested_class_methods_have_separate_owners(void) {
   assert(!find_suggestion(&suggestions, "inner_method"));
 }
 
+static void
+test_signature_shows_argument_types(void) {
+  TiSuggestionList suggestions =
+    suggest_source("def run(first: int, second) -> str:\n"
+                   "    return \"x\"\n"
+                   "ru");
+  const TiSuggestion *suggestion = find_suggestion(&suggestions, "run");
+
+  assert(suggestion);
+  assert(strcmp(
+    suggestion->detail,
+    "run(first: int, second: untyped) -> str"
+  ) == 0);
+}
+
+static void
+test_unsupported_type_hint_is_untyped(void) {
+  TiSuggestionList suggestions =
+    suggest_source("def run(value: list[int]) -> int | None:\n"
+                   "    return 1\n"
+                   "ru");
+  const TiSuggestion *suggestion = find_suggestion(&suggestions, "run");
+
+  assert(suggestion);
+  assert(strcmp(
+    suggestion->detail,
+    "run(value: untyped) -> Union<int NoneType>"
+  ) == 0);
+}
+
+static void
+test_preload_initializer_attribute_is_suggested(void) {
+  TiSuggestionList suggestions =
+    suggest_with_preload_source(
+      "class Holder:\n"
+      "    def __init__(self):\n"
+      "        self.value = 1\n",
+      "Holder()."
+    );
+
+  assert(find_suggestion(&suggestions, "value"));
+}
+
+static void
+test_preload_non_initializer_attribute_is_not_suggested(void) {
+  TiSuggestionList suggestions =
+    suggest_with_preload_source(
+      "class Holder:\n"
+      "    def setup(self):\n"
+      "        self.value = 1\n",
+      "Holder()."
+    );
+
+  assert(!find_suggestion(&suggestions, "value"));
+}
+
+static void
+test_preload_top_level_binding_is_suggested(void) {
+  TiSuggestionList suggestions =
+    suggest_with_preload_source("answer = 1\n", "answer.to_by");
+
+  assert(find_suggestion(&suggestions, "to_bytes"));
+}
+
+static void
+test_preload_class_variable_is_suggested(void) {
+  TiSuggestionList suggestions =
+    suggest_with_preload_source(
+      "class Holder:\n"
+      "    limit = 1\n",
+      "Holder()."
+    );
+
+  assert(find_suggestion(&suggestions, "limit"));
+}
+
+static void
+test_preload_aliased_import_is_not_suggested(void) {
+  TiSuggestionList suggestions =
+    suggest_with_preload_source("import gc as collector\n", "collector.co");
+
+  assert(!find_suggestion(&suggestions, "collect"));
+}
+
 int
 main(void) {
   test_str_suggestion();
@@ -276,13 +424,22 @@ main(void) {
   test_receiverless_lowercase_prefix_skips_class_suggestions();
   test_union_suggestion();
   test_union_prefix_suggestion();
-  test_union_skips_user_class();
+  test_union_includes_user_class();
+  test_instance_attribute_suggestion();
+  test_self_attribute_suggestion();
   test_static_method_suggestion();
   test_imported_module_suggestion();
   test_user_class_suggestion();
   test_user_class_only_suggests_its_methods();
   test_same_method_name_in_different_classes();
   test_nested_class_methods_have_separate_owners();
+  test_signature_shows_argument_types();
+  test_unsupported_type_hint_is_untyped();
+  test_preload_initializer_attribute_is_suggested();
+  test_preload_non_initializer_attribute_is_not_suggested();
+  test_preload_top_level_binding_is_suggested();
+  test_preload_class_variable_is_suggested();
+  test_preload_aliased_import_is_not_suggested();
 
   return 0;
 }

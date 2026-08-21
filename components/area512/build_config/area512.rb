@@ -22,6 +22,7 @@ MRuby::CrossBuild.new("esp32-femtoruby") do |conf|
   conf.cc.defines << "PICORB_INT64"
   conf.cc.defines << "NDEBUG"
   conf.cc.defines << "MAX_SYMBOLS_COUNT=2000"
+  conf.cc.defines << "TI_ARENA_SIZE=24576"
   conf.femtoruby(alloc_libc: false)
 
   # Pristine gems from ./R2P2-ESP32; the build root stays the Area512 tree.
@@ -70,6 +71,8 @@ MRuby::CrossBuild.new("esp32-femtoruby") do |conf|
   conf.gem gemdir: File.join(pure, 'picoruby-rng')
   conf.gem gemdir: File.join(pure, 'picoruby-i2c')
   conf.gem gemdir: File.join(pure, 'picoruby-adc')
+
+  conf.gem gemdir: File.join(pure, 'picoruby-spi')
 
   # Flicker-free text drawing (Sprite) for the launcher and small apps.
   conf.gem gemdir: File.expand_path('../mrbgems/picoruby-area512-sprite', __dir__)

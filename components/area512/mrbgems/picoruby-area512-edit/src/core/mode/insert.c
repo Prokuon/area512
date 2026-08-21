@@ -29,7 +29,12 @@ auto_indent_should_increase(
     );
 
   case VIM_SYNTAX_PYTHON:
-    return editor_python_auto_indent_should_increase(line, line_byte_length);
+    return editor_python_auto_indent_should_increase(
+      line,
+      line_byte_length,
+      previous_line,
+      previous_line_byte_length
+    );
 
   default:
     return 0;
@@ -90,7 +95,7 @@ put_auto_indented_newline(Vim *vim) {
     auto_indent_should_increase(
       vim->screen.syntax,
       line,
-      byte_length,
+      cursor_byte_offset,
       previous_line,
       previous_byte_length
     )
@@ -242,28 +247,6 @@ is_numeric_literal_before(const VimString *line, int byte_offset) {
     (preceding_byte >= 'a' && preceding_byte <= 'z') ||
     (preceding_byte >= 'A' && preceding_byte <= 'Z') ||
     preceding_byte == '_'
-  );
-}
-
-static int
-is_completion_trigger(
-  const VimBuffer *buffer,
-  const char *character,
-  int character_byte_length
-) {
-
-  if (character_byte_length != 1)
-    return 0;
-
-  if (character[0] >= 'A' && character[0] <= 'Z')
-    return 1;
-
-  if (character[0] != '.')
-    return 0;
-
-  return !is_numeric_literal_before(
-    &buffer->lines[buffer->cursor_line_index],
-    buffer->cursor_byte_offset - 1
   );
 }
 
@@ -434,13 +417,6 @@ handle_insert(
     if (key >= 32 && character && character_byte_length > 0) {
       vim_buffer_put_string(BUFFER, character, character_byte_length);
       maybe_outdent_current_line(vim);
-
-      if (is_completion_trigger(BUFFER, character, character_byte_length)) {
-        if (vim->active_canvas)
-          vim_screen_refresh_if_needed(&vim->screen, vim->active_canvas);
-
-        start_completion(vim);
-      }
     }
 
     break;

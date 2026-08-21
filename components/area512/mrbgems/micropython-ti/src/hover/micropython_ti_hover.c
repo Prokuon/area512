@@ -2,10 +2,12 @@
 #include "micropython_ti_builtin.h"
 #include "micropython_ti_collect_suggestions.h"
 #include "micropython_ti_context.h"
+#include "micropython_ti_cursor_scope.h"
 #include "micropython_ti_define_info.h"
 #include "micropython_ti_eval.h"
 #include "micropython_ti_name.h"
 #include "micropython_ti_parse_budget.h"
+#include "micropython_ti_t.h"
 #include "micropython_ti_t_frame.h"
 #include "micropython_ti_type.h"
 #include "picoruby_ti_arena.h"
@@ -56,7 +58,13 @@ find_hover_target(TSNode node, int depth, HoverTargetSearch *search) {
 }
 
 static int
-is_named_definition_part(TSNode parent, TSNode node) {
+is_attribute_name(TSNode parent, TSNode node) {
+  return micropython_ti_node_type_equals(parent, "attribute") &&
+    ts_node_eq(node, ts_node_child_by_field_name(parent, "attribute", 9));
+}
+
+static int
+is_hover_excluded(TSNode parent, TSNode node) {
   const char *parent_type = ts_node_type(parent);
 
   if (
@@ -83,14 +91,7 @@ is_named_definition_part(TSNode parent, TSNode node) {
     return 1;
   }
 
-  if (strcmp(parent_type, "attribute") == 0) {
-    return ts_node_eq(
-      node,
-      ts_node_child_by_field_name(parent, "attribute", 9)
-    );
-  }
-
-  return 0;
+  return is_attribute_name(parent, node);
 }
 
 static int
@@ -122,7 +123,7 @@ is_called_method_name(TSNode node) {
   TSNode parent = ts_node_parent(node);
 
   if (micropython_ti_node_type_equals(parent, "attribute")) {
-    if (!ts_node_eq(node, ts_node_child_by_field_name(parent, "attribute", 9)))
+    if (!is_attribute_name(parent, node))
       return 0;
 
     node = parent;
@@ -188,6 +189,7 @@ static void
 set_variable_hover(
   MicroPythonTiContext *context,
   TSNode variable_name_node,
+  uint16_t t_node_index,
   TiHoverInfo *out
 ) {
 
@@ -199,13 +201,6 @@ set_variable_hover(
       variable_name_node,
       &variable_name_length
     );
-
-  uint16_t name_id;
-
-  if (!micropython_ti_intern_node_name(context, variable_name_node, &name_id))
-    return;
-
-  uint16_t t_node_index = micropython_ti_get_value_t(name_id);
 
   if (
     !variable_name ||
@@ -227,6 +222,84 @@ set_variable_hover(
 
   out->variable_name[variable_name_length] = '\0';
   out->found = 1;
+}
+
+static void
+set_identifier_hover(
+  MicroPythonTiContext *context,
+  TSNode identifier_node,
+  TiHoverInfo *out
+) {
+
+  uint16_t name_id;
+
+  if (!micropython_ti_intern_node_name(context, identifier_node, &name_id))
+    return;
+
+  set_variable_hover(
+    context,
+    identifier_node,
+    micropython_ti_get_value_t(
+      context->current_class_name_id,
+      context->current_define_name_id,
+      name_id
+    ),
+    out
+  );
+}
+
+static void
+set_instance_attribute_hover(
+  MicroPythonTiContext *context,
+  TSNode attribute_node,
+  TiHoverInfo *out
+) {
+
+  uint16_t receiver_t_node_index =
+    micropython_ti_eval_expression(
+      context,
+      ts_node_child_by_field_name(attribute_node, "object", 6),
+      0
+    );
+
+  const MicroPythonTiT *receiver_t_node =
+    micropython_ti_get_t(receiver_t_node_index);
+
+  if (
+    !receiver_t_node ||
+    receiver_t_node->union_next != 0 ||
+    (receiver_t_node->t_flags & MICROPYTHON_TI_T_FLAG_DEFINED_CLASS) == 0 ||
+    (receiver_t_node->t_flags & MICROPYTHON_TI_T_FLAG_STATIC) != 0
+  ) {
+
+    return;
+  }
+
+  TSNode attribute_name_node =
+    ts_node_child_by_field_name(attribute_node, "attribute", 9);
+
+  uint16_t attribute_name_id;
+
+  if (
+    !micropython_ti_intern_node_name(
+      context,
+      attribute_name_node,
+      &attribute_name_id
+    )
+  ) {
+
+    return;
+  }
+
+  set_variable_hover(
+    context,
+    attribute_name_node,
+    micropython_ti_get_instance_attribute_t(
+      receiver_t_node->object_class_id,
+      attribute_name_id
+    ),
+    out
+  );
 }
 
 int
@@ -291,6 +364,12 @@ micropython_ti_find_hover_at_cursor(
     .cursor_byte_offset = (uint32_t)cursor_byte_offset,
   };
 
+  micropython_ti_set_context_scope_at_cursor(
+    &context,
+    root,
+    cursor_byte_offset
+  );
+
   if (!ti_did_arena_overflow())
     find_hover_target(root, 0, &search);
 
@@ -299,16 +378,19 @@ micropython_ti_find_hover_at_cursor(
 
     if (is_called_method_name(search.target)) {
       if (is_class_name(&context, search.target))
-        set_variable_hover(&context, search.target, out);
+        set_identifier_hover(&context, search.target, out);
       else
         set_method_hover(&context, root, search.target, out);
 
+    } else if (is_attribute_name(parent, search.target)) {
+      set_instance_attribute_hover(&context, parent, out);
+
     } else if (
       ts_node_is_null(parent) ||
-      !is_named_definition_part(parent, search.target)
+      !is_hover_excluded(parent, search.target)
     ) {
 
-      set_variable_hover(&context, search.target, out);
+      set_identifier_hover(&context, search.target, out);
     }
   }
 

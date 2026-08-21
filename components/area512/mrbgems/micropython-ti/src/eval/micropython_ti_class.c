@@ -38,7 +38,12 @@ micropython_ti_eval_class(MicroPythonTiContext *context, TSNode node) {
 
   if (
     class_t_node_index == 0 ||
-    !micropython_ti_set_value_t(name_id, class_t_node_index)
+    !micropython_ti_set_value_t(
+      context->current_class_name_id,
+      context->current_define_name_id,
+      name_id,
+      class_t_node_index
+    )
   )
     context->failed = 1;
 }

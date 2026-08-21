@@ -36,6 +36,7 @@ idf_component_register(
     ${PURE_PICORUBY}/mrbgems/picoruby-rng/ports/esp32/rng.c
     ${PURE_PICORUBY}/mrbgems/picoruby-watchdog/ports/esp32/watchdog.c
     ${PURE_PICORUBY}/mrbgems/picoruby-i2c/ports/esp32/i2c.c
+    ${PURE_PICORUBY}/mrbgems/picoruby-spi/ports/esp32/spi.c
     ${PURE_PICORUBY}/mrbgems/picoruby-require/ports/esp32/platform.c
   INCLUDE_DIRS
     ${COMPONENT_DIR}

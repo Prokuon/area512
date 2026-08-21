@@ -46,6 +46,7 @@ ACT_REBOOT = 11 unless Object.const_defined?(:ACT_REBOOT)
 ACT_MOVE = 12 unless Object.const_defined?(:ACT_MOVE)
 ACT_VIEW_MARKDOWN = 13 unless Object.const_defined?(:ACT_VIEW_MARKDOWN)
 ACT_RUN_PYTHON = 14 unless Object.const_defined?(:ACT_RUN_PYTHON)
+ACT_COPY = 15 unless Object.const_defined?(:ACT_COPY)
 
 def run_sd_error_screen(filer)
   filer.cwd = "/"
@@ -469,9 +470,9 @@ def remove_tree(path)
   end
 end
 
-def delete_entry(cwd, name, type)
+def delete_entry(cwd, name, entry_type)
   begin
-    if type == T_DIR
+    if entry_type == T_DIR
       remove_tree(join_path(cwd, name))
     else
       File.unlink(join_path(cwd, name))
@@ -517,30 +518,106 @@ def normalize_path(path)
   result
 end
 
-def move_entry(cwd, name, type, input)
-  return "Empty path" if input.nil? || input.empty?
+def move_entry(cwd, name, entry_type, destination_input)
+  return "Empty path" if destination_input.nil? || destination_input.empty?
 
-  destination =
-    normalize_path(input.start_with?("/") ? input : join_path(cwd, input))
+  normalized_input_path =
+    normalize_path(
+      destination_input.start_with?("/") ?
+        destination_input : join_path(cwd, destination_input)
+    )
 
-  return "Bad path" unless destination
-  return "No such directory" unless File.directory?(destination)
-  return "Same directory" if destination == cwd
+  return "Bad path" unless normalized_input_path
 
-  if type == T_DIR
-    source = join_path(cwd, name)
-
-    if destination == source || destination.start_with?("#{source}/")
-      return "Can't move into itself"
+  destination_path =
+    if File.directory?(normalized_input_path)
+      join_path(normalized_input_path, name)
+    else
+      normalized_input_path
     end
+
+  return "No such directory" unless File.directory?(dir_name(destination_path))
+
+  source_path = join_path(cwd, name)
+
+  return "Same path" if destination_path == source_path
+
+  if entry_type == T_DIR && destination_path.start_with?("#{source_path}/")
+    return "Can't move into itself"
   end
 
-  return "Already exists: #{name}" if File.exist?(join_path(destination, name))
+  if File.exist?(destination_path)
+    return "Already exists: #{base_name(destination_path)}"
+  end
 
   begin
-    File.rename(join_path(cwd, name), join_path(destination, name))
+    File.rename(source_path, destination_path)
 
-    "Moved #{name} -> #{destination}"
+    "Moved #{name} -> #{destination_path}"
+  rescue => e
+    "#{e.class}: #{e.message}"
+  end
+end
+
+# --- Copy (C, destination typed relative to cwd or absolute) ---
+
+# There is no recursive copy in the fs API; SD.read loads a whole file into the
+# mruby/c heap, so a file larger than the free heap fails with "No memory".
+def copy_tree(source_path, destination_path)
+  if File.directory?(source_path)
+    Dir.mkdir(destination_path)
+    names = entry_names(source_path)
+
+    index = 0
+    while index < names.length
+      copy_tree(
+        join_path(source_path, names[index]),
+        join_path(destination_path, names[index])
+      )
+
+      index += 1
+    end
+  else
+    SD.write(destination_path, SD.read(source_path))
+  end
+end
+
+def copy_entry(cwd, name, entry_type, destination_input)
+  return "Empty path" if destination_input.nil? || destination_input.empty?
+
+  normalized_input_path =
+    normalize_path(
+      destination_input.start_with?("/") ?
+        destination_input : join_path(cwd, destination_input)
+    )
+
+  return "Bad path" unless normalized_input_path
+
+  destination_path =
+    if File.directory?(normalized_input_path)
+      join_path(normalized_input_path, name)
+    else
+      normalized_input_path
+    end
+
+  return "No such directory" unless File.directory?(dir_name(destination_path))
+
+  source_path = join_path(cwd, name)
+
+  return "Same path" if destination_path == source_path
+
+  if entry_type == T_DIR && destination_path.start_with?("#{source_path}/")
+    return "Can't copy into itself"
+  end
+
+  if File.exist?(destination_path)
+    return "Already exists: #{base_name(destination_path)}"
+  end
+
+  begin
+    copy_tree(source_path, destination_path)
+
+    "Copied #{name} -> #{destination_path}"
   rescue => e
     "#{e.class}: #{e.message}"
   end
@@ -602,6 +679,15 @@ def run_filer(filer, root)
     when ACT_MOVE
       msg =
         move_entry(
+          cwd,
+          filer.selected_name,
+          filer.selected_type,
+          filer.input_text
+        )
+
+    when ACT_COPY
+      msg =
+        copy_entry(
           cwd,
           filer.selected_name,
           filer.selected_type,
