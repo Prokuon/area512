@@ -194,6 +194,23 @@ myapp/
 
 Applications can use the built-in Widget components directly. See [the Widget component documentation](components/area512/mrbgems/picoruby-area512-widget/README.md) and the preinstalled `/home/tool/gallery` app.
 
+## Theme
+
+Colors are read from `/sdcard/Area512_data/etc/theme` at boot. Without that file the defaults below are used. Edit it and reboot to apply.
+
+```
+background=0x000000
+text=0xCFA45F
+emphasis=0xF5972D
+border=0xF5972D
+selected=0xFFD966
+box=0x241604
+```
+
+One `key=0xRRGGBB` per line; six hex digits, `0x` required. Lines without `=` and unknown keys are ignored.
+
+Bitmaps (the boot logo and an application's `image.h`) are drawn with `emphasis` and `background` only, the brighter of the two used for the set bits.
+
 ## Building
 
 ### Requirements
