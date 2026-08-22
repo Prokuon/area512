@@ -6,18 +6,6 @@
 
 #include <stdint.h>
 
-#define MARKDOWN_BODY 0xCFA45F
-#define MARKDOWN_HEADING_PRIMARY 0xF5972D
-#define MARKDOWN_HEADING_SECONDARY 0xFFD966
-#define MARKDOWN_HEADING_TERTIARY 0xCFA45F
-#define MARKDOWN_STRONG_TEXT 0xFFD966
-#define MARKDOWN_EMPHASIS_TEXT 0xFFD966
-#define MARKDOWN_CODE_TEXT 0xFFD966
-#define MARKDOWN_LINK_TEXT 0xFFD966
-#define MARKDOWN_QUOTE_TEXT 0xCFA45F
-#define MARKDOWN_MARKER_TEXT 0xF5972D
-#define MARKDOWN_RULE_TEXT 0xCFA45F
-
 static const char MARKDOWN_DASHES[MARKDOWN_COLUMNS_MAX + 1] =
   "------------------------------------------------"
   "------------------------------------------------";
@@ -25,7 +13,6 @@ static const char MARKDOWN_DASHES[MARKDOWN_COLUMNS_MAX + 1] =
 typedef struct {
   MarkdownRowWriter *writer;
   uint32_t plain_foreground;
-  int ignore_inline_style;
 } MarkdownInlineContext;
 
 static void
@@ -38,33 +25,16 @@ write_markdown_inline_span(
 
   MarkdownInlineContext *context = (MarkdownInlineContext *)writer_context;
 
-  uint32_t foreground = context->plain_foreground;
-  uint32_t background = 0;
-
-  if (!context->ignore_inline_style)
-    switch (style) {
-    case MARKDOWN_INLINE_STRONG:
-      foreground = MARKDOWN_STRONG_TEXT;
-      break;
-    case MARKDOWN_INLINE_EMPHASIS:
-      foreground = MARKDOWN_EMPHASIS_TEXT;
-      break;
-    case MARKDOWN_INLINE_CODE:
-      foreground = MARKDOWN_CODE_TEXT;
-      break;
-    case MARKDOWN_INLINE_LINK:
-      foreground = MARKDOWN_LINK_TEXT;
-      break;
-    case MARKDOWN_INLINE_PLAIN:
-      break;
-    }
+  uint32_t foreground = style == MARKDOWN_INLINE_PLAIN
+                          ? context->plain_foreground
+                          : area512_theme_emphasis_color();
 
   write_markdown_wrapped_span(
     context->writer,
     text,
     byte_length,
     foreground,
-    background
+    0
   );
 }
 
@@ -73,25 +43,20 @@ write_markdown_inline(
   MarkdownRowWriter *writer,
   const char *text,
   int byte_length,
-  uint32_t plain_foreground,
-  int ignore_inline_style
+  uint32_t plain_foreground
 ) {
 
-  MarkdownInlineContext context =
-    {writer, plain_foreground, ignore_inline_style};
+  MarkdownInlineContext context = {writer, plain_foreground};
 
   scan_markdown_inline(text, byte_length, write_markdown_inline_span, &context);
 }
 
 static uint32_t
 select_heading_foreground(int level) {
-  if (level <= 1)
-    return MARKDOWN_HEADING_PRIMARY;
+  if (level <= 2)
+    return area512_theme_emphasis_color();
 
-  if (level == 2)
-    return MARKDOWN_HEADING_SECONDARY;
-
-  return MARKDOWN_HEADING_TERTIARY;
+  return area512_theme_text_color();
 }
 
 static int
@@ -123,7 +88,7 @@ draw_markdown_rule(MarkdownRowWriter *writer) {
     0,
     MARKDOWN_DASHES,
     writer->width,
-    MARKDOWN_RULE_TEXT,
+    area512_theme_border_color(),
     0
   );
   end_markdown_output_row(writer);
@@ -183,7 +148,7 @@ draw_markdown_code(
       writer,
       block->content,
       block->content_byte_length,
-      MARKDOWN_CODE_TEXT
+      area512_theme_emphasis_color()
     );
 
   end_markdown_output_row(writer);
@@ -202,8 +167,7 @@ draw_markdown_heading(MarkdownRowWriter *writer, const MarkdownBlock *block) {
     writer,
     block->content,
     block->content_byte_length,
-    foreground,
-    0
+    foreground
   );
 
   end_markdown_output_row(writer);
@@ -241,14 +205,19 @@ draw_markdown_table(MarkdownRowWriter *writer, const MarkdownBlock *block) {
 
     if (cell_end_byte_offset > cell_start_byte_offset) {
       if (!is_first_cell)
-        write_markdown_wrapped_span(writer, " | ", 3, MARKDOWN_RULE_TEXT, 0);
+        write_markdown_wrapped_span(
+          writer,
+          " | ",
+          3,
+          area512_theme_border_color(),
+          0
+        );
 
       write_markdown_inline(
         writer,
         content + cell_start_byte_offset,
         cell_end_byte_offset - cell_start_byte_offset,
-        MARKDOWN_BODY,
-        0
+        area512_theme_text_color()
       );
 
       is_first_cell = 0;
@@ -262,13 +231,9 @@ draw_markdown_table(MarkdownRowWriter *writer, const MarkdownBlock *block) {
 
 static void
 draw_markdown_text(MarkdownRowWriter *writer, const MarkdownBlock *block) {
-  uint32_t marker_foreground = MARKDOWN_MARKER_TEXT;
-  uint32_t content_foreground = MARKDOWN_BODY;
-
-  if (block->kind == MARKDOWN_BLOCK_QUOTE) {
-    marker_foreground = MARKDOWN_RULE_TEXT;
-    content_foreground = MARKDOWN_QUOTE_TEXT;
-  }
+  uint32_t marker_foreground = block->kind == MARKDOWN_BLOCK_QUOTE
+                                 ? area512_theme_text_color()
+                                 : area512_theme_emphasis_color();
 
   style_markdown_row_writer(
     writer,
@@ -300,8 +265,7 @@ draw_markdown_text(MarkdownRowWriter *writer, const MarkdownBlock *block) {
     writer,
     block->content,
     block->content_byte_length,
-    content_foreground,
-    0
+    area512_theme_text_color()
   );
 
   end_markdown_output_row(writer);

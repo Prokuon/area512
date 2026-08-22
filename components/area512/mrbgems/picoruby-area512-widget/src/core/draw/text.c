@@ -197,7 +197,7 @@ area512_widget_draw_marquee(
     x - (offset - start_width),
     y,
     visible,
-    WIDGET_COLOR_DIM
+    area512_theme_text_color()
   );
 
   return text_width;

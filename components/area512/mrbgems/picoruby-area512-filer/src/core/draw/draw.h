@@ -5,15 +5,12 @@
 
 #define PANEL_TITLE "SYS 0x200"
 #define PANEL_DELTA_Y 3
-#define PANEL_LOW 20
-#define PANEL_HIGH 80
 #define PANEL_MAX_METRICS 4
 
 typedef struct {
   int count;
   const char *label[PANEL_MAX_METRICS];
   int percent[PANEL_MAX_METRICS];
-  int warn[PANEL_MAX_METRICS];
 } PanelInfo;
 
 void draw_walls(Filer *filer, int top);

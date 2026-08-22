@@ -1,6 +1,6 @@
 class WidgetGallery
   def draw
-    @sp.fill(Widget.bg)
+    @sp.fill(Widget.theme_background)
     Widget.header(@sp, "WIDGET GALLERY", TABS[@tab])
     Widget.tabs(@sp, 18, TABS, @tab)
 
@@ -93,7 +93,7 @@ class WidgetGallery
 
   def draw_modal
     Widget.titled_panel(@sp, 18, 40, Display.width - 36, 54, "MODAL DEMO")
-    Widget.text_center(@sp, 60, "ENTER opens the modal menu", Widget.gold)
+    Widget.text_center(@sp, 60, "ENTER opens the modal menu", Widget.theme_emphasis)
     Widget.text_center(@sp, 78, "input / number / confirm / dialog / menu / alert")
   end
 end

@@ -7,7 +7,7 @@
 
 static uint32_t
 focus_color(int focused) {
-  return focused ? WIDGET_COLOR_GOLD : WIDGET_COLOR_DIM;
+  return focused ? area512_theme_selected_color() : area512_theme_text_color();
 }
 
 void
@@ -21,7 +21,7 @@ area512_widget_draw_button(
 ) {
 
   if (focused)
-    area512_sprite_fill_rect(sprite, x, y, w, 15, WIDGET_COLOR_DARK);
+    area512_sprite_fill_rect(sprite, x, y, w, 15, area512_theme_box_color());
 
   area512_sprite_rect(
     sprite,
@@ -29,7 +29,7 @@ area512_widget_draw_button(
     y,
     w,
     15,
-    focused ? WIDGET_COLOR_GOLD : WIDGET_COLOR_AMBER
+    focused ? area512_theme_selected_color() : area512_theme_border_color()
   );
 
   int text_x = x + (w - area512_widget_text_width(sprite, label)) / 2;
@@ -58,11 +58,18 @@ area512_widget_draw_checkbox(
     y + 1,
     9,
     9,
-    focused ? WIDGET_COLOR_GOLD : WIDGET_COLOR_AMBER
+    focused ? area512_theme_selected_color() : area512_theme_border_color()
   );
 
   if (checked) {
-    area512_sprite_fill_rect(sprite, x + 2, y + 3, 5, 5, WIDGET_COLOR_GOLD);
+    area512_sprite_fill_rect(
+      sprite,
+      x + 2,
+      y + 3,
+      5,
+      5,
+      area512_theme_selected_color()
+    );
   }
 
   area512_sprite_text(sprite, x + 13, y, label, focus_color(focused));
@@ -83,11 +90,17 @@ area512_widget_draw_radio(
     x + 4,
     y + 5,
     4,
-    focused ? WIDGET_COLOR_GOLD : WIDGET_COLOR_AMBER
+    focused ? area512_theme_selected_color() : area512_theme_border_color()
   );
 
   if (selected) {
-    area512_sprite_fill_circle(sprite, x + 4, y + 5, 2, WIDGET_COLOR_GOLD);
+    area512_sprite_fill_circle(
+      sprite,
+      x + 4,
+      y + 5,
+      2,
+      area512_theme_selected_color()
+    );
   }
 
   area512_sprite_text(sprite, x + 13, y, label, focus_color(focused));
@@ -102,7 +115,7 @@ area512_widget_draw_toggle(void *sprite, int x, int y, int on, int focused) {
     y,
     24,
     11,
-    focused ? WIDGET_COLOR_GOLD : WIDGET_COLOR_AMBER
+    focused ? area512_theme_selected_color() : area512_theme_border_color()
   );
   area512_sprite_fill_rect(
     sprite,
@@ -110,7 +123,7 @@ area512_widget_draw_toggle(void *sprite, int x, int y, int on, int focused) {
     y + 2,
     9,
     7,
-    on ? WIDGET_COLOR_GOLD : WIDGET_COLOR_DIM
+    on ? area512_theme_selected_color() : area512_theme_border_color()
   );
 }
 
@@ -124,7 +137,8 @@ area512_widget_draw_spinner(
   int focused
 ) {
 
-  uint32_t arrow_color = focused ? WIDGET_COLOR_GOLD : WIDGET_COLOR_AMBER;
+  uint32_t arrow_color =
+    focused ? area512_theme_selected_color() : area512_theme_border_color();
   int text_x = x + (w - area512_widget_text_width(sprite, text)) / 2;
 
   area512_sprite_text(sprite, x, y, "<", arrow_color);

@@ -1,3 +1,4 @@
+require 'area512-widget'
 require 'io/console'
 require 'area512-sprite'
 require 'area512-sdfat'
@@ -7,11 +8,12 @@ class Scheduler
   H = 135 unless const_defined?(:H)
   SAVE_FILE = "/data/scheduler.txt" unless const_defined?(:SAVE_FILE)
 
-  C_BG = 0x000000 unless const_defined?(:C_BG)
-  C_AMBER = 0xF5972D unless const_defined?(:C_AMBER)
-  C_TEXT = 0xCFA45F unless const_defined?(:C_TEXT)
-  C_GOLD = 0xFFD966 unless const_defined?(:C_GOLD)
-  C_DARK = 0x241604 unless const_defined?(:C_DARK)
+  C_BACKGROUND = Widget.theme_background unless const_defined?(:C_BACKGROUND)
+  C_BORDER = Widget.theme_border unless const_defined?(:C_BORDER)
+  C_TEXT = Widget.theme_text unless const_defined?(:C_TEXT)
+  C_SELECTED = Widget.theme_selected unless const_defined?(:C_SELECTED)
+  C_BOX = Widget.theme_box unless const_defined?(:C_BOX)
+  C_EMPHASIS = Widget.theme_emphasis unless const_defined?(:C_EMPHASIS)
 
   MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
             "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"] unless const_defined?(:MONTHS)

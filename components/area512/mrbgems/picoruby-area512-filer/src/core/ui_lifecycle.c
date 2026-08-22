@@ -7,7 +7,7 @@
 
 void
 area512_filer_setup_ui(Filer *filer) {
-  area512_gfx_fill_screen(COLOR_BACKGROUND);
+  area512_gfx_fill_screen(area512_theme_background_color());
 
   if (!filer->row) {
     filer->row = area512_sprite_new_with_font_size(

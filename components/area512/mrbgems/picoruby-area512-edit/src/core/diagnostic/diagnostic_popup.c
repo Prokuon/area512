@@ -3,7 +3,6 @@
 #include "core/text/utf8.h"
 #include <string.h>
 
-#define DIAGNOSTIC_POPUP_BACKGROUND 0x402808
 #define DIAGNOSTIC_POPUP_FOREGROUND 0xD16969
 #define DIAGNOSTIC_POPUP_TEXT_START_COLUMN 1
 
@@ -68,7 +67,7 @@ draw_diagnostic_popup(Vim *vim, const char *message) {
       canvas->context,
       0,
       vim->screen.width,
-      DIAGNOSTIC_POPUP_BACKGROUND
+      area512_theme_box_color()
     );
 
     canvas->draw_row_text(

@@ -1,14 +1,9 @@
 #include "core/render/signature.h"
+#include "area512_hal.h"
 #include "core/text/utf8.h"
 #include <string.h>
 
 #define SIGNATURE_TEXT_START_COLUMN 1
-#define SIGNATURE_BACKGROUND 0x402808
-#define SIGNATURE_NAME_COLOR 0xFFD966
-#define SIGNATURE_TEXT_COLOR 0xCFA45F
-#define SIGNATURE_CLASS_NAME_COLOR 0xF5972D
-#define SIGNATURE_SELECTED_BACKGROUND 0xF5972D
-#define SIGNATURE_SELECTED_TEXT_COLOR 0x241604
 
 int
 minimum_signature_value(int first, int second) {
@@ -132,7 +127,8 @@ paint_signature_row_background(Vim *vim, int selected) {
       canvas->context,
       0,
       vim->screen.width,
-      selected ? SIGNATURE_SELECTED_BACKGROUND : SIGNATURE_BACKGROUND
+      selected ? area512_theme_selected_color()
+               : area512_theme_box_color()
     );
 }
 
@@ -163,7 +159,8 @@ draw_signature_part(
       column,
       signature + start_byte_offset,
       name_end_byte_offset - start_byte_offset,
-      selected ? SIGNATURE_SELECTED_TEXT_COLOR : SIGNATURE_NAME_COLOR,
+      selected ? area512_theme_background_color()
+               : area512_theme_emphasis_color(),
       0,
       0
     );
@@ -183,7 +180,7 @@ draw_signature_part(
       column,
       signature + start_byte_offset,
       end_byte_offset - start_byte_offset,
-      selected ? SIGNATURE_SELECTED_TEXT_COLOR : SIGNATURE_TEXT_COLOR,
+      selected ? area512_theme_background_color() : area512_theme_text_color(),
       0,
       0
     );
@@ -285,7 +282,8 @@ draw_signature_rows(
           vim->screen.width - 1 - class_name_width,
           class_name,
           (int)strlen(class_name),
-          selected ? SIGNATURE_SELECTED_TEXT_COLOR : SIGNATURE_CLASS_NAME_COLOR,
+          selected ? area512_theme_background_color()
+                   : area512_theme_emphasis_color(),
           0,
           0
         );

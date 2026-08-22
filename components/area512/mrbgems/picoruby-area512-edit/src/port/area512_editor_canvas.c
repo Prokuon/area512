@@ -12,7 +12,7 @@ clear_editor_canvas_row(void *context) {
   Area512EditorCanvas *canvas = (Area512EditorCanvas *)context;
 
   area512_sprite_set_font_size(canvas->row_sprite, canvas->font_size);
-  area512_sprite_fill(canvas->row_sprite, EDIT_BACKGROUND);
+  area512_sprite_fill(canvas->row_sprite, area512_theme_background_color());
 }
 
 void
@@ -31,11 +31,11 @@ draw_editor_canvas_row_text(
   if (byte_length <= 0)
     return;
 
-  uint32_t draw_foreground = EDIT_FOREGROUND;
+  uint32_t draw_foreground = area512_theme_text_color();
   if (foreground)
     draw_foreground = foreground;
 
-  uint32_t draw_background = EDIT_BACKGROUND;
+  uint32_t draw_background = area512_theme_background_color();
   if (background)
     draw_background = background;
 
@@ -47,7 +47,7 @@ draw_editor_canvas_row_text(
 
   int pixel_left = column * canvas->char_width;
 
-  if (draw_background != EDIT_BACKGROUND)
+  if (draw_background != area512_theme_background_color())
     area512_sprite_fill_rect(
       canvas->row_sprite,
       pixel_left,
@@ -195,7 +195,7 @@ draw_editor_canvas_cursor(
       1,
       2,
       canvas->row_height - 2,
-      EDIT_FOREGROUND
+      area512_theme_selected_color()
     );
   else
     area512_sprite_fill_rect(
@@ -204,7 +204,7 @@ draw_editor_canvas_cursor(
       canvas->row_height - 2,
       canvas->char_width,
       2,
-      EDIT_FOREGROUND
+      area512_theme_selected_color()
     );
 
   area512_sprite_push_transparent(

@@ -21,8 +21,9 @@ scrollbar_color(Filer *filer, int row) {
     thumb_top = visible - thumb_length;
   if (thumb_top < 0)
     thumb_top = 0;
-  return (row >= thumb_top && row < thumb_top + thumb_length) ? COLOR_GREEN
-                                                              : COLOR_FAINT;
+  return (row >= thumb_top && row < thumb_top + thumb_length)
+           ? area512_theme_border_color()
+           : area512_theme_text_color();
 }
 
 static void
@@ -37,7 +38,7 @@ format_file_label(FileEntry *entry, char *out, int out_size) {
 
 void
 draw_entry(Filer *filer, int y, int index, int row, const PanelInfo *info) {
-  area512_sprite_fill(filer->row, COLOR_BACKGROUND);
+  area512_sprite_fill(filer->row, area512_theme_background_color());
   if (index < filer->count) {
     FileEntry *entry = &filer->entries[index];
     int selected = (index == filer->index);
@@ -56,7 +57,7 @@ draw_entry(Filer *filer, int y, int index, int row, const PanelInfo *info) {
       filer->content_x,
       0,
       fitted,
-      selected ? COLOR_GOLD : COLOR_DIM
+      selected ? area512_theme_selected_color() : area512_theme_text_color()
     );
   }
   int scrollbar = scrollbar_color(filer, row);

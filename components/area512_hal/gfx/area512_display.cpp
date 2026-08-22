@@ -1,5 +1,7 @@
 #include "area512_display.h"
 
+#include "area512_hal.h"
+
 #include <M5Unified.hpp>
 #include <lgfx/utility/pgmspace.h>
 #include <lgfx/v1/LGFXBase.hpp>
@@ -9,8 +11,6 @@
 #include "splash.h"
 
 static lgfx::LGFX_Device *s_display = nullptr;
-static constexpr uint32_t FG = 0xF5972D;
-static constexpr uint32_t BG = 0x000000;
 
 static uint16_t
 rgb888_to_565(uint32_t color) {
@@ -18,8 +18,8 @@ rgb888_to_565(uint32_t color) {
                     ((color >> 3) & 0x001F));
 }
 
-static void
-draw_boot_splash(void) {
+extern "C" void
+area512_display_draw_boot_splash(void) {
   static constexpr int width = 240;
   static constexpr int height = 135;
   static constexpr int line_delay_ms = 1;
@@ -28,6 +28,11 @@ draw_boot_splash(void) {
     return;
 
   const uint8_t *bitmap = (const uint8_t *)epd_bitmap_allArray[0];
+
+  uint32_t set_bit_color;
+  uint32_t clear_bit_color;
+
+  area512_theme_pick_bitmap_colors(&set_bit_color, &clear_bit_color);
 
   int row_bytes = (width + 7) / 8;
   int copy_w = width < s_display->width() ? width : s_display->width();
@@ -58,8 +63,8 @@ draw_boot_splash(void) {
       row,
       copy_w,
       1,
-      rgb888_to_565(FG),
-      rgb888_to_565(BG)
+      rgb888_to_565(set_bit_color),
+      rgb888_to_565(clear_bit_color)
     );
 
     s_display->endWrite();
@@ -81,9 +86,7 @@ area512_display_init(void) {
   s_display = &M5.Display;
 
   s_display->setBrightness(90);
-  s_display->fillScreen(BG);
-
-  draw_boot_splash();
+  s_display->fillScreen(area512_theme_background_color());
 }
 
 extern "C" void *

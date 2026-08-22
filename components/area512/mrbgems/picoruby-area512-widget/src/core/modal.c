@@ -54,13 +54,13 @@ draw_input_panel(void *sprite, const char *label, const char *input) {
   int label_y = y + (36 - two_line_height) / 2;
 
   area512_widget_draw_panel(sprite, 0, y, width, 36);
-  area512_sprite_text(sprite, 4, label_y, label, WIDGET_COLOR_DIM);
+  area512_sprite_text(sprite, 4, label_y, label, area512_theme_text_color());
   area512_sprite_text(
     sprite,
     4,
     label_y + WIDGET_ROW_HEIGHT,
     visible,
-    WIDGET_COLOR_GOLD
+    area512_theme_emphasis_color()
   );
   area512_sprite_push(sprite, 0, 0);
 }
@@ -289,7 +289,7 @@ area512_widget_run_menu_modal(
           row_y,
           panel_width - 4,
           WIDGET_ROW_HEIGHT,
-          WIDGET_COLOR_DARK
+          area512_theme_box_color()
         );
       }
 
@@ -298,7 +298,8 @@ area512_widget_run_menu_modal(
         panel_x + 8,
         area512_widget_vcenter_text_y(row_y, WIDGET_ROW_HEIGHT),
         items[index],
-        index == selected ? WIDGET_COLOR_GOLD : WIDGET_COLOR_DIM
+        index == selected ? area512_theme_selected_color()
+                          : area512_theme_text_color()
       );
     }
 
@@ -349,13 +350,13 @@ area512_widget_run_alert_modal(void *sprite, const char *message) {
     sprite,
     message_y,
     message,
-    WIDGET_COLOR_GOLD
+    area512_theme_emphasis_color()
   );
   area512_widget_draw_text_center(
     sprite,
     message_y + WIDGET_ROW_HEIGHT,
     "Press any key",
-    WIDGET_COLOR_DIM
+    area512_theme_text_color()
   );
   area512_sprite_push(sprite, 0, 0);
   area512_widget_read_key();

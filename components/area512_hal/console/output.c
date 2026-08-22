@@ -8,8 +8,6 @@
 #define CONSOLE_ROW_HEIGHT 12
 #define CONSOLE_FONT_SIZE 12
 #define CONSOLE_ROW_BYTES 128
-#define CONSOLE_TEXT_COLOR 0xCFA45F
-#define CONSOLE_BG_COLOR 0x000000
 
 static void *s_row_sprite;
 static char s_row_text[CONSOLE_ROWS][CONSOLE_ROW_BYTES];
@@ -42,7 +40,7 @@ clear_row(int row_index) {
 
 static void
 push_row_to_screen(int row_index) {
-  area512_sprite_fill(s_row_sprite, CONSOLE_BG_COLOR);
+  area512_sprite_fill(s_row_sprite, area512_theme_background_color());
 
   if (s_row_byte_count[row_index] > 0)
     area512_sprite_text(
@@ -50,7 +48,7 @@ push_row_to_screen(int row_index) {
       0,
       0,
       s_row_text[row_index],
-      CONSOLE_TEXT_COLOR
+      area512_theme_text_color()
     );
 
   area512_sprite_push(s_row_sprite, 0, row_index * CONSOLE_ROW_HEIGHT);
@@ -201,7 +199,7 @@ area512_console_reset(void) {
   s_character_total_byte_count = 0;
   s_character_filled_byte_count = 0;
 
-  area512_gfx_fill_screen(CONSOLE_BG_COLOR);
+  area512_gfx_fill_screen(area512_theme_background_color());
 }
 
 int

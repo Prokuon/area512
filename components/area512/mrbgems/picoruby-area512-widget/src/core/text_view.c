@@ -200,7 +200,7 @@ area512_widget_text_view_draw(void *sprite, const WidgetTextView *view) {
       view->x,
       view->y + row * WIDGET_ROW_HEIGHT,
       text,
-      WIDGET_COLOR_DIM
+      area512_theme_text_color()
     );
   }
 

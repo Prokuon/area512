@@ -61,6 +61,18 @@ int area512_sd_unmount(void);
 int area512_sd_mounted(void);
 int area512_seed_restore(void);
 
+void area512_theme_load(void);
+uint32_t area512_theme_background_color(void);
+uint32_t area512_theme_text_color(void);
+uint32_t area512_theme_emphasis_color(void);
+uint32_t area512_theme_border_color(void);
+uint32_t area512_theme_selected_color(void);
+uint32_t area512_theme_box_color(void);
+void area512_theme_pick_bitmap_colors(
+  uint32_t *set_bit_color,
+  uint32_t *clear_bit_color
+);
+
 #ifdef __cplusplus
 }
 #endif

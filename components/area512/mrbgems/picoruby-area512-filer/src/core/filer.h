@@ -1,4 +1,4 @@
-// Core filer declarations: layout/color constants, the filer state struct, and
+// Core filer declarations: layout constants, the filer state struct, and
 // the ACTION_* codes run() returns to the Ruby shell (must stay in sync with
 // the Ruby side). VM-independent: no mruby/c here.
 #pragma once
@@ -9,13 +9,6 @@
 #define ROW_HEIGHT 13
 #define HALF_ROW_HEIGHT 6
 #define FILER_FONT_SIZE 12
-
-#define COLOR_BACKGROUND 0x000000
-#define COLOR_GREEN 0xF5972D
-#define COLOR_DIM 0xCFA45F
-#define COLOR_FAINT 0xCFA45F
-#define COLOR_AMBER 0xF5972D
-#define COLOR_GOLD 0xFFD966
 
 #define NAME_MAX 40
 #define MESSAGE_MAX 96

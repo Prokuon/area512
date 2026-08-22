@@ -17,7 +17,7 @@ class SlideShow
     @top_row_index = 0
     @quit = false
 
-    Display.fill_screen(Widget.bg)
+    Display.fill_screen(Widget.theme_background)
     @sprite = Sprite.new(Display.width, Display.height, 12)
 
     begin
@@ -30,7 +30,7 @@ class SlideShow
     ensure
       SD.unmount
       @sprite.delete if @sprite
-      Display.fill_screen(Widget.bg)
+      Display.fill_screen(Widget.theme_background)
     end
   end
 end

@@ -23,13 +23,13 @@ def draw_end(game):
         0,
         3 * CHARACTER_HEIGHT,
         "Level {}".format(game.level),
-        COLOR_DIM
+        COLOR_TEXT
     )
     game.sprite.text(
         0,
         4 * CHARACTER_HEIGHT,
         "Fuel {}".format(int(game.fuel)),
-        COLOR_DIM
+        COLOR_TEXT
     )
     game.sprite.text(
         0,
@@ -38,6 +38,6 @@ def draw_end(game):
             format_one_decimal(game.velocity_y),
             format_one_decimal(game.velocity_x)
         ),
-        COLOR_DIM
+        COLOR_TEXT
     )
     game.sprite.push(0, 0)
