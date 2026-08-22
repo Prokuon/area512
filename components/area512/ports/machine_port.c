@@ -13,7 +13,11 @@
 void area512_console_poll(void);
 void area512_console_write(const void *buffer, int buffer_byte_count);
 void area512_display_init(void);
+void area512_display_draw_boot_splash(void);
 void area512_input_init(void);
+int area512_sd_mount(const char *base_path);
+int area512_sd_unmount(void);
+void area512_theme_load(void);
 
 #include <stdint.h>
 #include <stdio.h>
@@ -120,6 +124,16 @@ picorb_hal_init(void) {
   // Order matters: display (M5.begin) must run before input (keyboard relies
   // on M5's I2C bus brought up by M5.begin).
   area512_display_init();
+
+  // After M5.begin, which probes the panel on SPI2 and frees it again, and
+  // before the splash, which draws in the theme colors. Ruby mounts again
+  // later; unmounting here leaves that mount the only reference.
+  if (area512_sd_mount("/sdcard") == 0) {
+    area512_theme_load();
+    area512_sd_unmount();
+  }
+
+  area512_display_draw_boot_splash();
   area512_input_init();
 
   RingBuffer_init(s_stdin_ring_buffer, PICORB_STDIN_BUFFER_SIZE);

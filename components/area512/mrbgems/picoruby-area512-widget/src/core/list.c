@@ -122,7 +122,7 @@ draw_tag(void *sprite, int x, int y, const char *tag) {
   if (!tag[0])
     return x;
 
-  area512_sprite_text(sprite, x, y, tag, WIDGET_COLOR_AMBER);
+  area512_sprite_text(sprite, x, y, tag, area512_theme_emphasis_color());
   return x + area512_widget_text_width(sprite, tag) + WIDGET_CHAR_WIDTH;
 }
 
@@ -140,7 +140,7 @@ draw_row(void *sprite, const WidgetList *list, int index, int y) {
       y,
       list->w - 4,
       WIDGET_ROW_HEIGHT - 1,
-      WIDGET_COLOR_DARK
+      area512_theme_box_color()
     );
     area512_sprite_rect(
       sprite,
@@ -148,11 +148,12 @@ draw_row(void *sprite, const WidgetList *list, int index, int y) {
       y,
       list->w - 4,
       WIDGET_ROW_HEIGHT - 1,
-      WIDGET_COLOR_GOLD
+      area512_theme_selected_color()
     );
   }
 
-  uint32_t color = selected ? WIDGET_COLOR_GOLD : WIDGET_COLOR_DIM;
+  uint32_t color =
+    selected ? area512_theme_selected_color() : area512_theme_text_color();
   int text_y = area512_widget_vcenter_text_y(y, WIDGET_ROW_HEIGHT);
 
   if (list->show_marks)
@@ -176,7 +177,13 @@ area512_widget_list_draw(void *sprite, const WidgetList *list) {
     int text_width = area512_widget_text_width(sprite, list->empty_text);
     int x = list->x + (list->w - text_width) / 2;
     int y = area512_widget_vcenter_text_y(list->y, list->h);
-    area512_sprite_text(sprite, x, y, list->empty_text, WIDGET_COLOR_DIM);
+    area512_sprite_text(
+      sprite,
+      x,
+      y,
+      list->empty_text,
+      area512_theme_text_color()
+    );
     return;
   }
 

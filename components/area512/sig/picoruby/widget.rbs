@@ -1,20 +1,38 @@
 # Area512 built-in type declaration.
 
 class Widget
-  # Theme background color (0x000000)
+  # Fixed background color (0x000000)
   def self.bg: () -> Integer
 
-  # Theme accent color for frames and bands (0xF5972D)
+  # Fixed accent color for frames and bands (0xF5972D)
   def self.amber: () -> Integer
 
-  # Theme normal-text color (0xCFA45F)
+  # Fixed normal-text color (0xCFA45F)
   def self.dim: () -> Integer
 
-  # Theme selection/title color (0xFFD966)
+  # Fixed selection/title color (0xFFD966)
   def self.gold: () -> Integer
 
-  # Theme fill color for selected rows and panels (0x241604)
+  # Fixed fill color for selected rows and panels (0x241604)
   def self.dark: () -> Integer
+
+  # Screen background, set in /etc/theme (default 0x000000)
+  def self.theme_background: () -> Integer
+
+  # Body text (default 0xCFA45F)
+  def self.theme_text: () -> Integer
+
+  # Emphasized text, headings, key chips, chart values (default 0xF5972D)
+  def self.theme_emphasis: () -> Integer
+
+  # Frames, rules and ticks (default 0xF5972D)
+  def self.theme_border: () -> Integer
+
+  # Selected or focused rows and controls (default 0xFFD966)
+  def self.theme_selected: () -> Integer
+
+  # Fill inside panels, popups and table headers (default 0x241604)
+  def self.theme_box: () -> Integer
 
   # ASCII glyph width in px at font 12 (6)
   def self.char_width: () -> Integer
@@ -43,7 +61,7 @@ class Widget
   # Read one key: "UP" "DOWN" "LEFT" "RIGHT" "ENTER" "ESC" "BS" or a 1-char string
   def self.read_key: () -> String
 
-  # Top band: gold title, dim right-aligned text (sprite, title, right = "")
+  # Top band: highlight title, text-color right (sprite, title, right = "")
   def self.header: (Sprite sprite, String title, ?String right) -> nil
 
   # Bottom rule + clipped message
@@ -67,34 +85,34 @@ class Widget
   # Full-screen title in the 24px font (sprite, title, subtitle = "")
   def self.splash: (Sprite sprite, String title, ?String subtitle) -> nil
 
-  # Draw text in the 24px font (sprite, x, y, text, color = gold)
+  # Draw text in the 24px font (sprite, x, y, text, color = theme_emphasis)
   def self.big_text: (Sprite sprite, Integer x, Integer y, String text, ?Integer color) -> nil
 
   # Bottom-center message chip; the app decides how long to show it
   def self.toast: (Sprite sprite, String message) -> nil
 
-  # Dark fill + amber frame (sprite, x, y, w, h)
+  # Theme fill + accent frame (sprite, x, y, w, h)
   def self.panel: (Sprite sprite, Integer x, Integer y, Integer width, Integer height) -> nil
 
-  # Panel with a gold title row (sprite, x, y, w, h, title)
+  # Panel with a highlight title row (sprite, x, y, w, h, title)
   def self.titled_panel: (Sprite sprite, Integer x, Integer y, Integer width, Integer height, String title) -> nil
 
-  # Horizontally centered text (sprite, y, text, color = dim)
+  # Horizontally centered text (sprite, y, text, color = theme_text)
   def self.text_center: (Sprite sprite, Integer y, String text, ?Integer color) -> nil
 
-  # Right-aligned text (sprite, right_x, y, text, color = dim)
+  # Right-aligned text (sprite, right_x, y, text, color = theme_text)
   def self.text_right: (Sprite sprite, Integer right_x, Integer y, String text, ?Integer color) -> nil
 
   # Vertically centered lines from [[text, color?], ...]; "" rows are spacers
   def self.center_lines: (Sprite sprite, Array lines) -> nil
 
-  # Word-wrapped text in a box; returns lines drawn (sprite, x, y, w, h, text, color = dim)
+  # Word-wrapped text in a box; returns lines drawn (sprite, x, y, w, h, text, color = theme_text)
   def self.wrap_text: (Sprite sprite, Integer x, Integer y, Integer width, Integer height, String text, ?Integer color) -> Integer
 
   # Horizontally scrolling text; returns text px width (sprite, x, y, w, text, offset)
   def self.marquee: (Sprite sprite, Integer x, Integer y, Integer width, String text, Integer offset) -> Integer
 
-  # Table cell; selected = dark fill + gold frame (sprite, x, y, w, h, text, selected)
+  # Table cell; selected = theme fill + highlight frame (sprite, x, y, w, h, text, selected)
   def self.cell: (Sprite sprite, Integer x, Integer y, Integer width, Integer height, String text, bool selected) -> nil
 
   # Column header row (sprite, x, y, widths, labels)
@@ -103,7 +121,7 @@ class Widget
   # Row of cells (sprite, x, y, widths, texts, selected)
   def self.table_row: (Sprite sprite, Integer x, Integer y, Array[Integer] widths, Array[String] texts, bool selected) -> nil
 
-  # Settings row: dim label left, gold value right (sprite, x, y, w, label, value, focused)
+  # Settings row: text-color label, highlight value (sprite, x, y, w, label, value, focused)
   def self.field: (Sprite sprite, Integer x, Integer y, Integer width, String label, String value, bool focused) -> nil
 
   # Read-only progress bar (sprite, x, y, w, value, max)
@@ -118,7 +136,7 @@ class Widget
   # Horizontal scrollbar (sprite, x, y, w, left, visible, total)
   def self.hscrollbar: (Sprite sprite, Integer x, Integer y, Integer width, Integer left, Integer visible, Integer total) -> nil
 
-  # Inverted chip: amber fill, background-color text (sprite, x, y, text)
+  # Inverted chip: accent fill, background-color text (sprite, x, y, text)
   def self.badge: (Sprite sprite, Integer x, Integer y, String text) -> nil
 
   # 4-phase busy marker; pass a frame counter (sprite, x, y, frame)

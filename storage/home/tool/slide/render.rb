@@ -1,10 +1,10 @@
 class SlideShow
   def draw
-    @sprite.fill(Widget.bg)
+    @sprite.fill(Widget.theme_background)
 
     if @error_message
       Widget.header(@sprite, "SLIDE SHOW")
-      Widget.text_center(@sprite, 58, @error_message, Widget.gold)
+      Widget.text_center(@sprite, 58, @error_message, Widget.theme_emphasis)
       Widget.footer(@sprite, "ESC exit")
     else
       draw_page
@@ -43,14 +43,14 @@ class SlideShow
 
     case row_kind
     when :heading_1
-      @sprite.fill_rect(0, screen_y, Display.width, ROW_HEIGHT, Widget.dark)
+      @sprite.fill_rect(0, screen_y, Display.width, ROW_HEIGHT, Widget.theme_box)
       draw_segments(row_segments, screen_x, screen_y + 2, row_kind)
     when :heading_2
       draw_segments(row_segments, screen_x + 4, screen_y + 2, row_kind)
     when :heading_3
       draw_segments(row_segments, screen_x + 8, screen_y + 2, row_kind)
     when :list
-      @sprite.text(screen_x, screen_y + 2, "-", Widget.amber)
+      @sprite.text(screen_x, screen_y + 2, "-", Widget.theme_emphasis)
       draw_segments(row_segments, screen_x + 12, screen_y + 2, row_kind)
     when :code
       @sprite.fill_rect(0, screen_y, Display.width, ROW_HEIGHT, CODE_BACKGROUND_COLOR)

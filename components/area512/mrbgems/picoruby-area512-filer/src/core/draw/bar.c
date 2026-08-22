@@ -19,11 +19,18 @@ static const Chip BAR2[] =
 
 static void
 draw_chips(Filer *filer, const Chip *chips, int count, int y, int divider) {
-  area512_sprite_fill(filer->row, COLOR_BACKGROUND);
+  area512_sprite_fill(filer->row, area512_theme_background_color());
   draw_walls(filer, 0);
 
   if (divider)
-    area512_sprite_line(filer->row, 0, 0, filer->width - 1, 0, COLOR_GREEN);
+    area512_sprite_line(
+      filer->row,
+      0,
+      0,
+      filer->width - 1,
+      0,
+      area512_theme_border_color()
+    );
 
   int x = filer->content_x + 1;
   int i = 0;
@@ -32,12 +39,18 @@ draw_chips(Filer *filer, const Chip *chips, int count, int y, int divider) {
     char key[12];
 
     snprintf(key, sizeof key, "[%s]", chips[i].key);
-    area512_sprite_text(filer->row, x, 1, key, COLOR_GREEN);
+    area512_sprite_text(filer->row, x, 1, key, area512_theme_emphasis_color());
 
     x +=
       (int)strlen(key) * FILER_CHAR_WIDTH + FILER_CHAR_WIDTH; // gap after [key]
 
-    area512_sprite_text(filer->row, x, 1, chips[i].label, COLOR_DIM);
+    area512_sprite_text(
+      filer->row,
+      x,
+      1,
+      chips[i].label,
+      area512_theme_text_color()
+    );
 
     x += (int)strlen(chips[i].label) * FILER_CHAR_WIDTH +
          FILER_CHAR_WIDTH; // gap to next chip
@@ -52,14 +65,27 @@ draw_chips(Filer *filer, const Chip *chips, int count, int y, int divider) {
 void
 draw_primary_action_bar(Filer *filer) {
   if (filer->message[0]) {
-    area512_sprite_fill(filer->row, COLOR_BACKGROUND);
+    area512_sprite_fill(filer->row, area512_theme_background_color());
     draw_walls(filer, 0);
-    area512_sprite_line(filer->row, 0, 0, filer->width - 1, 0, COLOR_GREEN);
+    area512_sprite_line(
+      filer->row,
+      0,
+      0,
+      filer->width - 1,
+      0,
+      area512_theme_border_color()
+    );
 
     char fitted[LINE_MAX];
 
     fit_string(fitted, sizeof fitted, filer->message, filer->columns);
-    area512_sprite_text(filer->row, filer->content_x, 1, fitted, COLOR_AMBER);
+    area512_sprite_text(
+      filer->row,
+      filer->content_x,
+      1,
+      fitted,
+      area512_theme_emphasis_color()
+    );
     area512_sprite_push(filer->row, 0, filer->bar1_y);
 
   } else {

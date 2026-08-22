@@ -10,8 +10,8 @@ area512_widget_draw_panel(void *sprite, int x, int y, int w, int h) {
   if (w <= 0 || h <= 0)
     return;
 
-  area512_sprite_fill_rect(sprite, x, y, w, h, WIDGET_COLOR_DARK);
-  area512_sprite_rect(sprite, x, y, w, h, WIDGET_COLOR_AMBER);
+  area512_sprite_fill_rect(sprite, x, y, w, h, area512_theme_box_color());
+  area512_sprite_rect(sprite, x, y, w, h, area512_theme_border_color());
 }
 
 void
@@ -33,9 +33,16 @@ area512_widget_draw_titled_panel(
     x + 4,
     area512_widget_vcenter_text_y(y, 15),
     clipped,
-    WIDGET_COLOR_GOLD
+    area512_theme_emphasis_color()
   );
-  area512_sprite_line(sprite, x, y + 14, x + w - 1, y + 14, WIDGET_COLOR_AMBER);
+  area512_sprite_line(
+    sprite,
+    x,
+    y + 14,
+    x + w - 1,
+    y + 14,
+    area512_theme_border_color()
+  );
 }
 
 void
@@ -56,7 +63,7 @@ area512_widget_draw_toast(void *sprite, const char *message) {
     x + 8,
     area512_widget_vcenter_text_y(y, 18),
     clipped,
-    WIDGET_COLOR_GOLD
+    area512_theme_emphasis_color()
   );
 }
 
@@ -69,13 +76,13 @@ area512_widget_draw_splash(
 
   int center_y = area512_gfx_height() / 2;
 
-  area512_sprite_fill(sprite, WIDGET_COLOR_BG);
+  area512_sprite_fill(sprite, area512_theme_background_color());
   area512_sprite_set_font_size(sprite, 24);
   area512_widget_draw_text_center(
     sprite,
     center_y - 18,
     title,
-    WIDGET_COLOR_GOLD
+    area512_theme_emphasis_color()
   );
   area512_sprite_set_font_size(sprite, 12);
 
@@ -84,7 +91,7 @@ area512_widget_draw_splash(
       sprite,
       center_y + 12,
       subtitle,
-      WIDGET_COLOR_DIM
+      area512_theme_text_color()
     );
   }
 }

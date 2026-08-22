@@ -1,5 +1,6 @@
 #include "area512_micropython_sprite.h"
 
+#include "area512_hal.h"
 #include "core/widget.h"
 
 #include "py/runtime.h"
@@ -88,6 +89,30 @@ DEFINE_INTEGER_METHOD(fetch_widget_amber_color, WIDGET_COLOR_AMBER);
 DEFINE_INTEGER_METHOD(fetch_widget_dim_color, WIDGET_COLOR_DIM);
 DEFINE_INTEGER_METHOD(fetch_widget_gold_color, WIDGET_COLOR_GOLD);
 DEFINE_INTEGER_METHOD(fetch_widget_dark_color, WIDGET_COLOR_DARK);
+DEFINE_INTEGER_METHOD(
+  fetch_widget_theme_background_color,
+  area512_theme_background_color()
+);
+DEFINE_INTEGER_METHOD(
+  fetch_widget_theme_text_color,
+  area512_theme_text_color()
+);
+DEFINE_INTEGER_METHOD(
+  fetch_widget_theme_emphasis_color,
+  area512_theme_emphasis_color()
+);
+DEFINE_INTEGER_METHOD(
+  fetch_widget_theme_border_color,
+  area512_theme_border_color()
+);
+DEFINE_INTEGER_METHOD(
+  fetch_widget_theme_selected_color,
+  area512_theme_selected_color()
+);
+DEFINE_INTEGER_METHOD(
+  fetch_widget_theme_box_color,
+  area512_theme_box_color()
+);
 DEFINE_INTEGER_METHOD(fetch_widget_character_width, WIDGET_CHAR_WIDTH);
 DEFINE_INTEGER_METHOD(fetch_widget_row_height, WIDGET_ROW_HEIGHT);
 DEFINE_INTEGER_METHOD(fetch_widget_header_height, WIDGET_HEADER_HEIGHT);
@@ -311,7 +336,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
 static mp_obj_t
 draw_widget_big_text(size_t argument_count, const mp_obj_t *arguments) {
   uint32_t color = argument_count >= 5 ? fetch_color_or_raise(arguments[4])
-                                       : WIDGET_COLOR_GOLD;
+                                       : area512_theme_emphasis_color();
 
   area512_widget_draw_big_text(
     area512_micropython_fetch_sprite_handle_or_raise(arguments[0]),
@@ -383,7 +408,8 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
 static mp_obj_t
 draw_widget_text_center(size_t argument_count, const mp_obj_t *arguments) {
   uint32_t color =
-    argument_count >= 4 ? fetch_color_or_raise(arguments[3]) : WIDGET_COLOR_DIM;
+    argument_count >= 4 ? fetch_color_or_raise(arguments[3])
+                        : area512_theme_text_color();
 
   area512_widget_draw_text_center(
     area512_micropython_fetch_sprite_handle_or_raise(arguments[0]),
@@ -404,7 +430,8 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
 static mp_obj_t
 draw_widget_text_right(size_t argument_count, const mp_obj_t *arguments) {
   uint32_t color =
-    argument_count >= 5 ? fetch_color_or_raise(arguments[4]) : WIDGET_COLOR_DIM;
+    argument_count >= 5 ? fetch_color_or_raise(arguments[4])
+                        : area512_theme_text_color();
 
   area512_widget_draw_text_right(
     area512_micropython_fetch_sprite_handle_or_raise(arguments[0]),
@@ -439,7 +466,7 @@ draw_widget_center_lines(mp_obj_t sprite_object, mp_obj_t line_sequence) {
   WidgetColoredLine lines[WIDGET_MENU_MAX_ITEMS];
 
   for (size_t i = 0; i < line_count; i++) {
-    lines[i].color = WIDGET_COLOR_DIM;
+    lines[i].color = area512_theme_text_color();
 
     if (mp_obj_is_str(line_items[i])) {
       lines[i].text = mp_obj_str_get_str(line_items[i]);
@@ -472,7 +499,8 @@ static MP_DEFINE_CONST_FUN_OBJ_2(
 static mp_obj_t
 draw_widget_wrap_text(size_t argument_count, const mp_obj_t *arguments) {
   uint32_t color =
-    argument_count >= 7 ? fetch_color_or_raise(arguments[6]) : WIDGET_COLOR_DIM;
+    argument_count >= 7 ? fetch_color_or_raise(arguments[6])
+                        : area512_theme_text_color();
 
   return MP_OBJ_NEW_SMALL_INT(area512_widget_draw_wrap_text(
     area512_micropython_fetch_sprite_handle_or_raise(arguments[0]),
@@ -1063,6 +1091,18 @@ static const mp_rom_map_elem_t widget_locals_table[] = {
   {MP_ROM_QSTR(MP_QSTR_dim), MP_ROM_PTR(&fetch_widget_dim_color_callable)},
   {MP_ROM_QSTR(MP_QSTR_gold), MP_ROM_PTR(&fetch_widget_gold_color_callable)},
   {MP_ROM_QSTR(MP_QSTR_dark), MP_ROM_PTR(&fetch_widget_dark_color_callable)},
+  {MP_ROM_QSTR(MP_QSTR_theme_background),
+   MP_ROM_PTR(&fetch_widget_theme_background_color_callable)},
+  {MP_ROM_QSTR(MP_QSTR_theme_text),
+   MP_ROM_PTR(&fetch_widget_theme_text_color_callable)},
+  {MP_ROM_QSTR(MP_QSTR_theme_emphasis),
+   MP_ROM_PTR(&fetch_widget_theme_emphasis_color_callable)},
+  {MP_ROM_QSTR(MP_QSTR_theme_border),
+   MP_ROM_PTR(&fetch_widget_theme_border_color_callable)},
+  {MP_ROM_QSTR(MP_QSTR_theme_selected),
+   MP_ROM_PTR(&fetch_widget_theme_selected_color_callable)},
+  {MP_ROM_QSTR(MP_QSTR_theme_box),
+   MP_ROM_PTR(&fetch_widget_theme_box_color_callable)},
   {
     MP_ROM_QSTR(MP_QSTR_char_width),
     MP_ROM_PTR(&fetch_widget_character_width_callable),

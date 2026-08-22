@@ -75,7 +75,7 @@ class Scheduler
   end
 
   def run
-    Display.fill_screen(C_BG)
+    Display.fill_screen(C_BACKGROUND)
     @sp = Sprite.new(W, H, 12)
     begin
       SD.mount
@@ -87,7 +87,7 @@ class Scheduler
     ensure
       SD.unmount
       @sp.delete if @sp
-      Display.fill_screen(C_BG)
+      Display.fill_screen(C_BACKGROUND)
     end
   end
 end

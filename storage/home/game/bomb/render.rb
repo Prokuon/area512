@@ -12,9 +12,9 @@ class Bomb
           color = C_TEXT
           case n
           when 1
-            color = COL_GOLD
+            color = COL_SELECTED
           when 2
-            color = COL_AMBER
+            color = COL_EMPHASIS
           when 3
             color = C_FLAG
           when 4

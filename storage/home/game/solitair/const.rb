@@ -1,3 +1,5 @@
+require 'area512-widget'
+
 # Solitair -- constants and small card helpers
 
 require 'rng'
@@ -24,26 +26,27 @@ class Solitair
   HIGHSCORE_FILE = "/data/solitair.txt" unless const_defined?(:HIGHSCORE_FILE)
   SCORE_TIME_BASE = 360000 unless const_defined?(:SCORE_TIME_BASE)
 
-  COL_BG     = 0x000000 unless const_defined?(:COL_BG)
-  COL_AMBER  = 0xF5972D unless const_defined?(:COL_AMBER)
-  COL_DIM    = 0xCFA45F unless const_defined?(:COL_DIM)
-  COL_GOLD   = 0xFFD966 unless const_defined?(:COL_GOLD)
+  COL_BACKGROUND     = Widget.theme_background unless const_defined?(:COL_BACKGROUND)
+  COL_BORDER  = Widget.theme_border unless const_defined?(:COL_BORDER)
+  COL_TEXT    = Widget.theme_text unless const_defined?(:COL_TEXT)
+  COL_SELECTED   = Widget.theme_selected unless const_defined?(:COL_SELECTED)
+  COL_EMPHASIS   = Widget.theme_emphasis unless const_defined?(:COL_EMPHASIS)
 
-  C_BG     = COL_BG unless const_defined?(:C_BG)
-  C_PANEL  = COL_BG unless const_defined?(:C_PANEL)
-  C_TEXT   = COL_DIM unless const_defined?(:C_TEXT)
-  C_DIM    = COL_DIM unless const_defined?(:C_DIM)
-  C_RED    = COL_AMBER unless const_defined?(:C_RED)
-  C_BLACK  = COL_GOLD unless const_defined?(:C_BLACK)
-  C_BACK   = COL_AMBER unless const_defined?(:C_BACK)
-  C_SEL    = COL_GOLD unless const_defined?(:C_SEL)
-  C_MSG    = COL_DIM unless const_defined?(:C_MSG)
-  C_CARD   = COL_BG unless const_defined?(:C_CARD)
-  C_FACE   = COL_DIM unless const_defined?(:C_FACE)
-  C_EDGE   = COL_DIM unless const_defined?(:C_EDGE)
-  C_SHADOW = COL_BG unless const_defined?(:C_SHADOW)
-  C_EMPTY  = COL_BG unless const_defined?(:C_EMPTY)
-  C_SCROLL = COL_AMBER unless const_defined?(:C_SCROLL)
+  C_BG     = COL_BACKGROUND unless const_defined?(:C_BG)
+  C_PANEL  = COL_BACKGROUND unless const_defined?(:C_PANEL)
+  C_TEXT   = COL_TEXT unless const_defined?(:C_TEXT)
+  C_DIM    = COL_TEXT unless const_defined?(:C_DIM)
+  C_RED    = COL_EMPHASIS unless const_defined?(:C_RED)
+  C_BLACK  = COL_SELECTED unless const_defined?(:C_BLACK)
+  C_BACK   = COL_EMPHASIS unless const_defined?(:C_BACK)
+  C_SEL    = COL_SELECTED unless const_defined?(:C_SEL)
+  C_MSG    = COL_TEXT unless const_defined?(:C_MSG)
+  C_CARD   = COL_BACKGROUND unless const_defined?(:C_CARD)
+  C_FACE   = COL_TEXT unless const_defined?(:C_FACE)
+  C_EDGE   = COL_TEXT unless const_defined?(:C_EDGE)
+  C_SHADOW = COL_BACKGROUND unless const_defined?(:C_SHADOW)
+  C_EMPTY  = COL_BACKGROUND unless const_defined?(:C_EMPTY)
+  C_SCROLL = COL_EMPHASIS unless const_defined?(:C_SCROLL)
 end
 
 def rnd(n)

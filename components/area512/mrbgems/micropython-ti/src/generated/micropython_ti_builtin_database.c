@@ -9,18 +9,18 @@ const MicroPythonTiBuiltinClass micropython_ti_builtin_classes[] = {
   {86, 96, 5, 101, 0},   {90, 101, 0, 101, 2},   {98, 103, 11, 114, 9},
   {103, 123, 8, 131, 0}, {106, 131, 0, 131, 3},  {110, 134, 0, 134, 7},
   {113, 141, 3, 144, 5}, {118, 149, 3, 152, 3},  {122, 155, 13, 168, 0},
-  {129, 168, 0, 168, 5}, {137, 173, 0, 173, 55}, {144, 228, 15, 243, 0},
-  {155, 243, 7, 250, 0}, {170, 250, 0, 250, 0},  {183, 250, 0, 250, 0},
-  {195, 250, 0, 250, 0}, {201, 250, 0, 250, 0},  {205, 250, 0, 250, 0},
-  {209, 250, 0, 250, 0}, {223, 250, 0, 250, 0},  {237, 250, 0, 250, 0},
-  {255, 250, 0, 250, 0}, {266, 250, 0, 250, 0},  {276, 250, 0, 250, 0},
-  {290, 250, 0, 250, 0}, {298, 250, 0, 250, 0},  {314, 250, 0, 250, 0},
-  {329, 250, 0, 250, 0}, {344, 250, 0, 250, 0},  {353, 250, 0, 250, 0},
-  {365, 250, 0, 250, 0}, {377, 250, 0, 250, 0},  {389, 250, 0, 250, 0},
-  {399, 250, 0, 250, 0}, {412, 250, 0, 250, 0},  {424, 250, 0, 250, 0},
-  {434, 250, 0, 250, 0}, {445, 250, 0, 250, 0},  {459, 250, 0, 250, 0},
-  {477, 250, 0, 250, 0}, {488, 250, 0, 250, 0},  {497, 250, 0, 250, 0},
-  {517, 250, 0, 250, 0}, {534, 250, 0, 250, 6},
+  {129, 168, 0, 168, 5}, {137, 173, 0, 173, 61}, {144, 234, 15, 249, 0},
+  {155, 249, 7, 256, 0}, {170, 256, 0, 256, 0},  {183, 256, 0, 256, 0},
+  {195, 256, 0, 256, 0}, {201, 256, 0, 256, 0},  {205, 256, 0, 256, 0},
+  {209, 256, 0, 256, 0}, {223, 256, 0, 256, 0},  {237, 256, 0, 256, 0},
+  {255, 256, 0, 256, 0}, {266, 256, 0, 256, 0},  {276, 256, 0, 256, 0},
+  {290, 256, 0, 256, 0}, {298, 256, 0, 256, 0},  {314, 256, 0, 256, 0},
+  {329, 256, 0, 256, 0}, {344, 256, 0, 256, 0},  {353, 256, 0, 256, 0},
+  {365, 256, 0, 256, 0}, {377, 256, 0, 256, 0},  {389, 256, 0, 256, 0},
+  {399, 256, 0, 256, 0}, {412, 256, 0, 256, 0},  {424, 256, 0, 256, 0},
+  {434, 256, 0, 256, 0}, {445, 256, 0, 256, 0},  {459, 256, 0, 256, 0},
+  {477, 256, 0, 256, 0}, {488, 256, 0, 256, 0},  {497, 256, 0, 256, 0},
+  {517, 256, 0, 256, 0}, {534, 256, 0, 256, 6},
 };
 
 const MicroPythonTiBuiltinMethod micropython_ti_builtin_methods[] = {
@@ -200,86 +200,92 @@ const MicroPythonTiBuiltinMethod micropython_ti_builtin_methods[] = {
   {1925, 7429, 5129, 228, 2, 11, 0, 0, 0, 0, 25},
   {1931, 7473, 5182, 230, 0, 2, 0, 0, 0, 0, 25},
   {1937, 7488, 5252, 230, 4, 11, 0, 0, 0, 0, 25},
-  {1947, 7545, 5320, 234, 7, 11, 0, 0, 0, 0, 25},
-  {1957, 7649, 5383, 241, 3, 11, 0, 0, 0, 0, 25},
-  {1965, 7697, 5443, 244, 0, 2, 0, 0, 0, 0, 25},
-  {1968, 7709, 5496, 244, 5, 11, 0, 0, 0, 0, 25},
-  {1977, 7792, 5569, 249, 0, 2, 0, 0, 0, 0, 25},
-  {1989, 7813, 5617, 249, 0, 2, 0, 0, 0, 0, 25},
-  {2001, 7834, 5689, 249, 0, 2, 0, 0, 0, 0, 25},
-  {2016, 7852, 5738, 249, 4, 11, 0, 0, 0, 0, 25},
-  {2035, 7909, 5799, 253, 6, 11, 0, 0, 0, 0, 25},
-  {2051, 7995, 5845, 259, 7, 11, 0, 0, 0, 0, 25},
-  {2062, 8092, 5910, 266, 2, 11, 0, 0, 0, 0, 25},
-  {2075, 8165, 6018, 268, 0, 2, 0, 0, 0, 0, 25},
-  {2094, 8185, 6076, 268, 6, 11, 0, 0, 0, 0, 25},
-  {2103, 8276, 6115, 274, 3, 4, 0, 0, 0, 0, 25},
-  {2117, 8327, 6185, 277, 2, 6, 0, 0, 0, 0, 25},
-  {2125, 8374, 6236, 279, 0, 2, 0, 0, 0, 0, 25},
-  {2138, 8388, 6312, 279, 3, 0, 0, 3, 0, 0, 25},
-  {2145, 8459, 6392, 282, 0, 2, 0, 0, 0, 0, 25},
-  {2149, 8472, 6446, 282, 7, 11, 0, 0, 0, 0, 25},
-  {2155, 8569, 6512, 289, 2, 11, 0, 0, 0, 0, 25},
-  {2162, 8614, 6561, 291, 6, 11, 0, 0, 0, 0, 25},
-  {2168, 8694, 6603, 297, 0, 2, 0, 0, 0, 0, 25},
-  {2185, 8708, 6661, 297, 3, 11, 0, 0, 0, 0, 25},
-  {2192, 8768, 6725, 300, 0, 2, 0, 0, 0, 0, 25},
-  {2206, 8791, 6768, 300, 2, 11, 0, 0, 0, 0, 25},
-  {2231, 8851, 6838, 302, 7, 11, 0, 0, 0, 0, 25},
-  {1238, 8951, 6878, 309, 3, 0, 0, 4, 0, 0, 25},
-  {2254, 9018, 6950, 312, 5, 0, 0, 3, 0, 0, 25},
-  {2267, 9107, 7021, 317, 7, 11, 0, 0, 0, 0, 25},
-  {2285, 9212, 7089, 324, 6, 2, 0, 0, 0, 0, 25},
-  {2293, 9295, 7159, 330, 4, 0, 0, 3, 0, 0, 25},
-  {2305, 9378, 7223, 334, 4, 11, 0, 0, 0, 0, 25},
-  {2315, 9445, 7271, 338, 5, 11, 0, 0, 0, 0, 25},
-  {2321, 9516, 7314, 343, 6, 11, 0, 0, 0, 0, 25},
-  {2327, 9605, 7357, 349, 0, 4, 0, 0, 0, 0, 25},
-  {2336, 9623, 7470, 349, 0, 2, 0, 0, 0, 0, 25},
-  {2351, 9643, 7525, 349, 7, 11, 0, 0, 0, 0, 25},
-  {2361, 9742, 7593, 356, 2, 11, 0, 0, 0, 0, 25},
-  {2371, 9784, 7644, 358, 7, 11, 0, 0, 0, 0, 25},
-  {2378, 9880, 7676, 365, 6, 11, 0, 0, 0, 0, 25},
-  {2395, 9966, 7753, 371, 3, 11, 0, 0, 0, 0, 25},
-  {2416, 10029, 7807, 374, 5, 11, 0, 0, 0, 0, 25},
-  {2435, 10120, 7844, 379, 6, 11, 0, 0, 0, 0, 25},
-  {2445, 10223, 7876, 385, 4, 11, 0, 0, 0, 0, 25},
-  {2450, 10292, 7932, 389, 4, 11, 0, 0, 0, 0, 25},
-  {2470, 10370, 8004, 393, 5, 11, 0, 0, 0, 0, 25},
-  {2481, 10461, 8068, 398, 2, 2, 0, 0, 0, 0, 25},
-  {2492, 10506, 8136, 400, 6, 11, 0, 0, 0, 0, 25},
-  {2505, 10596, 8183, 406, 2, 11, 0, 0, 0, 0, 25},
-  {2514, 10640, 8266, 408, 5, 11, 0, 0, 0, 0, 25},
-  {2521, 10712, 8304, 413, 4, 11, 0, 0, 0, 0, 25},
-  {2532, 10776, 8337, 417, 7, 2, 0, 0, 0, 0, 25},
-  {1229, 5944, 8404, 424, 0, 11, 0, 0, 0, 0, 26},
-  {2546, 10884, 8464, 424, 2, 11, 0, 0, 0, 0, 26},
-  {2550, 10922, 8541, 426, 4, 11, 0, 0, 0, 0, 26},
-  {2555, 10976, 8613, 430, 0, 11, 0, 0, 0, 0, 26},
-  {722, 10992, 8648, 430, 0, 2, 0, 0, 0, 0, 26},
-  {2561, 11007, 8682, 430, 1, 11, 0, 0, 0, 0, 26},
-  {2566, 11036, 8760, 431, 1, 6, 0, 0, 0, 0, 26},
-  {635, 11061, 8837, 432, 0, 2, 0, 0, 0, 0, 26},
-  {2580, 11076, 8867, 432, 2, 11, 0, 0, 0, 0, 26},
-  {2573, 11115, 8912, 434, 1, 6, 0, 0, 0, 0, 26},
-  {2585, 11142, 8959, 435, 1, 11, 0, 0, 0, 0, 26},
-  {2600, 11176, 9021, 436, 1, 11, 0, 0, 0, 0, 26},
-  {2621, 11206, 9082, 437, 1, 11, 0, 0, 0, 0, 26},
-  {2636, 11247, 9135, 438, 0, 11, 0, 0, 0, 0, 26},
-  {2347, 11269, 9188, 438, 0, 2, 0, 0, 0, 0, 26},
-  {1229, 5944, 9225, 438, 0, 11, 0, 0, 0, 0, 27},
-  {2550, 10922, 8541, 438, 4, 11, 0, 0, 0, 0, 27},
-  {2561, 11007, 9270, 442, 1, 11, 0, 0, 0, 0, 27},
-  {2566, 11036, 9342, 443, 1, 6, 0, 0, 0, 0, 27},
-  {2648, 11282, 9419, 444, 0, 2, 0, 0, 0, 0, 27},
-  {2655, 11298, 9465, 444, 1, 11, 0, 0, 0, 0, 27},
-  {2666, 11330, 9519, 445, 1, 11, 0, 0, 0, 0, 27},
-  {2675, 11358, 9578, 446, 0, 0, 0, 3, 0, 0, 58},
-  {2683, 11382, 9614, 446, 0, 11, 0, 0, 0, 0, 58},
-  {2691, 11400, 9784, 446, 0, 11, 0, 0, 0, 0, 58},
-  {2698, 11417, 0, 446, 2, 12, 0, 0, 0, 0, 58},
-  {2708, 11458, 9831, 448, 0, 2, 0, 0, 0, 0, 58},
-  {2718, 11477, 10026, 448, 0, 2, 0, 0, 0, 0, 58},
+  {1947, 7545, 5321, 234, 7, 11, 0, 0, 0, 0, 25},
+  {1957, 7649, 5384, 241, 3, 11, 0, 0, 0, 0, 25},
+  {1965, 7697, 5444, 244, 0, 2, 0, 0, 0, 0, 25},
+  {1968, 7709, 5497, 244, 5, 11, 0, 0, 0, 0, 25},
+  {1977, 7807, 5585, 249, 0, 2, 0, 0, 0, 0, 25},
+  {1989, 7828, 5633, 249, 0, 2, 0, 0, 0, 0, 25},
+  {2001, 7849, 5705, 249, 0, 2, 0, 0, 0, 0, 25},
+  {2016, 7867, 5754, 249, 4, 11, 0, 0, 0, 0, 25},
+  {2035, 7924, 5815, 253, 6, 11, 0, 0, 0, 0, 25},
+  {2051, 8010, 5861, 259, 7, 11, 0, 0, 0, 0, 25},
+  {2062, 8107, 5932, 266, 2, 11, 0, 0, 0, 0, 25},
+  {2075, 8180, 6040, 268, 0, 2, 0, 0, 0, 0, 25},
+  {2094, 8200, 6098, 268, 6, 11, 0, 0, 0, 0, 25},
+  {2103, 8291, 6137, 274, 3, 4, 0, 0, 0, 0, 25},
+  {2117, 8342, 6207, 277, 2, 6, 0, 0, 0, 0, 25},
+  {2125, 8389, 6258, 279, 0, 2, 0, 0, 0, 0, 25},
+  {2138, 8403, 6334, 279, 3, 0, 0, 3, 0, 0, 25},
+  {2145, 8474, 6414, 282, 0, 2, 0, 0, 0, 0, 25},
+  {2149, 8487, 6468, 282, 7, 11, 0, 0, 0, 0, 25},
+  {2155, 8584, 6546, 289, 2, 11, 0, 0, 0, 0, 25},
+  {2162, 8629, 6595, 291, 6, 11, 0, 0, 0, 0, 25},
+  {2168, 8709, 6637, 297, 0, 2, 0, 0, 0, 0, 25},
+  {2185, 8723, 6695, 297, 3, 11, 0, 0, 0, 0, 25},
+  {2192, 8783, 6771, 300, 0, 2, 0, 0, 0, 0, 25},
+  {2206, 8806, 6814, 300, 2, 11, 0, 0, 0, 0, 25},
+  {2231, 8866, 6884, 302, 7, 11, 0, 0, 0, 0, 25},
+  {1238, 8966, 6924, 309, 3, 0, 0, 4, 0, 0, 25},
+  {2254, 9033, 6996, 312, 5, 0, 0, 3, 0, 0, 25},
+  {2267, 9122, 7067, 317, 7, 11, 0, 0, 0, 0, 25},
+  {2285, 9227, 7135, 324, 6, 2, 0, 0, 0, 0, 25},
+  {2293, 9310, 7205, 330, 4, 0, 0, 3, 0, 0, 25},
+  {2305, 9393, 7269, 334, 4, 11, 0, 0, 0, 0, 25},
+  {2315, 9460, 7317, 338, 5, 11, 0, 0, 0, 0, 25},
+  {2321, 9531, 7362, 343, 6, 11, 0, 0, 0, 0, 25},
+  {2327, 9620, 7405, 349, 0, 4, 0, 0, 0, 0, 25},
+  {2336, 9638, 7518, 349, 0, 2, 0, 0, 0, 0, 25},
+  {2351, 9658, 7573, 349, 7, 11, 0, 0, 0, 0, 25},
+  {2361, 9757, 7641, 356, 2, 11, 0, 0, 0, 0, 25},
+  {2371, 9799, 7692, 358, 7, 11, 0, 0, 0, 0, 25},
+  {2378, 9895, 7724, 365, 6, 11, 0, 0, 0, 0, 25},
+  {2395, 9981, 7801, 371, 3, 11, 0, 0, 0, 0, 25},
+  {2416, 10044, 7855, 374, 5, 11, 0, 0, 0, 0, 25},
+  {2435, 10135, 7892, 379, 6, 11, 0, 0, 0, 0, 25},
+  {2445, 10238, 7924, 385, 4, 11, 0, 0, 0, 0, 25},
+  {2450, 10307, 7980, 389, 4, 11, 0, 0, 0, 0, 25},
+  {2470, 10396, 8069, 393, 5, 11, 0, 0, 0, 0, 25},
+  {2481, 10498, 8150, 398, 2, 2, 0, 0, 0, 0, 25},
+  {2492, 10543, 8218, 400, 0, 2, 0, 0, 0, 0, 25},
+  {2509, 10569, 8293, 400, 0, 2, 0, 0, 0, 0, 25},
+  {2522, 10591, 8355, 400, 0, 2, 0, 0, 0, 0, 25},
+  {2532, 10610, 8438, 400, 0, 2, 0, 0, 0, 0, 25},
+  {2547, 10634, 8527, 400, 0, 2, 0, 0, 0, 0, 25},
+  {2562, 10658, 8603, 400, 0, 2, 0, 0, 0, 0, 25},
+  {2573, 10678, 8651, 400, 6, 11, 0, 0, 0, 0, 25},
+  {2586, 10768, 8703, 406, 2, 11, 0, 0, 0, 0, 25},
+  {2595, 10812, 8786, 408, 5, 11, 0, 0, 0, 0, 25},
+  {2602, 10884, 8824, 413, 4, 11, 0, 0, 0, 0, 25},
+  {2613, 10948, 8857, 417, 7, 2, 0, 0, 0, 0, 25},
+  {1229, 5944, 8924, 424, 0, 11, 0, 0, 0, 0, 26},
+  {2627, 11067, 8984, 424, 2, 11, 0, 0, 0, 0, 26},
+  {2631, 11105, 9061, 426, 4, 11, 0, 0, 0, 0, 26},
+  {2636, 11159, 9133, 430, 0, 11, 0, 0, 0, 0, 26},
+  {722, 11175, 9168, 430, 0, 2, 0, 0, 0, 0, 26},
+  {2642, 11190, 9202, 430, 1, 11, 0, 0, 0, 0, 26},
+  {2647, 11219, 9280, 431, 1, 6, 0, 0, 0, 0, 26},
+  {635, 11244, 9357, 432, 0, 2, 0, 0, 0, 0, 26},
+  {2661, 11259, 9387, 432, 2, 11, 0, 0, 0, 0, 26},
+  {2654, 11298, 9432, 434, 1, 6, 0, 0, 0, 0, 26},
+  {2666, 11325, 9479, 435, 1, 11, 0, 0, 0, 0, 26},
+  {2681, 11359, 9541, 436, 1, 11, 0, 0, 0, 0, 26},
+  {2702, 11389, 9602, 437, 1, 11, 0, 0, 0, 0, 26},
+  {2717, 11430, 9655, 438, 0, 11, 0, 0, 0, 0, 26},
+  {2347, 11452, 9708, 438, 0, 2, 0, 0, 0, 0, 26},
+  {1229, 5944, 9745, 438, 0, 11, 0, 0, 0, 0, 27},
+  {2631, 11105, 9061, 438, 4, 11, 0, 0, 0, 0, 27},
+  {2642, 11190, 9790, 442, 1, 11, 0, 0, 0, 0, 27},
+  {2647, 11219, 9862, 443, 1, 6, 0, 0, 0, 0, 27},
+  {2729, 11465, 9939, 444, 0, 2, 0, 0, 0, 0, 27},
+  {2736, 11481, 9985, 444, 1, 11, 0, 0, 0, 0, 27},
+  {2747, 11513, 10039, 445, 1, 11, 0, 0, 0, 0, 27},
+  {2756, 11541, 10098, 446, 0, 0, 0, 3, 0, 0, 58},
+  {2764, 11565, 10134, 446, 0, 11, 0, 0, 0, 0, 58},
+  {2772, 11583, 10304, 446, 0, 11, 0, 0, 0, 0, 58},
+  {2779, 11600, 0, 446, 2, 12, 0, 0, 0, 0, 58},
+  {2789, 11641, 10351, 448, 0, 2, 0, 0, 0, 0, 58},
+  {2799, 11660, 10546, 448, 0, 2, 0, 0, 0, 0, 58},
 };
 
 const MicroPythonTiBuiltinArgument micropython_ti_builtin_arguments[] = {
@@ -694,7 +700,7 @@ const MicroPythonTiBuiltinArgument micropython_ti_builtin_arguments[] = {
   {1910, 23, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {917, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {978, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
-  {2511, 6, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
+  {2592, 6, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {2027, 6, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {1910, 23, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {917, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
@@ -708,7 +714,7 @@ const MicroPythonTiBuiltinArgument micropython_ti_builtin_arguments[] = {
   {1831, 4, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {1732, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_OPTIONAL},
   {1831, 4, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
-  {2542, 4, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_OPTIONAL},
+  {2623, 4, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_OPTIONAL},
   {917, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {978, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {1702, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
@@ -716,18 +722,18 @@ const MicroPythonTiBuiltinArgument micropython_ti_builtin_arguments[] = {
   {1910, 23, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {878, 4, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {635, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
-  {2573, 6, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
+  {2654, 6, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {635, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {1831, 4, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {635, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
-  {2610, 6, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
+  {2691, 6, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {917, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {978, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {1702, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {1708, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {1910, 23, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {878, 4, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
-  {2648, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
+  {2729, 2, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {1831, 4, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REQUIRED},
   {616, 1, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REST},
   {621, 1, 0, MICROPYTHON_TI_BUILTIN_ARGUMENT_REST_KEYWORD},
@@ -800,7 +806,9 @@ const char micropython_ti_builtin_name_pool[] =
   "dots\000panel\000radio\000read_key\000row_"
   "height\000top\000scrollbar\000separator\000slider\000spinner\000subtitle\000"
   "splash\000widths\000labels\000table_header\000texts\000table_"
-  "row\000tabs\000text_center\000right_x\000text_right\000text_width\000titled_"
+  "row\000tabs\000text_center\000right_x\000text_right\000text_width\000theme_"
+  "background\000theme_border\000theme_box\000theme_emphasis\000theme_"
+  "selected\000theme_text\000titled_"
   "panel\000toast\000on\000toggle\000vseparator\000wrap_"
   "text\000tag\000add\000area\000clear\000draw\000handle\000marked\000mark\000s"
   "et_empty_text\000set_index\000show_marks\000set_show_marks\000toggle_"
@@ -928,11 +936,11 @@ const char micropython_ti_builtin_signature_pool[] =
   "None\000bar_chart(sprite: Sprite, x: int, y: int, width: int, height: int, "
   "values: list[int], max: int) -> None\000battery(sprite: Sprite, x: int, y: "
   "int) -> None\000bg() -> int\000big_text(sprite: Sprite, x: int, y: int, "
-  "text: str, color: int = 16767334) -> None\000body_bottom() -> "
-  "int\000body_height() -> int\000body_top() -> int\000busy(sprite: Sprite, x: "
-  "int, y: int, frame: int) -> None\000button(sprite: Sprite, x: int, y: int, "
-  "width: int, label: str, focused: bool) -> None\000cell(sprite: Sprite, x: "
-  "int, y: int, width: int, height: int, text: str, selected: bool) -> "
+  "text: str, color: int = Widget.theme_emphasis()) -> None\000body_bottom() "
+  "-> int\000body_height() -> int\000body_top() -> int\000busy(sprite: Sprite, "
+  "x: int, y: int, frame: int) -> None\000button(sprite: Sprite, x: int, y: "
+  "int, width: int, label: str, focused: bool) -> None\000cell(sprite: Sprite, "
+  "x: int, y: int, width: int, height: int, text: str, selected: bool) -> "
   "None\000center_lines(sprite: Sprite, lines: list[str | tuple[str, int]]) -> "
   "None\000char_width() -> int\000checkbox(sprite: Sprite, x: int, y: int, "
   "label: str, checked: bool, focused: bool) -> None\000clip(sprite: Sprite, "
@@ -967,20 +975,23 @@ const char micropython_ti_builtin_signature_pool[] =
   "y: int, widths: list[int], texts: list[str], selected: bool) -> "
   "None\000tabs(sprite: Sprite, y: int, labels: list[str], active: int) -> "
   "None\000text_center(sprite: Sprite, y: int, text: str, color: int = "
-  "13608031) -> None\000text_right(sprite: Sprite, right_x: int, y: int, text: "
-  "str, color: int = 13608031) -> None\000text_width(sprite: Sprite, text: "
-  "str) -> int\000titled_panel(sprite: Sprite, x: int, y: int, width: int, "
-  "height: int, title: str) -> None\000toast(sprite: Sprite, message: str) -> "
+  "Widget.theme_text()) -> None\000text_right(sprite: Sprite, right_x: int, y: "
+  "int, text: str, color: int = Widget.theme_text()) -> "
+  "None\000text_width(sprite: Sprite, text: str) -> int\000theme_background() "
+  "-> int\000theme_border() -> int\000theme_box() -> int\000theme_emphasis() "
+  "-> int\000theme_selected() -> int\000theme_text() -> "
+  "int\000titled_panel(sprite: Sprite, x: int, y: int, width: int, height: "
+  "int, title: str) -> None\000toast(sprite: Sprite, message: str) -> "
   "None\000toggle(sprite: Sprite, x: int, y: int, on: bool, focused: bool) -> "
   "None\000vseparator(sprite: Sprite, x: int, y: int, height: int) -> "
   "None\000wrap_text(sprite: Sprite, x: int, y: int, width: int, height: int, "
-  "text: str, color: int = 13608031) -> int\000add(text: str, tag: str = '') "
-  "-> None\000area(x: int, y: int, width: int, height: int) -> None\000clear() "
-  "-> None\000count() -> int\000draw(sprite: Sprite) -> None\000handle(key: "
-  "str) -> bool\000index() -> int\000mark(index: int, marked: bool) -> "
-  "None\000marked(index: int) -> bool\000set_empty_text(text: str) -> "
-  "None\000set_index(index: int) -> None\000set_show_marks(show_marks: bool) "
-  "-> None\000toggle_mark() -> None\000top() -> int\000scroll() -> "
+  "text: str, color: int = Widget.theme_text()) -> int\000add(text: str, tag: "
+  "str = '') -> None\000area(x: int, y: int, width: int, height: int) -> "
+  "None\000clear() -> None\000count() -> int\000draw(sprite: Sprite) -> "
+  "None\000handle(key: str) -> bool\000index() -> int\000mark(index: int, "
+  "marked: bool) -> None\000marked(index: int) -> bool\000set_empty_text(text: "
+  "str) -> None\000set_index(index: int) -> None\000set_show_marks(show_marks: "
+  "bool) -> None\000toggle_mark() -> None\000top() -> int\000scroll() -> "
   "int\000set_scroll(scroll: int) -> None\000set_text(text: str) -> "
   "None\000collect() -> int | None\000disable() -> None\000enable() -> "
   "None\000isenabled(*args, **kwargs) -> Incomplete\000mem_alloc() -> "
@@ -1062,64 +1073,72 @@ const char micropython_ti_builtin_document_pool[] =
   "  Set backlight brightness (0..255).\n        \000\n        Show an image "
   "header file for the given time.\n        \000\n        Screen width in "
   "pixels.\n        \000\n        Modal message; returns on any key.\n        "
-  "\000\n        Theme accent color for frames and bands (0xF5972D).\n        "
-  "\000\n        Inverted chip: amber fill, background-color text.\n        "
+  "\000\n        Fixed accent color for frames and bands (0xF5972D).\n        "
+  "\000\n        Inverted chip: accent fill, background-color text.\n        "
   "\000\n        Bar chart; max <= 0 auto-scales to the data.\n        \000\n  "
   "      Battery icon with charge level at (x, y).\n        \000\n        "
-  "Theme background color (0x000000).\n        \000\n        Draw text in the "
-  "24px font; the default color is gold.\n        \000\n        Last y above "
-  "the footer rule.\n        \000\n        Height of the content area between "
-  "header and footer.\n        \000\n        First y below the header band.\n  "
-  "      \000\n        4-phase busy marker; pass a frame counter.\n        "
-  "\000\n        Button with centered label.\n        \000\n        Table "
-  "cell; selected = dark fill + gold frame.\n        \000\n        Vertically "
-  "centered lines from [text or (text, color), ...]; \"\"\n        rows are "
-  "spacers.\n        \000\n        ASCII glyph width in px at font 12 (6).\n   "
-  "     \000\n        Checkbox with label.\n        \000\n        Clip text to "
-  "a pixel width; ends with \">\" when cut.\n        \000\n        Modal y/n "
-  "question; ESC = False.\n        \000\n        Theme fill color for selected "
-  "rows and panels (0x241604).\n        \000\n        Modal message with a "
-  "button row; button index or None on ESC.\n        \000\n        Theme "
-  "normal-text color (0xCFA45F).\n        \000\n        Settings row: dim "
-  "label left, gold value right.\n        \000\n        Bottom rule + clipped "
-  "message.\n        \000\n        Read-only progress bar.\n        \000\n     "
-  "   Theme selection/title color (0xFFD966).\n        \000\n        Top band: "
-  "gold title, dim right-aligned text.\n        \000\n        Header band "
-  "height (17).\n        \000\n        Footer-position key chips from [(key, "
-  "label), ...].\n        \000\n        Horizontal scrollbar.\n        \000\n  "
-  "      Modal one-line text input; str on Enter, None on ESC.\n        \000\n "
-  "       Modal number input clamped to min..max; None on ESC.\n        \000\n "
-  "       Polyline chart; max <= 0 auto-scales to the data.\n        \000\n    "
-  "    Horizontally scrolling text; returns text px width.\n        \000\n     "
-  "   Modal item picker; item index or None on ESC.\n        \000\n        "
-  "Centered page-indicator dots.\n        \000\n        Dark fill + amber "
-  "frame.\n        \000\n        Radio button with label.\n        \000\n      "
-  "  Read one key: \"UP\" \"DOWN\" \"LEFT\" \"RIGHT\" \"ENTER\" \"ESC\" \"BS\" "
-  "or a\n        one-character string.\n        \000\n        Standard "
-  "list/table row height (16).\n        \000\n        Vertical scrollbar; "
-  "hidden when total <= visible.\n        \000\n        Full-width horizontal "
-  "rule at y.\n        \000\n        Track + knob.\n        \000\n        \"< "
-  "text >\" value chooser; the app handles left/right keys.\n        \000\n    "
-  "    Full-screen title in the 24px font.\n        \000\n        Column "
-  "header row.\n        \000\n        Row of cells.\n        \000\n        Tab "
-  "bar at y; active tab highlighted.\n        \000\n        Horizontally "
-  "centered text; the default color is dim.\n        \000\n        "
-  "Right-aligned text; the default color is dim.\n        \000\n        "
-  "Measured text width in px (correct for Japanese).\n        \000\n        "
-  "Panel with a gold title row.\n        \000\n        Bottom-center message "
-  "chip; the app decides how long to show it.\n        \000\n        ON/OFF "
-  "toggle pill.\n        \000\n        Vertical rule.\n        \000\n        "
-  "Word-wrapped text in a box; returns lines drawn.\n        \000\n        "
-  "Create an empty list (capacity 128 rows).\n        \000\n        Append a "
-  "row; the optional tag is drawn amber on the left.\n        \000\n        "
-  "Set the drawing area; default is the whole body area.\n        \000\n       "
-  " Remove all rows.\n        \000\n        Number of rows.\n        \000\n    "
-  "    Draw rows, selection, marks, and the scrollbar when needed.\n        "
-  "\000\n        Consume UP/DOWN, k/j, ;/. cursor keys; True when consumed.\n  "
-  "      \000\n        Cursor row.\n        \000\n        Set the mark on row "
-  "index.\n        \000\n        Whether row index is marked.\n        \000\n  "
-  "      Text shown centered when the list is empty.\n        \000\n        "
-  "Move the cursor (clamped; scroll follows).\n        \000\n        Show the "
+  "Fixed background color (0x000000).\n        \000\n        Draw text in the "
+  "24px font; the default color is the theme highlight.\n        \000\n        "
+  "Last y above the footer rule.\n        \000\n        Height of the content "
+  "area between header and footer.\n        \000\n        First y below the "
+  "header band.\n        \000\n        4-phase busy marker; pass a frame "
+  "counter.\n        \000\n        Button with centered label.\n        \000\n "
+  "       Table cell; selected = theme fill + highlight frame.\n        \000\n "
+  "       Vertically centered lines from [text or (text, color), ...]; \"\"\n  "
+  "      rows are spacers.\n        \000\n        ASCII glyph width in px at "
+  "font 12 (6).\n        \000\n        Checkbox with label.\n        \000\n    "
+  "    Clip text to a pixel width; ends with \">\" when cut.\n        \000\n   "
+  "     Modal y/n question; ESC = False.\n        \000\n        Fixed fill "
+  "color for selected rows and panels (0x241604).\n        \000\n        Modal "
+  "message with a button row; button index or None on ESC.\n        \000\n     "
+  "   Fixed normal-text color (0xCFA45F).\n        \000\n        Settings row: "
+  "text-color label left, highlight value right.\n        \000\n        Bottom "
+  "rule + clipped message.\n        \000\n        Read-only progress bar.\n    "
+  "    \000\n        Fixed selection/title color (0xFFD966).\n        \000\n   "
+  "     Top band: highlight title, text-color right-aligned text.\n        "
+  "\000\n        Header band height (17).\n        \000\n        "
+  "Footer-position key chips from [(key, label), ...].\n        \000\n        "
+  "Horizontal scrollbar.\n        \000\n        Modal one-line text input; str "
+  "on Enter, None on ESC.\n        \000\n        Modal number input clamped to "
+  "min..max; None on ESC.\n        \000\n        Polyline chart; max <= 0 "
+  "auto-scales to the data.\n        \000\n        Horizontally scrolling "
+  "text; returns text px width.\n        \000\n        Modal item picker; item "
+  "index or None on ESC.\n        \000\n        Centered page-indicator "
+  "dots.\n        \000\n        Theme fill + accent frame.\n        \000\n     "
+  "   Radio button with label.\n        \000\n        Read one key: \"UP\" "
+  "\"DOWN\" \"LEFT\" \"RIGHT\" \"ENTER\" \"ESC\" \"BS\" or a\n        "
+  "one-character string.\n        \000\n        Standard list/table row height "
+  "(16).\n        \000\n        Vertical scrollbar; hidden when total <= "
+  "visible.\n        \000\n        Full-width horizontal rule at y.\n        "
+  "\000\n        Track + knob.\n        \000\n        \"< text >\" value "
+  "chooser; the app handles left/right keys.\n        \000\n        "
+  "Full-screen title in the 24px font.\n        \000\n        Column header "
+  "row.\n        \000\n        Row of cells.\n        \000\n        Tab bar at "
+  "y; active tab highlighted.\n        \000\n        Horizontally centered "
+  "text; the default color is the theme text color.\n        \000\n        "
+  "Right-aligned text; the default color is the theme text color.\n        "
+  "\000\n        Measured text width in px (correct for Japanese).\n        "
+  "\000\n        Screen background, set in /etc/theme (default 0x000000).\n    "
+  "    \000\n        Frames, rules and ticks (default 0xF5972D).\n        "
+  "\000\n        Fill inside panels, popups and table headers (default "
+  "0x241604).\n        \000\n        Emphasized text, headings, key chips, "
+  "chart values (default 0xF5972D).\n        \000\n        Selected or focused "
+  "rows and controls (default 0xFFD966).\n        \000\n        Body text "
+  "(default 0xCFA45F).\n        \000\n        Panel with a highlight title "
+  "row.\n        \000\n        Bottom-center message chip; the app decides how "
+  "long to show it.\n        \000\n        ON/OFF toggle pill.\n        \000\n "
+  "       Vertical rule.\n        \000\n        Word-wrapped text in a box; "
+  "returns lines drawn.\n        \000\n        Create an empty list (capacity "
+  "128 rows).\n        \000\n        Append a row; the optional tag is drawn "
+  "amber on the left.\n        \000\n        Set the drawing area; default is "
+  "the whole body area.\n        \000\n        Remove all rows.\n        "
+  "\000\n        Number of rows.\n        \000\n        Draw rows, selection, "
+  "marks, and the scrollbar when needed.\n        \000\n        Consume "
+  "UP/DOWN, k/j, ;/. cursor keys; True when consumed.\n        \000\n        "
+  "Cursor row.\n        \000\n        Set the mark on row index.\n        "
+  "\000\n        Whether row index is marked.\n        \000\n        Text "
+  "shown centered when the list is empty.\n        \000\n        Move the "
+  "cursor (clamped; scroll follows).\n        \000\n        Show the "
   "multi-select mark column.\n        \000\n        Toggle the mark on the "
   "cursor row.\n        \000\n        First visible row.\n        \000\n       "
   " Create an empty text view.\n        \000\n        Draw word-wrapped text "
@@ -1139,9 +1158,9 @@ const char micropython_ti_builtin_document_pool[] =
   " :class: attention\n\n       This function is MicroPython extension.\n    "
   "\000";
 const uint16_t micropython_ti_builtin_class_count = 59;
-const uint16_t micropython_ti_builtin_method_count = 256;
+const uint16_t micropython_ti_builtin_method_count = 262;
 const uint16_t micropython_ti_builtin_argument_count = 448;
 const uint16_t micropython_ti_builtin_union_count = 11;
-const uint16_t micropython_ti_builtin_name_pool_size = 2727;
-const uint16_t micropython_ti_builtin_signature_pool_size = 11495;
-const uint16_t micropython_ti_builtin_document_pool_size = 10272;
+const uint16_t micropython_ti_builtin_name_pool_size = 2808;
+const uint16_t micropython_ti_builtin_signature_pool_size = 11678;
+const uint16_t micropython_ti_builtin_document_pool_size = 10792;

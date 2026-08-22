@@ -126,7 +126,7 @@ c_markdown_show(
   session->canvas.font_size = EDIT_BODY_FONT_SIZE;
 
   io_raw_bang(false);
-  area512_gfx_fill_screen(EDIT_BACKGROUND);
+  area512_gfx_fill_screen(area512_theme_background_color());
 
   session->canvas.row_sprite = area512_sprite_new_with_font_size(
     area512_gfx_width(),

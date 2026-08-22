@@ -9,8 +9,22 @@ draw_walls(Filer *filer, int top) {
   int outer_top = top ? (HALF_ROW_HEIGHT - 1) : 0;
   int inner_top = top ? (HALF_ROW_HEIGHT + 1) : 0;
 
-  area512_sprite_line(filer->row, 0, outer_top, 0, ROW_HEIGHT - 1, COLOR_GREEN);
-  area512_sprite_line(filer->row, 2, inner_top, 2, ROW_HEIGHT - 1, COLOR_FAINT);
+  area512_sprite_line(
+    filer->row,
+    0,
+    outer_top,
+    0,
+    ROW_HEIGHT - 1,
+    area512_theme_border_color()
+  );
+  area512_sprite_line(
+    filer->row,
+    2,
+    inner_top,
+    2,
+    ROW_HEIGHT - 1,
+    area512_theme_border_color()
+  );
 
   area512_sprite_line(
     filer->row,
@@ -18,7 +32,7 @@ draw_walls(Filer *filer, int top) {
     outer_top,
     filer->width - 1,
     ROW_HEIGHT - 1,
-    COLOR_GREEN
+    area512_theme_border_color()
   );
 
   area512_sprite_line(
@@ -27,7 +41,7 @@ draw_walls(Filer *filer, int top) {
     inner_top,
     filer->width - 3,
     ROW_HEIGHT - 1,
-    COLOR_FAINT
+    area512_theme_border_color()
   );
 }
 
@@ -39,7 +53,7 @@ draw_rule(Filer *filer, int outer_y, int inner_y) {
     outer_y,
     filer->width - 1,
     outer_y,
-    COLOR_GREEN
+    area512_theme_border_color()
   );
 
   area512_sprite_line(
@@ -48,7 +62,7 @@ draw_rule(Filer *filer, int outer_y, int inner_y) {
     inner_y,
     filer->width - 3,
     inner_y,
-    COLOR_FAINT
+    area512_theme_border_color()
   );
 }
 
@@ -63,7 +77,7 @@ edge_text(Filer *filer, int x, const char *text, uint32_t color) {
     0,
     width + 2,
     ROW_HEIGHT,
-    COLOR_BACKGROUND
+    area512_theme_background_color()
   );
 
   area512_sprite_text(filer->row, x, 0, text, color);
@@ -71,14 +85,14 @@ edge_text(Filer *filer, int x, const char *text, uint32_t color) {
 
 void
 draw_header(Filer *filer) {
-  area512_sprite_fill(filer->row, COLOR_BACKGROUND);
+  area512_sprite_fill(filer->row, area512_theme_background_color());
   draw_walls(filer, 1);
   draw_rule(filer, HALF_ROW_HEIGHT - 1, HALF_ROW_HEIGHT + 1);
 
   const char *brand = " AREA 512 ";
   int brand_x = (filer->width - (int)strlen(brand) * FILER_CHAR_WIDTH) / 2;
 
-  edge_text(filer, brand_x, brand, COLOR_GOLD);
+  edge_text(filer, brand_x, brand, area512_theme_emphasis_color());
 
   char count[24];
   snprintf(count, sizeof count, " %d/%d ", filer->index + 1, filer->count);
@@ -87,7 +101,7 @@ draw_header(Filer *filer) {
     filer,
     filer->width - 6 - (int)strlen(count) * FILER_CHAR_WIDTH,
     count,
-    COLOR_GOLD
+    area512_theme_emphasis_color()
   );
 
   int available = (brand_x - 6) / FILER_CHAR_WIDTH;
@@ -100,7 +114,7 @@ draw_header(Filer *filer) {
 
     fit_string(fitted_path, sizeof fitted_path, path, available);
 
-    edge_text(filer, 4, fitted_path, COLOR_DIM);
+    edge_text(filer, 4, fitted_path, area512_theme_text_color());
   }
 
   area512_sprite_push(filer->row, 0, 0);
@@ -109,8 +123,8 @@ draw_header(Filer *filer) {
 // Close the frame bottom with a double rule.
 void
 draw_close(Filer *filer) {
-  area512_sprite_fill(filer->row, COLOR_BACKGROUND);
-  area512_sprite_line(filer->row, 0, 0, 0, 2, COLOR_GREEN);
+  area512_sprite_fill(filer->row, area512_theme_background_color());
+  area512_sprite_line(filer->row, 0, 0, 0, 2, area512_theme_border_color());
 
   area512_sprite_line(
     filer->row,
@@ -118,10 +132,24 @@ draw_close(Filer *filer) {
     0,
     filer->width - 1,
     2,
-    COLOR_GREEN
+    area512_theme_border_color()
   );
 
-  area512_sprite_line(filer->row, 0, 2, filer->width - 1, 2, COLOR_GREEN);
-  area512_sprite_line(filer->row, 2, 0, filer->width - 3, 0, COLOR_FAINT);
+  area512_sprite_line(
+    filer->row,
+    0,
+    2,
+    filer->width - 1,
+    2,
+    area512_theme_border_color()
+  );
+  area512_sprite_line(
+    filer->row,
+    2,
+    0,
+    filer->width - 3,
+    0,
+    area512_theme_border_color()
+  );
   area512_sprite_push(filer->row, 0, filer->close_y);
 }

@@ -4,7 +4,7 @@ class Scheduler
     list = day_events
     if list.empty?
       @sp.text(8, 38, "No schedule", C_TEXT)
-      @sp.text(8, 54, "Press a to add", C_AMBER)
+      @sp.text(8, 54, "Press a to add", C_EMPHASIS)
       return
     end
     row = 0
@@ -13,11 +13,11 @@ class Scheduler
       event = list[index]
       y = 22 + row * 16
       if index == @event_cursor
-        @sp.fill_rect(3, y - 2, W - 6, 15, C_DARK)
-        @sp.rect(3, y - 2, W - 6, 15, C_GOLD)
+        @sp.fill_rect(3, y - 2, W - 6, 15, C_BOX)
+        @sp.rect(3, y - 2, W - 6, 15, C_SELECTED)
       end
-      color = index == @event_cursor ? C_GOLD : C_TEXT
-      @sp.text(7, y, event[0], C_AMBER)
+      color = index == @event_cursor ? C_SELECTED : C_TEXT
+      @sp.text(7, y, event[0], C_EMPHASIS)
       @sp.text(45, y, clip_text(event[1], 188), color)
       row += 1
     end

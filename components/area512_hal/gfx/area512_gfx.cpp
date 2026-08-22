@@ -466,9 +466,14 @@ area512_gfx_show_header_image(const char *path, int hold_milliseconds) {
   }
 
   if (row != nullptr) {
+    uint32_t set_bit_color;
+    uint32_t clear_bit_color;
+
+    area512_theme_pick_bitmap_colors(&set_bit_color, &clear_bit_color);
+
     // LGFX converts RGB888 to the panel's color depth itself.
-    const lgfx::v1::rgb888_t color_on(0xF5972D);
-    const lgfx::v1::rgb888_t color_off(0x000000);
+    const lgfx::v1::rgb888_t color_on(set_bit_color);
+    const lgfx::v1::rgb888_t color_off(clear_bit_color);
     int y = 0;
     int col = 0;
 

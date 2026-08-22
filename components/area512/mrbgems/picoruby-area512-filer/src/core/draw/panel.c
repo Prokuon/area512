@@ -8,22 +8,18 @@ build_panel_info(PanelInfo *panel_information) {
   int battery = area512_metrics_battery_percent();
   panel_information->label[0] = "BAT";
   panel_information->percent[0] = battery;
-  panel_information->warn[0] = (battery >= 0 && battery <= PANEL_LOW);
 
   int virtual_machine_percent = area512_metrics_vm_used_pct();
   panel_information->label[1] = "VM";
   panel_information->percent[1] = virtual_machine_percent;
-  panel_information->warn[1] = (virtual_machine_percent >= PANEL_HIGH);
 
   int ram_percent = area512_metrics_dram_used_pct();
   panel_information->label[2] = "RAM";
   panel_information->percent[2] = ram_percent;
-  panel_information->warn[2] = (ram_percent >= PANEL_HIGH);
 
   int stack_percent = area512_metrics_stack_used_pct();
   panel_information->label[3] = "STK";
   panel_information->percent[3] = stack_percent;
-  panel_information->warn[3] = (stack_percent >= PANEL_HIGH);
   panel_information->count = 4;
 }
 
@@ -34,13 +30,18 @@ draw_meter(
   Filer *filer,
   const char *label,
   int percent,
-  int warn,
   int meter_top_y
 ) {
 
   int label_x = filer->panel_x + FILER_CHAR_WIDTH;
 
-  area512_sprite_text(filer->row, label_x, meter_top_y, label, COLOR_DIM);
+  area512_sprite_text(
+    filer->row,
+    label_x,
+    meter_top_y,
+    label,
+    area512_theme_text_color()
+  );
 
   // Fixed bar/value layout so the bar length doesn't shift with digit count.
   int value_right = filer->panel_right - 5;
@@ -53,7 +54,7 @@ draw_meter(
     bar_width = 6;
 
   int bar_y = meter_top_y + 3, bar_height = 6;
-  uint32_t color = warn ? COLOR_AMBER : COLOR_GREEN;
+  uint32_t color = area512_theme_border_color();
 
   area512_sprite_line(
     filer->row,
@@ -61,7 +62,7 @@ draw_meter(
     bar_y,
     bar_x + bar_width,
     bar_y,
-    COLOR_FAINT
+    area512_theme_border_color()
   );
 
   area512_sprite_line(
@@ -70,7 +71,7 @@ draw_meter(
     bar_y + bar_height,
     bar_x + bar_width,
     bar_y + bar_height,
-    COLOR_FAINT
+    area512_theme_border_color()
   );
 
   area512_sprite_line(
@@ -79,7 +80,7 @@ draw_meter(
     bar_y,
     bar_x,
     bar_y + bar_height,
-    COLOR_FAINT
+    area512_theme_border_color()
   );
 
   area512_sprite_line(
@@ -88,7 +89,7 @@ draw_meter(
     bar_y,
     bar_x + bar_width,
     bar_y + bar_height,
-    COLOR_FAINT
+    area512_theme_border_color()
   );
 
   if (percent > 0) {
@@ -152,7 +153,7 @@ draw_panel_row(Filer *filer, int row, const PanelInfo *panel_information) {
     -offset,
     left_x,
     box_height - 1 - offset,
-    COLOR_GREEN
+    area512_theme_border_color()
   );
 
   area512_sprite_line(
@@ -161,7 +162,7 @@ draw_panel_row(Filer *filer, int row, const PanelInfo *panel_information) {
     -offset,
     right_x,
     box_height - 1 - offset,
-    COLOR_GREEN
+    area512_theme_border_color()
   );
 
   area512_sprite_line(
@@ -170,7 +171,7 @@ draw_panel_row(Filer *filer, int row, const PanelInfo *panel_information) {
     -offset,
     right_x,
     -offset,
-    COLOR_GREEN
+    area512_theme_border_color()
   );
 
   {
@@ -178,7 +179,13 @@ draw_panel_row(Filer *filer, int row, const PanelInfo *panel_information) {
     int title_width = (int)strlen(title) * FILER_CHAR_WIDTH;
     int title_x = left_x + (right_x - left_x - title_width) / 2;
 
-    area512_sprite_text(filer->row, title_x, 1 - offset, title, COLOR_GREEN);
+    area512_sprite_text(
+      filer->row,
+      title_x,
+      1 - offset,
+      title,
+      area512_theme_emphasis_color()
+    );
   }
 
   for (int metric_index = 0; metric_index < panel_information->count;
@@ -191,7 +198,6 @@ draw_panel_row(Filer *filer, int row, const PanelInfo *panel_information) {
         filer,
         panel_information->label[metric_index],
         panel_information->percent[metric_index],
-        panel_information->warn[metric_index],
         metric_y
       );
     }
@@ -203,7 +209,7 @@ draw_panel_row(Filer *filer, int row, const PanelInfo *panel_information) {
     box_height - 1 - offset,
     right_x,
     box_height - 1 - offset,
-    COLOR_GREEN
+    area512_theme_border_color()
   );
 }
 

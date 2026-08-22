@@ -17,11 +17,13 @@ area512_widget_draw_cell(
 ) {
 
   char clipped[TABLE_TEXT_BUFFER_SIZE];
-  uint32_t border = selected ? WIDGET_COLOR_GOLD : WIDGET_COLOR_AMBER;
-  uint32_t text_color = selected ? WIDGET_COLOR_GOLD : WIDGET_COLOR_DIM;
+  uint32_t border =
+    selected ? area512_theme_selected_color() : area512_theme_border_color();
+  uint32_t text_color =
+    selected ? area512_theme_selected_color() : area512_theme_text_color();
 
   if (selected)
-    area512_sprite_fill_rect(sprite, x, y, w, h, WIDGET_COLOR_DARK);
+    area512_sprite_fill_rect(sprite, x, y, w, h, area512_theme_box_color());
 
   area512_sprite_rect(sprite, x, y, w, h, border);
   area512_widget_clip(sprite, text, w - 6, clipped, sizeof clipped);
@@ -97,8 +99,8 @@ area512_widget_draw_field(
   int text_y = area512_widget_vcenter_text_y(y, 15);
 
   if (focused) {
-    area512_sprite_fill_rect(sprite, x, y, w, 15, WIDGET_COLOR_DARK);
-    area512_sprite_rect(sprite, x, y, w, 15, WIDGET_COLOR_GOLD);
+    area512_sprite_fill_rect(sprite, x, y, w, 15, area512_theme_box_color());
+    area512_sprite_rect(sprite, x, y, w, 15, area512_theme_selected_color());
   }
 
   area512_sprite_text(
@@ -106,14 +108,14 @@ area512_widget_draw_field(
     x + 3,
     text_y,
     label,
-    focused ? WIDGET_COLOR_GOLD : WIDGET_COLOR_DIM
+    focused ? area512_theme_selected_color() : area512_theme_text_color()
   );
   area512_widget_draw_text_right(
     sprite,
     x + w - 3,
     text_y,
     value,
-    WIDGET_COLOR_GOLD
+    area512_theme_emphasis_color()
   );
 }
 

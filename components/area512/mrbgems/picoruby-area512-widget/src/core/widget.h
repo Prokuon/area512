@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+// Returned by Widget.bg/amber/dim/gold/dark, which stay fixed so apps already
+// on a card keep their colors. Drawing reads the theme instead.
 #define WIDGET_COLOR_BG 0x000000
 #define WIDGET_COLOR_AMBER 0xF5972D
 #define WIDGET_COLOR_DIM 0xCFA45F

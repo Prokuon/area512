@@ -21,7 +21,7 @@ def draw_status(game):
         "H{}".format(format_one_decimal(game.velocity_x)),
         COLOR_TEXT
     )
-    game.sprite.text(left, top + STATUS_Y, game.message, COLOR_DIM)
+    game.sprite.text(left, top + STATUS_Y, game.message, COLOR_TEXT)
 
 
 def draw_overlay(game):

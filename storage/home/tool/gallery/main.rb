@@ -14,7 +14,7 @@ class WidgetGallery
   end
 
   def run
-    Display.fill_screen(Widget.bg)
+    Display.fill_screen(Widget.theme_background)
     @sp = Sprite.new(Display.width, Display.height, 12)
 
     begin
@@ -24,7 +24,7 @@ class WidgetGallery
       end
     ensure
       @sp.delete if @sp
-      Display.fill_screen(Widget.bg)
+      Display.fill_screen(Widget.theme_background)
     end
   end
 end

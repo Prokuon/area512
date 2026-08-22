@@ -6,7 +6,7 @@ draw_all(Filer *filer) {
     return;
 
   if (filer->full_redraw) {
-    area512_gfx_fill_screen(COLOR_BACKGROUND);
+    area512_gfx_fill_screen(area512_theme_background_color());
     filer->full_redraw = 0;
   }
 

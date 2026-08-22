@@ -3,35 +3,77 @@ class Widget:
     @staticmethod
     def bg() -> int:
         """
-        Theme background color (0x000000).
+        Fixed background color (0x000000).
         """
         ...
 
     @staticmethod
     def amber() -> int:
         """
-        Theme accent color for frames and bands (0xF5972D).
+        Fixed accent color for frames and bands (0xF5972D).
         """
         ...
 
     @staticmethod
     def dim() -> int:
         """
-        Theme normal-text color (0xCFA45F).
+        Fixed normal-text color (0xCFA45F).
         """
         ...
 
     @staticmethod
     def gold() -> int:
         """
-        Theme selection/title color (0xFFD966).
+        Fixed selection/title color (0xFFD966).
         """
         ...
 
     @staticmethod
     def dark() -> int:
         """
-        Theme fill color for selected rows and panels (0x241604).
+        Fixed fill color for selected rows and panels (0x241604).
+        """
+        ...
+
+    @staticmethod
+    def theme_background() -> int:
+        """
+        Screen background, set in /etc/theme (default 0x000000).
+        """
+        ...
+
+    @staticmethod
+    def theme_text() -> int:
+        """
+        Body text (default 0xCFA45F).
+        """
+        ...
+
+    @staticmethod
+    def theme_emphasis() -> int:
+        """
+        Emphasized text, headings, key chips, chart values (default 0xF5972D).
+        """
+        ...
+
+    @staticmethod
+    def theme_border() -> int:
+        """
+        Frames, rules and ticks (default 0xF5972D).
+        """
+        ...
+
+    @staticmethod
+    def theme_selected() -> int:
+        """
+        Selected or focused rows and controls (default 0xFFD966).
+        """
+        ...
+
+    @staticmethod
+    def theme_box() -> int:
+        """
+        Fill inside panels, popups and table headers (default 0x241604).
         """
         ...
 
@@ -102,7 +144,7 @@ class Widget:
     @staticmethod
     def header(sprite: Sprite, title: str, right: str = "", /) -> None:
         """
-        Top band: gold title, dim right-aligned text.
+        Top band: highlight title, text-color right-aligned text.
         """
         ...
 
@@ -156,9 +198,9 @@ class Widget:
         ...
 
     @staticmethod
-    def big_text(sprite: Sprite, x: int, y: int, text: str, color: int = 0xFFD966, /) -> None:
+    def big_text(sprite: Sprite, x: int, y: int, text: str, color: int = Widget.theme_emphasis(), /) -> None:
         """
-        Draw text in the 24px font; the default color is gold.
+        Draw text in the 24px font; the default color is the theme highlight.
         """
         ...
 
@@ -172,28 +214,28 @@ class Widget:
     @staticmethod
     def panel(sprite: Sprite, x: int, y: int, width: int, height: int) -> None:
         """
-        Dark fill + amber frame.
+        Theme fill + accent frame.
         """
         ...
 
     @staticmethod
     def titled_panel(sprite: Sprite, x: int, y: int, width: int, height: int, title: str) -> None:
         """
-        Panel with a gold title row.
+        Panel with a highlight title row.
         """
         ...
 
     @staticmethod
-    def text_center(sprite: Sprite, y: int, text: str, color: int = 0xCFA45F, /) -> None:
+    def text_center(sprite: Sprite, y: int, text: str, color: int = Widget.theme_text(), /) -> None:
         """
-        Horizontally centered text; the default color is dim.
+        Horizontally centered text; the default color is the theme text color.
         """
         ...
 
     @staticmethod
-    def text_right(sprite: Sprite, right_x: int, y: int, text: str, color: int = 0xCFA45F, /) -> None:
+    def text_right(sprite: Sprite, right_x: int, y: int, text: str, color: int = Widget.theme_text(), /) -> None:
         """
-        Right-aligned text; the default color is dim.
+        Right-aligned text; the default color is the theme text color.
         """
         ...
 
@@ -206,7 +248,7 @@ class Widget:
         ...
 
     @staticmethod
-    def wrap_text(sprite: Sprite, x: int, y: int, width: int, height: int, text: str, color: int = 0xCFA45F, /) -> int:
+    def wrap_text(sprite: Sprite, x: int, y: int, width: int, height: int, text: str, color: int = Widget.theme_text(), /) -> int:
         """
         Word-wrapped text in a box; returns lines drawn.
         """
@@ -222,7 +264,7 @@ class Widget:
     @staticmethod
     def cell(sprite: Sprite, x: int, y: int, width: int, height: int, text: str, selected: bool) -> None:
         """
-        Table cell; selected = dark fill + gold frame.
+        Table cell; selected = theme fill + highlight frame.
         """
         ...
 
@@ -243,7 +285,7 @@ class Widget:
     @staticmethod
     def field(sprite: Sprite, x: int, y: int, width: int, label: str, value: str, focused: bool) -> None:
         """
-        Settings row: dim label left, gold value right.
+        Settings row: text-color label left, highlight value right.
         """
         ...
 
@@ -278,7 +320,7 @@ class Widget:
     @staticmethod
     def badge(sprite: Sprite, x: int, y: int, text: str) -> None:
         """
-        Inverted chip: amber fill, background-color text.
+        Inverted chip: accent fill, background-color text.
         """
         ...
 

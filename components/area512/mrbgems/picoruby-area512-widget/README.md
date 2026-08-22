@@ -1,7 +1,7 @@
 # Area512Widget
 
 Themed UI components for Area512/Cardputer apps. One `require` gives every app
-the same amber palette, screen-size-aware layout, and font metrics — no more
+the same theme palette, screen-size-aware layout, and font metrics — no more
 copying `COL_*` constants and pixel offsets between apps.
 
 ```ruby
@@ -41,15 +41,31 @@ end
 
 | Method | Value | Meaning |
 |---|---|---|
-| `Widget.bg` | `0x000000` | background |
-| `Widget.amber` | `0xF5972D` | frames, bands, accents |
-| `Widget.dim` | `0xCFA45F` | normal text |
-| `Widget.gold` | `0xFFD966` | selection, titles |
-| `Widget.dark` | `0x241604` | selected-row / panel fill |
+| `Widget.theme_background` | `0x000000` | screen background |
+| `Widget.theme_text` | `0xCFA45F` | body text |
+| `Widget.theme_emphasis` | `0xF5972D` | headings, key chips, tags, chart values |
+| `Widget.theme_border` | `0xF5972D` | frames, rules, ticks |
+| `Widget.theme_selected` | `0xFFD966` | selected or focused rows and controls |
+| `Widget.theme_box` | `0x241604` | fill inside panels, popups, table headers |
 | `Widget.char_width` | 6 | ASCII glyph width (font 12) |
 | `Widget.row_height` | 16 | standard list/table row |
 | `Widget.header_height` | 17 | header band height |
 | `Widget.body_top` / `body_bottom` / `body_height` | 20 / 119 / 100 | content area between header and footer (values for 240x135) |
+
+The `theme_*` values are the defaults; `/etc/theme` on the card overrides them
+at boot, one `key=0xRRGGBB` per line:
+
+```
+background=0x000000
+text=0xCFA45F
+emphasis=0xF5972D
+border=0xF5972D
+selected=0xFFD966
+box=0x241604
+```
+
+`Widget.bg` / `amber` / `dim` / `gold` / `dark` return the old palette as fixed
+values, so apps written before the theme existed keep their looks.
 
 Text measurement uses the real renderer, so Japanese text measures correctly:
 
@@ -61,7 +77,7 @@ Widget.clip(sp, text, width_px)  # => String, ">"-terminated when cut
 ## Screen chrome
 
 ```ruby
-Widget.header(sp, title, right = "")  # top band; gold title, dim right-aligned text
+Widget.header(sp, title, right = "")  # top band; highlight title, right text
 Widget.footer(sp, message)            # bottom rule + message (clipped)
 Widget.hints(sp, [["ENT", "open"], ["q", "quit"]])  # footer-position key chips
 Widget.separator(sp, y)               # full-width horizontal rule
@@ -74,15 +90,15 @@ Widget.splash(sp, title, subtitle = "")  # full-screen title in the 24px font
 ## Containers and text
 
 ```ruby
-Widget.panel(sp, x, y, w, h)                # dark fill + amber frame
+Widget.panel(sp, x, y, w, h)                # theme fill + accent frame
 Widget.titled_panel(sp, x, y, w, h, title)
 Widget.toast(sp, message)                   # bottom-center chip; app decides how long to show it
-Widget.text_center(sp, y, text, color = Widget.dim)
-Widget.text_right(sp, right_x, y, text, color = Widget.dim)
-Widget.center_lines(sp, [["Cleared!", Widget.gold], [""], ["Press any key."]])
-Widget.wrap_text(sp, x, y, w, h, text, color = Widget.dim)  # => lines drawn
+Widget.text_center(sp, y, text, color = Widget.theme_text)
+Widget.text_right(sp, right_x, y, text, color = Widget.theme_text)
+Widget.center_lines(sp, [["Cleared!", Widget.theme_emphasis], [""], ["Press any key."]])
+Widget.wrap_text(sp, x, y, w, h, text, color = Widget.theme_text)  # => lines drawn
 Widget.marquee(sp, x, y, w, text, offset)   # => text px width; advance offset per frame
-Widget.big_text(sp, x, y, text, color = Widget.gold)        # 24px font
+Widget.big_text(sp, x, y, text, color = Widget.theme_emphasis)   # 24px font
 ```
 
 ## Tables and records
@@ -91,7 +107,7 @@ Widget.big_text(sp, x, y, text, color = Widget.gold)        # 24px font
 Widget.cell(sp, x, y, w, h, text, selected)
 Widget.table_header(sp, x, y, [60, 90, 60], ["ID", "NAME", "QTY"])
 Widget.table_row(sp, x, y, [60, 90, 60], ["3", "Bolt M3", "12"], selected)
-Widget.field(sp, x, y, w, label, value, focused)  # settings row: dim label, gold value
+Widget.field(sp, x, y, w, label, value, focused)  # settings row: label, value
 ```
 
 ## Indicators and charts
@@ -152,7 +168,7 @@ Scrollable, selectable rows with an optional tag column and multi-select marks.
 list = WidgetList.new
 list.area(x, y, w, h)          # default: whole body area
 list.clear
-list.add("Meeting", "07:30")   # tag is optional, drawn amber on the left
+list.add("Meeting", "07:30")   # tag is optional, drawn in the accent color
 list.empty_text = "No schedule"
 list.show_marks = true
 list.toggle_mark               # cursor row

@@ -184,6 +184,15 @@ DEFINE_INTEGER_METHOD(c_widget_amber, WIDGET_COLOR_AMBER)
 DEFINE_INTEGER_METHOD(c_widget_dim, WIDGET_COLOR_DIM)
 DEFINE_INTEGER_METHOD(c_widget_gold, WIDGET_COLOR_GOLD)
 DEFINE_INTEGER_METHOD(c_widget_dark, WIDGET_COLOR_DARK)
+DEFINE_INTEGER_METHOD(
+  c_widget_theme_background,
+  area512_theme_background_color()
+)
+DEFINE_INTEGER_METHOD(c_widget_theme_text, area512_theme_text_color())
+DEFINE_INTEGER_METHOD(c_widget_theme_emphasis, area512_theme_emphasis_color())
+DEFINE_INTEGER_METHOD(c_widget_theme_border, area512_theme_border_color())
+DEFINE_INTEGER_METHOD(c_widget_theme_selected, area512_theme_selected_color())
+DEFINE_INTEGER_METHOD(c_widget_theme_box, area512_theme_box_color())
 DEFINE_INTEGER_METHOD(c_widget_char_width, WIDGET_CHAR_WIDTH)
 DEFINE_INTEGER_METHOD(c_widget_row_height, WIDGET_ROW_HEIGHT)
 DEFINE_INTEGER_METHOD(c_widget_header_height, WIDGET_HEADER_HEIGHT)
@@ -471,7 +480,7 @@ c_widget_text_center(
 
   uint32_t color = argument_count >= 4
                      ? fetch_color_or_raise(virtual_machine, v, 4)
-                     : WIDGET_COLOR_DIM;
+                     : area512_theme_text_color();
 
   area512_widget_draw_text_center(
     fetch_sprite_handle_or_raise(virtual_machine, v, 1),
@@ -494,7 +503,7 @@ c_widget_text_right(
 
   uint32_t color = argument_count >= 5
                      ? fetch_color_or_raise(virtual_machine, v, 5)
-                     : WIDGET_COLOR_DIM;
+                     : area512_theme_text_color();
 
   area512_widget_draw_text_right(
     fetch_sprite_handle_or_raise(virtual_machine, v, 1),
@@ -531,7 +540,7 @@ c_widget_center_lines(
   for (int i = 0; i < line_count; i++) {
     mrbc_value row = mrbc_array_get(array, i);
 
-    lines[i].color = WIDGET_COLOR_DIM;
+    lines[i].color = area512_theme_text_color();
 
     if (row.tt == MRBC_TT_STRING) {
       lines[i].text = (const char *)row.string->data;
@@ -584,7 +593,7 @@ c_widget_wrap_text(
 
   uint32_t color = argument_count >= 7
                      ? fetch_color_or_raise(virtual_machine, v, 7)
-                     : WIDGET_COLOR_DIM;
+                     : area512_theme_text_color();
 
   int line_count = area512_widget_draw_wrap_text(
     fetch_sprite_handle_or_raise(virtual_machine, v, 1),
@@ -625,7 +634,7 @@ c_widget_big_text(mrbc_vm *virtual_machine, mrbc_value *v, int argument_count) {
 
   uint32_t color = argument_count >= 5
                      ? fetch_color_or_raise(virtual_machine, v, 5)
-                     : WIDGET_COLOR_GOLD;
+                     : area512_theme_emphasis_color();
 
   area512_widget_draw_big_text(
     fetch_sprite_handle_or_raise(virtual_machine, v, 1),
@@ -1654,6 +1663,42 @@ define_widget_methods(mrbc_vm *virtual_machine, mrbc_class *widget_class) {
   mrbc_define_method(virtual_machine, widget_class, "dim", c_widget_dim);
   mrbc_define_method(virtual_machine, widget_class, "gold", c_widget_gold);
   mrbc_define_method(virtual_machine, widget_class, "dark", c_widget_dark);
+  mrbc_define_method(
+    virtual_machine,
+    widget_class,
+    "theme_background",
+    c_widget_theme_background
+  );
+  mrbc_define_method(
+    virtual_machine,
+    widget_class,
+    "theme_text",
+    c_widget_theme_text
+  );
+  mrbc_define_method(
+    virtual_machine,
+    widget_class,
+    "theme_emphasis",
+    c_widget_theme_emphasis
+  );
+  mrbc_define_method(
+    virtual_machine,
+    widget_class,
+    "theme_border",
+    c_widget_theme_border
+  );
+  mrbc_define_method(
+    virtual_machine,
+    widget_class,
+    "theme_selected",
+    c_widget_theme_selected
+  );
+  mrbc_define_method(
+    virtual_machine,
+    widget_class,
+    "theme_box",
+    c_widget_theme_box
+  );
   mrbc_define_method(
     virtual_machine,
     widget_class,

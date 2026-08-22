@@ -52,7 +52,7 @@ area512_widget_draw_bar_chart(
     y + h - 1,
     x + w - 1,
     y + h - 1,
-    WIDGET_COLOR_AMBER
+    area512_theme_border_color()
   );
 
   int slot_width = w / value_count;
@@ -70,7 +70,7 @@ area512_widget_draw_bar_chart(
       bar_y,
       bar_width,
       y + h - bar_y,
-      WIDGET_COLOR_GOLD
+      area512_theme_emphasis_color()
     );
   }
 }
@@ -98,7 +98,7 @@ area512_widget_draw_line_chart(
     y + h - 1,
     x + w - 1,
     y + h - 1,
-    WIDGET_COLOR_AMBER
+    area512_theme_border_color()
   );
 
   int previous_x = x;
@@ -109,7 +109,7 @@ area512_widget_draw_line_chart(
     previous_x,
     previous_y,
     1,
-    WIDGET_COLOR_GOLD
+    area512_theme_emphasis_color()
   );
 
   for (int i = 1; i < value_count; i++) {
@@ -122,9 +122,15 @@ area512_widget_draw_line_chart(
       previous_y,
       point_x,
       point_y,
-      WIDGET_COLOR_GOLD
+      area512_theme_emphasis_color()
     );
-    area512_sprite_fill_circle(sprite, point_x, point_y, 1, WIDGET_COLOR_GOLD);
+    area512_sprite_fill_circle(
+      sprite,
+      point_x,
+      point_y,
+      1,
+      area512_theme_emphasis_color()
+    );
 
     previous_x = point_x;
     previous_y = point_y;
